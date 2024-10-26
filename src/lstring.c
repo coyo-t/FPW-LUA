@@ -68,12 +68,12 @@ static void tablerehash(TString **vect, int osize, int nsize)
 {
 	int i;
 	for (i = osize; i < nsize; i++) /* clear new elements */
-		vect[i] = NULL;
+		vect[i] = nullptr;
 	for (i = 0; i < osize; i++)
 	{
 		/* rehash old part of the array */
 		TString *p = vect[i];
-		vect[i] = NULL;
+		vect[i] = nullptr;
 		while (p)
 		{
 			/* for each string in the list */
@@ -251,15 +251,12 @@ TString *luaS_newlstr(lua_State *L, const char *str, size_t l)
 {
 	if (l <= LUAI_MAXSHORTLEN) /* short string? */
 		return internshrstr(L, str, l);
-	else
-	{
-		TString *ts;
-		if (l_unlikely(l * sizeof(char) >= (MAX_SIZE - sizeof(TString))))
-			luaM_toobig(L);
-		ts = luaS_createlngstrobj(L, l);
-		memcpy(getlngstr(ts), str, l * sizeof(char));
-		return ts;
-	}
+	TString *ts;
+	if (l_unlikely(l * sizeof(char) >= (MAX_SIZE - sizeof(TString))))
+		luaM_toobig(L);
+	ts = luaS_createlngstrobj(L, l);
+	memcpy(getlngstr(ts), str, l * sizeof(char));
+	return ts;
 }
 
 
@@ -299,7 +296,7 @@ Udata *luaS_newudata(lua_State *L, size_t s, int nuvalue)
 	u = gco2u(o);
 	u->len = s;
 	u->nuvalue = nuvalue;
-	u->metatable = NULL;
+	u->metatable = nullptr;
 	for (i = 0; i < nuvalue; i++)
 		setnilvalue(&u->uv[i].uv);
 	return u;
