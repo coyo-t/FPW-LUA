@@ -104,25 +104,25 @@
 */
 
 /* predefined options for LUA_INT_TYPE */
-#define LUA_INT_INT		1
-#define LUA_INT_LONG		2
-#define LUA_INT_LONGLONG	3
+#define LUA_INT_INT      1
+#define LUA_INT_LONG     2
+#define LUA_INT_LONGLONG 3
 
 /* predefined options for LUA_FLOAT_TYPE */
-#define LUA_FLOAT_FLOAT		1
-#define LUA_FLOAT_DOUBLE	2
-#define LUA_FLOAT_LONGDOUBLE	3
+#define LUA_FLOAT_FLOAT      1
+#define LUA_FLOAT_DOUBLE     2
+#define LUA_FLOAT_LONGDOUBLE 3
 
 
 /* Default configuration ('long long' and 'double', for 64-bit Lua) */
-#define LUA_INT_DEFAULT		LUA_INT_LONGLONG
-#define LUA_FLOAT_DEFAULT	LUA_FLOAT_DOUBLE
+#define LUA_INT_DEFAULT   LUA_INT_LONGLONG
+#define LUA_FLOAT_DEFAULT LUA_FLOAT_DOUBLE
 
 
 /*
 @@ LUA_32BITS enables Lua with 32-bit integers and 32-bit floats.
 */
-#define LUA_32BITS	0
+#define LUA_32BITS false
 
 
 /*
@@ -131,9 +131,9 @@
 ** not need to use this case.
 */
 #if defined(LUA_USE_C89) && !defined(LUA_USE_WINDOWS)
-#define LUA_C89_NUMBERS		1
+#define LUA_C89_NUMBERS true
 #else
-#define LUA_C89_NUMBERS		0
+#define LUA_C89_NUMBERS false
 #endif
 
 
@@ -181,9 +181,9 @@
 ** LUA_EXEC_DIR in a Windows path is replaced by the executable's
 ** directory.
 */
-#define LUA_PATH_SEP            ";"
-#define LUA_PATH_MARK           "?"
-#define LUA_EXEC_DIR            "!"
+#define LUA_PATH_SEP  ";"
+#define LUA_PATH_MARK "?"
+#define LUA_EXEC_DIR  "!"
 
 
 /*
@@ -264,7 +264,7 @@
 ** Typically, the suffix after the mark is the module version,
 ** as in "mod-v1.2.so".
 */
-#define LUA_IGMARK		"-"
+#define LUA_IGMARK "-"
 
 /* }================================================================== */
 
