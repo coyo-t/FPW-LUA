@@ -66,8 +66,10 @@ static void expr(LexState *ls, expdesc *v);
 
 static l_noret error_expected(LexState *ls, int token)
 {
-	luaX_syntaxerror(ls,
-							luaO_pushfstring(ls->L, "%s expected", luaX_token2str(ls, token)));
+	luaX_syntaxerror(
+		ls,
+		luaO_pushfstring(ls->L, "%s expected", luaX_token2str(ls, token))
+	);
 }
 
 
@@ -99,9 +101,9 @@ static int testnext(LexState *ls, int c)
 	if (ls->t.token == c)
 	{
 		luaX_next(ls);
-		return 1;
+		return true;
 	}
-	else return 0;
+	return false;
 }
 
 
@@ -141,9 +143,16 @@ static void check_match(LexState *ls, int what, int who, int where)
 			error_expected(ls, what); /* do not need a complex message */
 		else
 		{
-			luaX_syntaxerror(ls, luaO_pushfstring(ls->L,
-																"%s expected (to close %s at line %d)",
-																luaX_token2str(ls, what), luaX_token2str(ls, who), where));
+			luaX_syntaxerror(
+				ls,
+				luaO_pushfstring(
+					ls->L,
+					"%s expected (to close %s at line %d)",
+					luaX_token2str(ls, what),
+					luaX_token2str(ls, who),
+					where
+				)
+			);
 		}
 	}
 }
@@ -271,12 +280,9 @@ static LocVar *localdebuginfo(FuncState *fs, int vidx)
 	Vardesc *vd = getlocalvardesc(fs, vidx);
 	if (vd->vd.kind == RDKCTC)
 		return NULL; /* no debug info. for constants */
-	else
-	{
-		int idx = vd->vd.pidx;
-		lua_assert(idx < fs->ndebugvars);
-		return &fs->f->locvars[idx];
-	}
+	int idx = vd->vd.pidx;
+	lua_assert(idx < fs->ndebugvars);
+	return &fs->f->locvars[idx];
 }
 
 
@@ -423,8 +429,7 @@ static int newupvalue(FuncState *fs, TString *name, expdesc *v)
 */
 static int searchvar(FuncState *fs, TString *n, expdesc *var)
 {
-	int i;
-	for (i = cast_int(fs->nactvar) - 1; i >= 0; i--)
+	for (int i = cast_int(fs->nactvar) - 1; i >= 0; i--)
 	{
 		Vardesc *vd = getlocalvardesc(fs, i);
 		if (eqstr(n, vd->vd.name))

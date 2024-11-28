@@ -11,13 +11,13 @@ add_executable(LuaMod
     src/lapi.h
     src/lauxlib.c
     src/lauxlib.h
-    src/lbaselib.c
+        src/libs/lbaselib.c
     src/lcode.c
     src/lcode.h
     src/lcorolib.c
     src/lctype.c
     src/lctype.h
-    src/ldblib.c
+        src/libs/ldblib.c
     src/ldebug.c
     src/ldebug.h
     src/ldo.c
@@ -28,21 +28,20 @@ add_executable(LuaMod
     src/lgc.c
     src/lgc.h
     src/linit.c
-    src/liolib.c
-    src/ljumptab.h
+        src/libs/liolib.c
     src/llex.c
     src/llex.h
     src/llimits.h
-    src/lmathlib.c
+        src/libs/lmathlib.c
     src/lmem.c
     src/lmem.h
-    src/loadlib.c
+        src/libs/loadlib.c
     src/lobject.c
     src/lobject.h
     src/lopcodes.c
     src/lopcodes.h
     src/lopnames.h
-    src/loslib.c
+        src/libs/loslib.c
     src/lparser.c
     src/lparser.h
     src/lprefix.h
@@ -50,23 +49,22 @@ add_executable(LuaMod
     src/lstate.h
     src/lstring.c
     src/lstring.h
-    src/lstrlib.c
+        src/libs/lstrlib.c
     src/ltable.c
     src/ltable.h
-    src/ltablib.c
+        src/libs/ltablib.c
     src/ltm.c
     src/ltm.h
-    src/lua.c
     src/lua.h
     src/lua.hpp
     src/luac.c
     src/luaconf.h
     src/luacoyote.c
     src/luacoyote.h
-    src/lualib.h
+    src/libs/lualib.h
     src/lundump.c
     src/lundump.h
-    src/lutf8lib.c
+        src/libs/lutf8lib.c
     src/lvm.c
     src/lvm.h
     src/lzio.c
