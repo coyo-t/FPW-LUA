@@ -253,9 +253,9 @@ constexpr int LUA_OPBNOT = 13;
 
 void (lua_arith)(lua_State *L, int op);
 
-#define LUA_OPEQ 0
-#define LUA_OPLT 1
-#define LUA_OPLE 2
+constexpr int LUA_OPEQ = 0;
+constexpr int LUA_OPLT = 1;
+constexpr int LUA_OPLE = 2;
 
 LUA_API int (lua_rawequal)(lua_State *L, int idx1, int idx2);
 

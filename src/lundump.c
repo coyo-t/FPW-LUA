@@ -124,7 +124,8 @@ static TString *loadStringN(LoadState *S, Proto *p)
 	size_t size = loadSize(S);
 	if (size == 0) /* no string? */
 		return nullptr;
-	else if (--size <= LUAI_MAXSHORTLEN)
+
+	if (--size <= LUAI_MAXSHORTLEN)
 	{
 		/* short string? */
 		char buff[LUAI_MAXSHORTLEN];

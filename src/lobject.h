@@ -790,7 +790,12 @@ typedef struct Table {
 #define lmod(s,size) \
 	(check_exp((size&(size-1))==0, (cast_int((s) & ((size)-1)))))
 
-#define twoto (x) (1<<(x))
+inline int twoto (int i)
+{
+	return 1 << i;
+}
+
+// #define twoto (x) (1<<(x))
 #define sizenode(t)	(twoto((t)->lsizenode))
 
 

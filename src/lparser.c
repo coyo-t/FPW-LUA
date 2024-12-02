@@ -31,7 +31,7 @@
 
 /* maximum number of local variables per function (must be smaller
    than 250, due to the bytecode format) */
-#define MAXVARS		200
+constexpr int MAXVARS = 200;
 
 
 #define hasmultret(k)		((k) == VCALL || (k) == VVARARG)
@@ -230,8 +230,8 @@ static int new_localvar(LexState *ls, TString *name)
 }
 
 #define new_localvarliteral(ls,v) \
-    new_localvar(ls,  \
-      luaX_newstring(ls, "" v, (sizeof(v)/sizeof(char)) - 1));
+	new_localvar(ls,  \
+	luaX_newstring(ls, "" v, (sizeof(v)/sizeof(char)) - 1));
 
 
 /*
@@ -328,8 +328,11 @@ static void check_readonly(LexState *ls, expdesc *e)
 	}
 	if (varname)
 	{
-		const char *msg = luaO_pushfstring(ls->L,
-														"attempt to assign to const variable '%s'", getstr(varname));
+		const char *msg = luaO_pushfstring(
+			ls->L,
+			"attempt to assign to const variable '%s'",
+			getstr(varname)
+		);
 		luaK_semerror(ls, msg); /* error */
 	}
 }
@@ -621,8 +624,12 @@ static Labeldesc *findlabel(LexState *ls, TString *name)
 /*
 ** Adds a new label/goto in the corresponding list.
 */
-static int newlabelentry(LexState *ls, Labellist *l, TString *name,
-								int line, int pc)
+static int newlabelentry(
+	LexState *ls,
+	Labellist *l,
+	TString *name,
+	int line,
+	int pc)
 {
 	int n = l->n;
 	luaM_growvector(ls->L, l->arr, n, l->size,
@@ -674,8 +681,11 @@ static int solvegotos(LexState *ls, Labeldesc *lb)
 ** a close instruction if necessary.
 ** Returns true iff it added a close instruction.
 */
-static int createlabel(LexState *ls, TString *name, int line,
-								int last)
+static int createlabel(
+	LexState *ls,
+	TString *name,
+	int line,
+	int last)
 {
 	FuncState *fs = ls->fs;
 	Labellist *ll = &ls->dyd->label;
@@ -1382,20 +1392,31 @@ static const struct {
 	lu_byte right; /* right priority */
 } priority[] = {
 	/* ORDER OPR */
-	{10, 10}, {10, 10}, /* '+' '-' */
-	{11, 11}, {11, 11}, /* '*' '%' */
-	{14, 13}, /* '^' (right associative) */
-	{11, 11}, {11, 11}, /* '/' '//' */
-	{6, 6}, {4, 4}, {5, 5}, /* '&' '|' '~' */
-	{7, 7}, {7, 7}, /* '<<' '>>' */
-	{9, 8}, /* '..' (right associative) */
-	{3, 3}, {3, 3}, {3, 3}, /* ==, <, <= */
-	{3, 3}, {3, 3}, {3, 3}, /* ~=, >, >= */
-	{2, 2}, {1, 1} /* and, or */
+	{10, 10}, // '+'
+	{10, 10}, // '-'
+	{11, 11}, // '*'
+	{11, 11}, // '%'
+	{14, 13}, // '^' (right associative)
+	{11, 11}, // '/'
+	{11, 11}, // '//'
+	{6, 6}, // '&'
+	{4, 4}, // '|'
+	{5, 5}, // '~'
+	{7, 7}, // '<<'
+	{7, 7}, // '>>'
+	{9, 8}, // '..' (right associative)
+	{3, 3}, // '=='
+	{3, 3}, // '<'
+	{3, 3}, // '<='
+	{3, 3}, // '~='
+	{3, 3}, // '>'
+	{3, 3}, // '>='
+	{2, 2}, // 'and'
+	{1, 1}, //'or'
 };
 
-#define UNARY_PRIORITY	12  /* priority for unary operators */
-
+// priority for unary operators
+constexpr int UNARY_PRIORITY = 12;
 
 /*
 ** subexpr -> (simpleexp | unop subexpr) { binop subexpr }
