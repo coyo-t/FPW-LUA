@@ -7,15 +7,15 @@
 #define lcorolib_c
 #define LUA_LIB
 
-#include "lprefix.h"
+#include "../lprefix.h"
 
 
 #include <stdlib.h>
 
-#include "lua.hpp"
+#include "../lua.hpp"
 
-#include "lauxlib.h"
-#include "libs/lualib.h"
+#include "../lauxlib.h"
+#include "lualib.h"
 
 
 static lua_State *getco(lua_State *L)
@@ -51,11 +51,8 @@ static int auxresume(lua_State *L, lua_State *co, int narg)
 		lua_xmove(co, L, nres); /* move yielded values */
 		return nres;
 	}
-	else
-	{
-		lua_xmove(co, L, 1); /* move error message */
-		return -1; /* error flag */
-	}
+	lua_xmove(co, L, 1); /* move error message */
+	return -1; /* error flag */
 }
 
 
@@ -70,12 +67,9 @@ static int luaB_coresume(lua_State *L)
 		lua_insert(L, -2);
 		return 2; /* return false + error message */
 	}
-	else
-	{
-		lua_pushboolean(L, 1);
-		lua_insert(L, -(r + 1));
-		return r + 1; /* return true + 'resume' returns */
-	}
+	lua_pushboolean(L, 1);
+	lua_insert(L, -(r + 1));
+	return r + 1; /* return true + 'resume' returns */
 }
 
 
@@ -146,24 +140,21 @@ static const char *const statname[] =
 static int auxstatus(lua_State *L, lua_State *co)
 {
 	if (L == co) return COS_RUN;
-	else
+	switch (lua_status(co))
 	{
-		switch (lua_status(co))
-		{
-			case LUA_YIELD:
-				return COS_YIELD;
-			case LUA_OK: {
-				lua_Debug ar;
-				if (lua_getstack(co, 0, &ar)) /* does it have frames? */
-					return COS_NORM; /* it is running */
-				else if (lua_gettop(co) == 0)
-					return COS_DEAD;
-				else
-					return COS_YIELD; /* initial state */
-			}
-			default: /* some error occurred */
+		case LUA_YIELD:
+			return COS_YIELD;
+		case LUA_OK: {
+			lua_Debug ar;
+			if (lua_getstack(co, 0, &ar)) /* does it have frames? */
+				return COS_NORM; /* it is running */
+			if (lua_gettop(co) == 0)
 				return COS_DEAD;
+			/* initial state */
+			return COS_YIELD;
 		}
+		default: /* some error occurred */
+			return COS_DEAD;
 	}
 }
 
@@ -206,12 +197,9 @@ static int luaB_close(lua_State *L)
 				lua_pushboolean(L, 1);
 				return 1;
 			}
-			else
-			{
-				lua_pushboolean(L, 0);
-				lua_xmove(co, L, 1); /* move error message */
-				return 2;
-			}
+			lua_pushboolean(L, 0);
+			lua_xmove(co, L, 1); /* move error message */
+			return 2;
 		}
 		default: /* normal or running coroutine */
 			return luaL_error(L, "cannot close a %s coroutine", statname[status]);

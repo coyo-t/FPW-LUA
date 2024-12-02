@@ -77,12 +77,12 @@ build CMakeFiles/LuaMod.dir/src/lcode.c.obj: C_COMPILER__LuaMod_unscanned_Debug 
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/lcorolib.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lcorolib.c || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lcorolib.c.obj.d
+build CMakeFiles/LuaMod.dir/src/libs/lcorolib.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/libs/lcorolib.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\libs\lcorolib.c.obj.d
   FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
-  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
+  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src\libs
 
 build CMakeFiles/LuaMod.dir/src/lctype.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lctype.c || cmake_object_order_depends_target_LuaMod
   DEP_FILE = CMakeFiles\LuaMod.dir\src\lctype.c.obj.d
@@ -295,7 +295,7 @@ build CMakeFiles/LuaMod.dir/src/lzio.c.obj: C_COMPILER__LuaMod_unscanned_Debug D
 #############################################
 # Link the executable LuaMod.exe
 
-build LuaMod.exe: CXX_EXECUTABLE_LINKER__LuaMod_Debug CMakeFiles/LuaMod.dir/src/lapi.c.obj CMakeFiles/LuaMod.dir/src/lauxlib.c.obj CMakeFiles/LuaMod.dir/src/libs/lbaselib.c.obj CMakeFiles/LuaMod.dir/src/lcode.c.obj CMakeFiles/LuaMod.dir/src/lcorolib.c.obj CMakeFiles/LuaMod.dir/src/lctype.c.obj CMakeFiles/LuaMod.dir/src/libs/ldblib.c.obj CMakeFiles/LuaMod.dir/src/ldebug.c.obj CMakeFiles/LuaMod.dir/src/ldo.c.obj CMakeFiles/LuaMod.dir/src/ldump.c.obj CMakeFiles/LuaMod.dir/src/lfunc.c.obj CMakeFiles/LuaMod.dir/src/lgc.c.obj CMakeFiles/LuaMod.dir/src/linit.c.obj CMakeFiles/LuaMod.dir/src/libs/liolib.c.obj CMakeFiles/LuaMod.dir/src/llex.c.obj CMakeFiles/LuaMod.dir/src/libs/lmathlib.c.obj CMakeFiles/LuaMod.dir/src/lmem.c.obj CMakeFiles/LuaMod.dir/src/libs/loadlib.c.obj CMakeFiles/LuaMod.dir/src/lobject.cpp.obj CMakeFiles/LuaMod.dir/src/lopcodes.c.obj CMakeFiles/LuaMod.dir/src/libs/loslib.c.obj CMakeFiles/LuaMod.dir/src/lparser.c.obj CMakeFiles/LuaMod.dir/src/lstate.c.obj CMakeFiles/LuaMod.dir/src/lstring.c.obj CMakeFiles/LuaMod.dir/src/libs/lstrlib.c.obj CMakeFiles/LuaMod.dir/src/ltable.c.obj CMakeFiles/LuaMod.dir/src/libs/ltablib.c.obj CMakeFiles/LuaMod.dir/src/ltm.c.obj CMakeFiles/LuaMod.dir/src/luac.c.obj CMakeFiles/LuaMod.dir/src/luacoyote.c.obj CMakeFiles/LuaMod.dir/src/lundump.c.obj CMakeFiles/LuaMod.dir/src/libs/lutf8lib.c.obj CMakeFiles/LuaMod.dir/src/lvm.c.obj CMakeFiles/LuaMod.dir/src/lzio.c.obj
+build LuaMod.exe: CXX_EXECUTABLE_LINKER__LuaMod_Debug CMakeFiles/LuaMod.dir/src/lapi.c.obj CMakeFiles/LuaMod.dir/src/lauxlib.c.obj CMakeFiles/LuaMod.dir/src/libs/lbaselib.c.obj CMakeFiles/LuaMod.dir/src/lcode.c.obj CMakeFiles/LuaMod.dir/src/libs/lcorolib.c.obj CMakeFiles/LuaMod.dir/src/lctype.c.obj CMakeFiles/LuaMod.dir/src/libs/ldblib.c.obj CMakeFiles/LuaMod.dir/src/ldebug.c.obj CMakeFiles/LuaMod.dir/src/ldo.c.obj CMakeFiles/LuaMod.dir/src/ldump.c.obj CMakeFiles/LuaMod.dir/src/lfunc.c.obj CMakeFiles/LuaMod.dir/src/lgc.c.obj CMakeFiles/LuaMod.dir/src/linit.c.obj CMakeFiles/LuaMod.dir/src/libs/liolib.c.obj CMakeFiles/LuaMod.dir/src/llex.c.obj CMakeFiles/LuaMod.dir/src/libs/lmathlib.c.obj CMakeFiles/LuaMod.dir/src/lmem.c.obj CMakeFiles/LuaMod.dir/src/libs/loadlib.c.obj CMakeFiles/LuaMod.dir/src/lobject.cpp.obj CMakeFiles/LuaMod.dir/src/lopcodes.c.obj CMakeFiles/LuaMod.dir/src/libs/loslib.c.obj CMakeFiles/LuaMod.dir/src/lparser.c.obj CMakeFiles/LuaMod.dir/src/lstate.c.obj CMakeFiles/LuaMod.dir/src/lstring.c.obj CMakeFiles/LuaMod.dir/src/libs/lstrlib.c.obj CMakeFiles/LuaMod.dir/src/ltable.c.obj CMakeFiles/LuaMod.dir/src/libs/ltablib.c.obj CMakeFiles/LuaMod.dir/src/ltm.c.obj CMakeFiles/LuaMod.dir/src/luac.c.obj CMakeFiles/LuaMod.dir/src/luacoyote.c.obj CMakeFiles/LuaMod.dir/src/lundump.c.obj CMakeFiles/LuaMod.dir/src/libs/lutf8lib.c.obj CMakeFiles/LuaMod.dir/src/lvm.c.obj CMakeFiles/LuaMod.dir/src/lzio.c.obj
   FLAGS = -g
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\LuaMod.dir

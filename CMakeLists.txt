@@ -14,7 +14,7 @@ add_executable(LuaMod
         src/libs/lbaselib.c
     src/lcode.c
     src/lcode.h
-    src/lcorolib.c
+        src/libs/lcorolib.c
     src/lctype.c
     src/lctype.h
         src/libs/ldblib.c

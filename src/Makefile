@@ -166,7 +166,7 @@ lbaselib.o: libs/lbaselib.c lprefix.h lua.hpp luaconf.h lauxlib.h lualib.h
 lcode.o: lcode.c lprefix.h lua.hpp luaconf.h lcode.h llex.h lobject.hpp \
  llimits.h lzio.h lmem.h lopcodes.h lparser.h ldebug.h lstate.h ltm.h \
  ldo.h lgc.h lstring.h ltable.h lvm.h
-lcorolib.o: lcorolib.c lprefix.h lua.hpp luaconf.h lauxlib.h lualib.h
+lcorolib.o: libs/lcorolib.c lprefix.h lua.hpp luaconf.h lauxlib.h lualib.h
 lctype.o: lctype.c lprefix.h lctype.h lua.hpp luaconf.h llimits.h
 ldblib.o: libs/ldblib.c lprefix.h lua.hpp luaconf.h lauxlib.h lualib.h
 ldebug.o: ldebug.c lprefix.h lua.hpp luaconf.h lapi.h llimits.h lstate.h \
