@@ -74,26 +74,6 @@ constexpr bool luaM_limitN (N n)
 	return static_cast<uint32_t>(MAX_SIZET/sizeof(T));
 }
 
-
-#define luaM_new(L,t)		cast(t*, luaM_malloc_(L, sizeof(t), 0))
-#define luaM_newvector(L,n,t)	cast(t*, luaM_malloc_(L, (n)*sizeof(t), 0))
-#define luaM_newvectorchecked(L,n,t) \
-  (luaM_checksize(L,n,sizeof(t)), luaM_newvector(L,n,t))
-
-#define luaM_newobject(L,tag,s)	luaM_malloc_(L, (s), tag)
-
-#define luaM_growvector(L,v,nelems,size,t,limit,e) \
-	((v)=cast(t *, luaM_growaux_(L,v,nelems,&(size),sizeof(t), \
-                         luaM_limitN(limit,t),e)))
-
-#define luaM_reallocvector(L, v,oldn,n,t) \
-   (cast(t *, luaM_realloc_(L, v, cast_sizet(oldn) * sizeof(t), \
-                                  cast_sizet(n) * sizeof(t))))
-
-#define luaM_shrinkvector(L,v,size,fs,t) \
-   ((v)=cast(t *, luaM_shrinkvector_(L, v, &(size), fs, sizeof(t))))
-
-
 /* not to be called directly */
 LUAI_FUNC void *luaM_realloc_(
 	lua_State *L,
@@ -157,6 +137,52 @@ void luaM_freearray(lua_State* L, T* b, size_t n)
 // #define luaM_freearray(L, b, n)   luaM_free_(L, (b), (n)*sizeof(*(b)))
 	luaM_free_(L, b, n*sizeof(T));
 }
+
+
+template<typename T>
+T* luaM_new(lua_State* L)
+{
+// #define luaM_new(L,t)		cast(t*, luaM_malloc_(L, sizeof(t), 0))
+	return luaM_malloc_(L, sizeof(T), 0);
+}
+
+template<typename T>
+T* luaM_newvector(lua_State* L, size_t n)
+{
+// #define luaM_newvector(L,n,t)	cast(t*, luaM_malloc_(L, (n)*sizeof(t), 0))
+	return luaM_malloc_(L, n*sizeof(T), 0);
+}
+
+
+
+template<typename T>
+T* luaM_checksize(lua_State* L, size_t n)
+{
+// #define luaM_newvectorchecked(L,n,t) \
+// (luaM_checksize(L,n,sizeof(t)), luaM_newvector(L,n,t))
+	luaM_checksize(L,n,sizeof(T));
+	return luaM_newvector<T>(L,n);
+}
+
+
+void* luaM_newobject(lua_State* L, int tag, size_t s)
+{
+// #define luaM_newobject(L,tag,s)	luaM_malloc_(L, (s), tag)
+	return luaM_malloc_(L, s, tag);
+}
+
+
+
+#define luaM_growvector(L,v,nelems,size,t,limit,e) \
+((v)=cast(t *, luaM_growaux_(L,v,nelems,&(size),sizeof(t), \
+luaM_limitN(limit,t),e)))
+
+#define luaM_reallocvector(L, v,oldn,n,t) \
+(cast(t *, luaM_realloc_(L, v, cast_sizet(oldn) * sizeof(t), \
+cast_sizet(n) * sizeof(t))))
+
+#define luaM_shrinkvector(L,v,size,fs,t) \
+((v)=cast(t *, luaM_shrinkvector_(L, v, &(size), fs, sizeof(t))))
 
 
 #endif
