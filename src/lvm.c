@@ -1324,34 +1324,34 @@ returning: /* trap already set */
 		/* invalidate top for instructions not expecting it */
 		lua_assert(isIT(i) || (cast_void(L->top.p = base), 1));
 		vmdispatch(GET_OPCODE(i)) {
-		vmcase(OP_MOVE)
+			vmcase(OP_MOVE)
 			{
 				StkId ra = RA(i);
 				setobjs2s(L, ra, RB(i));
 				vmbreak;
 			}
-		vmcase(OP_LOADI)
+			vmcase(OP_LOADI)
 			{
 				StkId ra = RA(i);
 				lua_Integer b = GETARG_sBx(i);
 				setivalue(s2v(ra), b);
 				vmbreak;
 			}
-		vmcase(OP_LOADF)
+			vmcase(OP_LOADF)
 			{
 				StkId ra = RA(i);
 				int b = GETARG_sBx(i);
 				setfltvalue(s2v(ra), cast_num(b));
 				vmbreak;
 			}
-		vmcase(OP_LOADK)
+			vmcase(OP_LOADK)
 			{
 				StkId ra = RA(i);
 				TValue *rb = k + GETARG_Bx(i);
 				setobj2s(L, ra, rb);
 				vmbreak;
 			}
-		vmcase(OP_LOADKX)
+			vmcase(OP_LOADKX)
 			{
 				StkId ra = RA(i);
 				TValue *rb;
@@ -1360,26 +1360,26 @@ returning: /* trap already set */
 				setobj2s(L, ra, rb);
 				vmbreak;
 			}
-		vmcase(OP_LOADFALSE)
+			vmcase(OP_LOADFALSE)
 			{
 				StkId ra = RA(i);
 				setbfvalue(s2v(ra));
 				vmbreak;
 			}
-		vmcase(OP_LFALSESKIP)
+			vmcase(OP_LFALSESKIP)
 			{
 				StkId ra = RA(i);
 				setbfvalue(s2v(ra));
 				pc++; /* skip next instruction */
 				vmbreak;
 			}
-		vmcase(OP_LOADTRUE)
+			vmcase(OP_LOADTRUE)
 			{
 				StkId ra = RA(i);
 				setbtvalue(s2v(ra));
 				vmbreak;
 			}
-		vmcase(OP_LOADNIL)
+			vmcase(OP_LOADNIL)
 			{
 				StkId ra = RA(i);
 				int b = GETARG_B(i);
@@ -1389,14 +1389,14 @@ returning: /* trap already set */
 				} while (b--);
 				vmbreak;
 			}
-		vmcase(OP_GETUPVAL)
+			vmcase(OP_GETUPVAL)
 			{
 				StkId ra = RA(i);
 				int b = GETARG_B(i);
 				setobj2s(L, ra, cl->upvals[b]->v.p);
 				vmbreak;
 			}
-		vmcase(OP_SETUPVAL)
+			vmcase(OP_SETUPVAL)
 			{
 				StkId ra = RA(i);
 				UpVal *uv = cl->upvals[GETARG_B(i)];
@@ -1404,7 +1404,7 @@ returning: /* trap already set */
 				luaC_barrier(L, uv, s2v(ra));
 				vmbreak;
 			}
-		vmcase(OP_GETTABUP)
+			vmcase(OP_GETTABUP)
 			{
 				StkId ra = RA(i);
 				const TValue *slot;
@@ -1419,7 +1419,7 @@ returning: /* trap already set */
 					Protect(luaV_finishget(L, upval, rc, ra, slot));
 				vmbreak;
 			}
-		vmcase(OP_GETTABLE)
+			vmcase(OP_GETTABLE)
 			{
 				StkId ra = RA(i);
 				const TValue *slot;
@@ -1436,7 +1436,7 @@ returning: /* trap already set */
 					Protect(luaV_finishget(L, rb, rc, ra, slot));
 				vmbreak;
 			}
-		vmcase(OP_GETI)
+			vmcase(OP_GETI)
 			{
 				StkId ra = RA(i);
 				const TValue *slot;
@@ -1454,7 +1454,7 @@ returning: /* trap already set */
 				}
 				vmbreak;
 			}
-		vmcase(OP_GETFIELD)
+			vmcase(OP_GETFIELD)
 			{
 				StkId ra = RA(i);
 				const TValue *slot;
@@ -1469,7 +1469,7 @@ returning: /* trap already set */
 					Protect(luaV_finishget(L, rb, rc, ra, slot));
 				vmbreak;
 			}
-		vmcase(OP_SETTABUP)
+			vmcase(OP_SETTABUP)
 			{
 				const TValue *slot;
 				TValue *upval = cl->upvals[GETARG_A(i)]->v.p;
@@ -1484,7 +1484,7 @@ returning: /* trap already set */
 					Protect(luaV_finishset(L, upval, rb, rc, slot));
 				vmbreak;
 			}
-		vmcase(OP_SETTABLE)
+			vmcase(OP_SETTABLE)
 			{
 				StkId ra = RA(i);
 				const TValue *slot;
@@ -1501,7 +1501,7 @@ returning: /* trap already set */
 					Protect(luaV_finishset(L, s2v(ra), rb, rc, slot));
 				vmbreak;
 			}
-		vmcase(OP_SETI)
+			vmcase(OP_SETI)
 			{
 				StkId ra = RA(i);
 				const TValue *slot;
@@ -1519,7 +1519,7 @@ returning: /* trap already set */
 				}
 				vmbreak;
 			}
-		vmcase(OP_SETFIELD)
+			vmcase(OP_SETFIELD)
 			{
 				StkId ra = RA(i);
 				const TValue *slot;
@@ -1534,7 +1534,7 @@ returning: /* trap already set */
 					Protect(luaV_finishset(L, s2v(ra), rb, rc, slot));
 				vmbreak;
 			}
-		vmcase(OP_NEWTABLE)
+			vmcase(OP_NEWTABLE)
 			{
 				StkId ra = RA(i);
 				int b = GETARG_B(i); /* log2(hash size) + 1 */
@@ -1554,7 +1554,7 @@ returning: /* trap already set */
 				checkGC(L, ra + 1);
 				vmbreak;
 			}
-		vmcase(OP_SELF)
+			vmcase(OP_SELF)
 			{
 				StkId ra = RA(i);
 				const TValue *slot;
@@ -1570,64 +1570,64 @@ returning: /* trap already set */
 					Protect(luaV_finishget(L, rb, rc, ra, slot));
 				vmbreak;
 			}
-		vmcase(OP_ADDI)
+			vmcase(OP_ADDI)
 			{
 				op_arithI(L, l_addi, luai_numadd);
 				vmbreak;
 			}
-		vmcase(OP_ADDK)
+			vmcase(OP_ADDK)
 			{
 				op_arithK(L, l_addi, luai_numadd);
 				vmbreak;
 			}
-		vmcase(OP_SUBK)
+			vmcase(OP_SUBK)
 			{
 				op_arithK(L, l_subi, luai_numsub);
 				vmbreak;
 			}
-		vmcase(OP_MULK)
+			vmcase(OP_MULK)
 			{
 				op_arithK(L, l_muli, luai_nummul);
 				vmbreak;
 			}
-		vmcase(OP_MODK)
+			vmcase(OP_MODK)
 			{
 				savestate(L, ci); /* in case of division by 0 */
 				op_arithK(L, luaV_mod, luaV_modf);
 				vmbreak;
 			}
-		vmcase(OP_POWK)
+			vmcase(OP_POWK)
 			{
 				op_arithfK(L, luai_numpow);
 				vmbreak;
 			}
-		vmcase(OP_DIVK)
+			vmcase(OP_DIVK)
 			{
 				op_arithfK(L, luai_numdiv);
 				vmbreak;
 			}
-		vmcase(OP_IDIVK)
+			vmcase(OP_IDIVK)
 			{
 				savestate(L, ci); /* in case of division by 0 */
 				op_arithK(L, luaV_idiv, luai_numidiv);
 				vmbreak;
 			}
-		vmcase(OP_BANDK)
+			vmcase(OP_BANDK)
 			{
 				op_bitwiseK(L, l_band);
 				vmbreak;
 			}
-		vmcase(OP_BORK)
+			vmcase(OP_BORK)
 			{
 				op_bitwiseK(L, l_bor);
 				vmbreak;
 			}
-		vmcase(OP_BXORK)
+			vmcase(OP_BXORK)
 			{
 				op_bitwiseK(L, l_bxor);
 				vmbreak;
 			}
-		vmcase(OP_SHRI)
+			vmcase(OP_SHRI)
 			{
 				StkId ra = RA(i);
 				TValue *rb = vRB(i);
@@ -1640,7 +1640,7 @@ returning: /* trap already set */
 				}
 				vmbreak;
 			}
-		vmcase(OP_SHLI)
+			vmcase(OP_SHLI)
 			{
 				StkId ra = RA(i);
 				TValue *rb = vRB(i);
@@ -1653,71 +1653,71 @@ returning: /* trap already set */
 				}
 				vmbreak;
 			}
-		vmcase(OP_ADD)
+			vmcase(OP_ADD)
 			{
 				op_arith(L, l_addi, luai_numadd);
 				vmbreak;
 			}
-		vmcase(OP_SUB)
+			vmcase(OP_SUB)
 			{
 				op_arith(L, l_subi, luai_numsub);
 				vmbreak;
 			}
-		vmcase(OP_MUL)
+			vmcase(OP_MUL)
 			{
 				op_arith(L, l_muli, luai_nummul);
 				vmbreak;
 			}
-		vmcase(OP_MOD)
+			vmcase(OP_MOD)
 			{
 				savestate(L, ci); /* in case of division by 0 */
 				op_arith(L, luaV_mod, luaV_modf);
 				vmbreak;
 			}
-		vmcase(OP_POW)
+			vmcase(OP_POW)
 			{
 				op_arithf(L, luai_numpow);
 				vmbreak;
 			}
-		vmcase(OP_DIV)
+			vmcase(OP_DIV)
 			{
 				/* float division (always with floats) */
 				op_arithf(L, luai_numdiv);
 				vmbreak;
 			}
-		vmcase(OP_IDIV)
+			vmcase(OP_IDIV)
 			{
 				/* floor division */
 				savestate(L, ci); /* in case of division by 0 */
 				op_arith(L, luaV_idiv, luai_numidiv);
 				vmbreak;
 			}
-		vmcase(OP_BAND)
+			vmcase(OP_BAND)
 			{
 				op_bitwise(L, l_band);
 				vmbreak;
 			}
-		vmcase(OP_BOR)
+			vmcase(OP_BOR)
 			{
 				op_bitwise(L, l_bor);
 				vmbreak;
 			}
-		vmcase(OP_BXOR)
+			vmcase(OP_BXOR)
 			{
 				op_bitwise(L, l_bxor);
 				vmbreak;
 			}
-		vmcase(OP_SHR)
+			vmcase(OP_SHR)
 			{
 				op_bitwise(L, luaV_shiftr);
 				vmbreak;
 			}
-		vmcase(OP_SHL)
+			vmcase(OP_SHL)
 			{
 				op_bitwise(L, luaV_shiftl);
 				vmbreak;
 			}
-		vmcase(OP_MMBIN)
+			vmcase(OP_MMBIN)
 			{
 				StkId ra = RA(i);
 				Instruction pi = *(pc - 2); /* original arith. expression */
@@ -1728,7 +1728,7 @@ returning: /* trap already set */
 				Protect(luaT_trybinTM(L, s2v(ra), rb, result, tm));
 				vmbreak;
 			}
-		vmcase(OP_MMBINI)
+			vmcase(OP_MMBINI)
 			{
 				StkId ra = RA(i);
 				Instruction pi = *(pc - 2); /* original arith. expression */
@@ -1739,7 +1739,7 @@ returning: /* trap already set */
 				Protect(luaT_trybiniTM(L, s2v(ra), imm, flip, result, tm));
 				vmbreak;
 			}
-		vmcase(OP_MMBINK)
+			vmcase(OP_MMBINK)
 			{
 				StkId ra = RA(i);
 				Instruction pi = *(pc - 2); /* original arith. expression */
@@ -1750,7 +1750,7 @@ returning: /* trap already set */
 				Protect(luaT_trybinassocTM(L, s2v(ra), imm, flip, result, tm));
 				vmbreak;
 			}
-		vmcase(OP_UNM)
+			vmcase(OP_UNM)
 			{
 				StkId ra = RA(i);
 				TValue *rb = vRB(i);
@@ -1768,7 +1768,7 @@ returning: /* trap already set */
 					Protect(luaT_trybinTM(L, rb, rb, ra, TM_UNM));
 				vmbreak;
 			}
-		vmcase(OP_BNOT)
+			vmcase(OP_BNOT)
 			{
 				StkId ra = RA(i);
 				TValue *rb = vRB(i);
@@ -1781,7 +1781,7 @@ returning: /* trap already set */
 					Protect(luaT_trybinTM(L, rb, rb, ra, TM_BNOT));
 				vmbreak;
 			}
-		vmcase(OP_NOT)
+			vmcase(OP_NOT)
 			{
 				StkId ra = RA(i);
 				TValue *rb = vRB(i);
@@ -1791,13 +1791,13 @@ returning: /* trap already set */
 					setbfvalue(s2v(ra));
 				vmbreak;
 			}
-		vmcase(OP_LEN)
+			vmcase(OP_LEN)
 			{
 				StkId ra = RA(i);
 				Protect(luaV_objlen(L, ra, vRB(i)));
 				vmbreak;
 			}
-		vmcase(OP_CONCAT)
+			vmcase(OP_CONCAT)
 			{
 				StkId ra = RA(i);
 				int n = GETARG_B(i); /* number of elements to concatenate */
@@ -1806,25 +1806,25 @@ returning: /* trap already set */
 				checkGC(L, L->top.p); /* 'luaV_concat' ensures correct top */
 				vmbreak;
 			}
-		vmcase(OP_CLOSE)
+			vmcase(OP_CLOSE)
 			{
 				StkId ra = RA(i);
 				Protect(luaF_close(L, ra, LUA_OK, 1));
 				vmbreak;
 			}
-		vmcase(OP_TBC)
+			vmcase(OP_TBC)
 			{
 				StkId ra = RA(i);
 				/* create new to-be-closed upvalue */
 				halfProtect(luaF_newtbcupval(L, ra));
 				vmbreak;
 			}
-		vmcase(OP_JMP)
+			vmcase(OP_JMP)
 			{
 				dojump(ci, i, 0);
 				vmbreak;
 			}
-		vmcase(OP_EQ)
+			vmcase(OP_EQ)
 			{
 				StkId ra = RA(i);
 				int cond;
@@ -1833,17 +1833,17 @@ returning: /* trap already set */
 				docondjump();
 				vmbreak;
 			}
-		vmcase(OP_LT)
+			vmcase(OP_LT)
 			{
 				op_order(L, l_lti, LTnum, lessthanothers);
 				vmbreak;
 			}
-		vmcase(OP_LE)
+			vmcase(OP_LE)
 			{
 				op_order(L, l_lei, LEnum, lessequalothers);
 				vmbreak;
 			}
-		vmcase(OP_EQK)
+			vmcase(OP_EQK)
 			{
 				StkId ra = RA(i);
 				TValue *rb = KB(i);
@@ -1852,7 +1852,7 @@ returning: /* trap already set */
 				docondjump();
 				vmbreak;
 			}
-		vmcase(OP_EQI)
+			vmcase(OP_EQI)
 			{
 				StkId ra = RA(i);
 				int cond;
@@ -1866,34 +1866,34 @@ returning: /* trap already set */
 				docondjump();
 				vmbreak;
 			}
-		vmcase(OP_LTI)
+			vmcase(OP_LTI)
 			{
 				op_orderI(L, l_lti, luai_numlt, 0, TM_LT);
 				vmbreak;
 			}
-		vmcase(OP_LEI)
+			vmcase(OP_LEI)
 			{
 				op_orderI(L, l_lei, luai_numle, 0, TM_LE);
 				vmbreak;
 			}
-		vmcase(OP_GTI)
+			vmcase(OP_GTI)
 			{
 				op_orderI(L, l_gti, luai_numgt, 1, TM_LT);
 				vmbreak;
 			}
-		vmcase(OP_GEI)
+			vmcase(OP_GEI)
 			{
 				op_orderI(L, l_gei, luai_numge, 1, TM_LE);
 				vmbreak;
 			}
-		vmcase(OP_TEST)
+			vmcase(OP_TEST)
 			{
 				StkId ra = RA(i);
 				int cond = !l_isfalse(s2v(ra));
 				docondjump();
 				vmbreak;
 			}
-		vmcase(OP_TESTSET)
+			vmcase(OP_TESTSET)
 			{
 				StkId ra = RA(i);
 				TValue *rb = vRB(i);
@@ -1906,7 +1906,7 @@ returning: /* trap already set */
 				}
 				vmbreak;
 			}
-		vmcase(OP_CALL)
+			vmcase(OP_CALL)
 			{
 				StkId ra = RA(i);
 				CallInfo *newci;
@@ -1926,7 +1926,7 @@ returning: /* trap already set */
 				}
 				vmbreak;
 			}
-		vmcase(OP_TAILCALL)
+			vmcase(OP_TAILCALL)
 			{
 				StkId ra = RA(i);
 				int b = GETARG_B(i); /* number of arguments + 1 (function) */
@@ -1956,7 +1956,7 @@ returning: /* trap already set */
 					goto ret; /* caller returns after the tail call */
 				}
 			}
-		vmcase(OP_RETURN)
+			vmcase(OP_RETURN)
 			{
 				StkId ra = RA(i);
 				int n = GETARG_B(i) - 1; /* number of results */
@@ -1981,7 +1981,7 @@ returning: /* trap already set */
 				updatetrap(ci); /* 'luaD_poscall' can change hooks */
 				goto ret;
 			}
-		vmcase(OP_RETURN0)
+			vmcase(OP_RETURN0)
 			{
 				if (l_unlikely(L->hookmask))
 				{
@@ -2002,7 +2002,7 @@ returning: /* trap already set */
 				}
 				goto ret;
 			}
-		vmcase(OP_RETURN1)
+			vmcase(OP_RETURN1)
 			{
 				if (l_unlikely(L->hookmask))
 				{
@@ -2028,7 +2028,7 @@ returning: /* trap already set */
 							setnilvalue(s2v(L->top.p++)); /* complete missing results */
 					}
 				}
-			ret: /* return from a Lua function */
+				ret: /* return from a Lua function */
 				if (ci->callstatus & CIST_FRESH)
 					return; /* end this frame */
 				else
@@ -2037,7 +2037,7 @@ returning: /* trap already set */
 					goto returning; /* continue running caller in this frame */
 				}
 			}
-		vmcase(OP_FORLOOP)
+			vmcase(OP_FORLOOP)
 			{
 				StkId ra = RA(i);
 				if (ttisinteger(s2v(ra + 2)))
@@ -2061,7 +2061,7 @@ returning: /* trap already set */
 				updatetrap(ci); /* allows a signal to break the loop */
 				vmbreak;
 			}
-		vmcase(OP_FORPREP)
+			vmcase(OP_FORPREP)
 			{
 				StkId ra = RA(i);
 				savestate(L, ci); /* in case of errors */
@@ -2069,7 +2069,7 @@ returning: /* trap already set */
 					pc += GETARG_Bx(i) + 1; /* skip the loop */
 				vmbreak;
 			}
-		vmcase(OP_TFORPREP)
+			vmcase(OP_TFORPREP)
 			{
 				StkId ra = RA(i);
 				/* create to-be-closed upvalue (if needed) */
@@ -2079,7 +2079,7 @@ returning: /* trap already set */
 				lua_assert(GET_OPCODE(i) == OP_TFORCALL && ra == RA(i));
 				goto l_tforcall;
 			}
-		vmcase(OP_TFORCALL)
+			vmcase(OP_TFORCALL)
 			{
 			l_tforcall:
 				{
@@ -2099,7 +2099,7 @@ returning: /* trap already set */
 					goto l_tforloop;
 				}
 			}
-		vmcase(OP_TFORLOOP)
+			vmcase(OP_TFORLOOP)
 			{
 			l_tforloop:
 				{
@@ -2113,7 +2113,7 @@ returning: /* trap already set */
 					vmbreak;
 				}
 			}
-		vmcase(OP_SETLIST)
+			vmcase(OP_SETLIST)
 			{
 				StkId ra = RA(i);
 				int n = GETARG_B(i);
@@ -2140,7 +2140,7 @@ returning: /* trap already set */
 				}
 				vmbreak;
 			}
-		vmcase(OP_CLOSURE)
+			vmcase(OP_CLOSURE)
 			{
 				StkId ra = RA(i);
 				Proto *p = cl->p->p[GETARG_Bx(i)];
@@ -2148,14 +2148,14 @@ returning: /* trap already set */
 				checkGC(L, ra + 1);
 				vmbreak;
 			}
-		vmcase(OP_VARARG)
+			vmcase(OP_VARARG)
 			{
 				StkId ra = RA(i);
 				int n = GETARG_C(i) - 1; /* required results */
 				Protect(luaT_getvarargs(L, ci, ra, n));
 				vmbreak;
 			}
-		vmcase(OP_VARARGPREP)
+			vmcase(OP_VARARGPREP)
 			{
 				ProtectNT(luaT_adjustvarargs(L, GETARG_A(i), ci, cl->p));
 				if (l_unlikely(trap))
@@ -2167,7 +2167,7 @@ returning: /* trap already set */
 				updatebase(ci); /* function has new base after adjustment */
 				vmbreak;
 			}
-		vmcase(OP_EXTRAARG)
+			vmcase(OP_EXTRAARG)
 			{
 				lua_assert(0);
 				vmbreak;
