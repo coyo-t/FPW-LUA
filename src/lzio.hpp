@@ -27,7 +27,7 @@ struct CoyoteBuffer
 	size_t n; // limit
 	size_t buffsize; // capacity
 
-	void initbuffer ()
+	void initbuffer (lua_State* L)
 	{
 		buffer = nullptr;
 		buffsize = 0;
@@ -51,6 +51,22 @@ struct CoyoteBuffer
 	void resetbuffer()
 	{
 		n = 0;
+	}
+
+	void resizebuffer(lua_State *L, size_t size)
+	{
+		buffer = luaM_realloc(
+			L,
+			buffer,
+			buffsize,
+			size
+		);
+		buffsize = size;
+	}
+
+	void luaZ_freebuffer(lua_State *L)
+	{
+		resizebuffer(L, 0);
 	}
 };
 

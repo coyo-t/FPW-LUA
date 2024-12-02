@@ -57,7 +57,7 @@ void luaZ_resetbuffer(Mbuffer *buff)
 
 void luaZ_resizebuffer(lua_State *L, Mbuffer *buff, size_t size)
 {
-	buff->buffer = luaM_reallocvchar(
+	buff->buffer = luaM_realloc(
 		L,
 		buff->buffer,
 		buff->buffsize,
