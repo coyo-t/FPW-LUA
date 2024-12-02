@@ -60,19 +60,19 @@ typedef struct lua_State lua_State;
 /*
 ** basic types
 */
-#define LUA_TNONE		(-1)
+LUA_API const int LUA_TNONE = -1;
 
-#define LUA_TNIL           0
-#define LUA_TBOOLEAN       1
-#define LUA_TLIGHTUSERDATA 2
-#define LUA_TNUMBER        3
-#define LUA_TSTRING        4
-#define LUA_TTABLE         5
-#define LUA_TFUNCTION      6
-#define LUA_TUSERDATA      7
-#define LUA_TTHREAD        8
+LUA_API const int LUA_TNIL = 0;
+LUA_API const int LUA_TBOOLEAN = 1;
+LUA_API const int LUA_TLIGHTUSERDATA = 2;
+LUA_API const int LUA_TNUMBER = 3;
+LUA_API const int LUA_TSTRING = 4;
+LUA_API const int LUA_TTABLE = 5;
+LUA_API const int LUA_TFUNCTION = 6;
+LUA_API const int LUA_TUSERDATA = 7;
+LUA_API const int LUA_TTHREAD = 8;
 
-#define LUA_NUMTYPES       9
+LUA_API const int LUA_NUMTYPES = 9;
 
 
 /* minimum Lua stack available to a C function */
@@ -397,18 +397,6 @@ LUA_API const int LUA_GCGEN  = 10;
 LUA_API const int LUA_GCINC  = 11;
 
 
-// #define LUA_GCSTOP		0
-// #define LUA_GCRESTART		1
-// #define LUA_GCCOLLECT		2
-// #define LUA_GCCOUNT		3
-// #define LUA_GCCOUNTB		4
-// #define LUA_GCSTEP		5
-// #define LUA_GCSETPAUSE		6
-// #define LUA_GCSETSTEPMUL	7
-// #define LUA_GCISRUNNING		9
-// #define LUA_GCGEN		10
-// #define LUA_GCINC		11
-
 LUA_API int (lua_gc)(lua_State *L, int what, ...);
 
 
@@ -497,7 +485,7 @@ LUA_API void (lua_closeslot)(lua_State *L, int idx);
 #define lua_getuservalue(L,idx)	lua_getiuservalue(L,idx,1)
 #define lua_setuservalue(L,idx)	lua_setiuservalue(L,idx,1)
 
-#define LUA_NUMTAGS		LUA_NUMTYPES
+LUA_API const int LUA_NUMTAGS = LUA_NUMTYPES;
 
 /* }============================================================== */
 
@@ -511,20 +499,20 @@ LUA_API void (lua_closeslot)(lua_State *L, int idx);
 /*
 ** Event codes
 */
-#define LUA_HOOKCALL	0
-#define LUA_HOOKRET	1
-#define LUA_HOOKLINE	2
-#define LUA_HOOKCOUNT	3
-#define LUA_HOOKTAILCALL 4
+LUA_API const int LUA_HOOKCALL = 0;
+LUA_API const int LUA_HOOKRET = 1;
+LUA_API const int LUA_HOOKLINE = 2;
+LUA_API const int LUA_HOOKCOUNT = 3;
+LUA_API const int LUA_HOOKTAILCALL = 4;
 
 
 /*
 ** Event masks
 */
-#define LUA_MASKCALL	(1 << LUA_HOOKCALL)
-#define LUA_MASKRET	(1 << LUA_HOOKRET)
-#define LUA_MASKLINE	(1 << LUA_HOOKLINE)
-#define LUA_MASKCOUNT	(1 << LUA_HOOKCOUNT)
+LUA_API const int LUA_MASKCALL  = 1 << LUA_HOOKCALL;
+LUA_API const int LUA_MASKRET   = 1 << LUA_HOOKRET;
+LUA_API const int LUA_MASKLINE  = 1 << LUA_HOOKLINE;
+LUA_API const int LUA_MASKCOUNT = 1 << LUA_HOOKCOUNT;
 
 
 LUA_API int (lua_getstack)(lua_State *L, int level, lua_Debug *ar);
