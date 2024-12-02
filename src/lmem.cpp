@@ -88,7 +88,7 @@ static void *firsttry (global_State *g, void *block, size_t os, size_t ns) {
 #define MINSIZEARRAY	4
 
 
-void *luaM_growaux_(lua_State *L, void *block, int nelems, int *psize,
+void *luaM::growaux_(lua_State *L, void *block, int nelems, int *psize,
 							int size_elems, int limit, const char *what)
 {
 	void *newblock;
@@ -123,7 +123,7 @@ void *luaM_growaux_(lua_State *L, void *block, int nelems, int *psize,
 ** to its number of elements, the only option is to raise an
 ** error.
 */
-void *luaM_shrinkvector_(lua_State *L, void *block, int *size,
+void *luaM::shrinkvector_(lua_State *L, void *block, int *size,
 								int final_n, int size_elem)
 {
 	void *newblock;
@@ -195,7 +195,7 @@ void *luaM::realloc_(lua_State *L, void *block, size_t osize, size_t nsize)
 }
 
 
-void *luaM_saferealloc_(lua_State *L, void *block, size_t osize,
+void *luaM::saferealloc_(lua_State *L, void *block, size_t osize,
 								size_t nsize)
 {
 	void *newblock = luaM::realloc_(L, block, osize, nsize);
@@ -205,7 +205,7 @@ void *luaM_saferealloc_(lua_State *L, void *block, size_t osize,
 }
 
 
-void *luaM_malloc_(lua_State *L, size_t size, int tag)
+void *luaM::malloc_(lua_State *L, size_t size, int tag)
 {
 	if (size == 0)
 		return nullptr; /* that's all */

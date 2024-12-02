@@ -83,6 +83,26 @@ namespace luaM {
 	);
 
 	LUAI_FUNC void free_(lua_State *L, void *block, size_t osize);
+
+	LUAI_FUNC void *growaux_(
+		lua_State *L,
+		void *block,
+		int nelems,
+		int *size,
+		int size_elem,
+		int limit,
+		const char *what
+	);
+
+	LUAI_FUNC void *shrinkvector_(
+		lua_State *L,
+		void *block,
+		int *nelem,
+		int final_n,
+		int size_elem
+	);
+
+	LUAI_FUNC void *malloc_(lua_State *L, size_t size, int tag);
 }
 
 
@@ -93,23 +113,8 @@ namespace luaM {
 
 
 
-LUAI_FUNC void *luaM_growaux_(
-	lua_State *L,
-	void *block,
-	int nelems,
-	int *size,
-	int size_elem,
-	int limit,
-	const char *what);
 
-LUAI_FUNC void *luaM_shrinkvector_(
-	lua_State *L,
-	void *block,
-	int *nelem,
-	int final_n,
-	int size_elem);
 
-LUAI_FUNC void *luaM_malloc_(lua_State *L, size_t size, int tag);
 
 
 /*
@@ -143,13 +148,13 @@ void luaM_freearray(lua_State* L, T* b, size_t n)
 template<typename T>
 T* luaM_new(lua_State* L)
 {
-	return luaM_malloc_(L, sizeof(T), 0);
+	return luaM::malloc_(L, sizeof(T), 0);
 }
 
 template<typename T>
 T* luaM_newvector(lua_State* L, size_t n)
 {
-	return luaM_malloc_(L, n*sizeof(T), 0);
+	return luaM::malloc_(L, n*sizeof(T), 0);
 }
 
 template<typename T>
@@ -162,7 +167,7 @@ T* luaM_newvectorchecked(lua_State* L, size_t n)
 void* luaM_newobject(lua_State* L, int tag, size_t s)
 {
 // #define luaM_newobject(L,tag,s)	luaM_malloc_(L, (s), tag)
-	return luaM_malloc_(L, s, tag);
+	return luaM::malloc_(L, s, tag);
 }
 
 
@@ -178,7 +183,7 @@ void luaM_growvector (
 // #define luaM_growvector(L,v,nelems,size,t,limit,e) \
 // ((v)=cast(t *, luaM_growaux_(L,v,nelems,&(size),sizeof(t), \
 // luaM_limitN(limit,t),e)))
-	*v=luaM_growaux_(L,*v,nelems,size,sizeof(T), luaM::limitN<T>(limit),what);
+	*v=luaM::growaux_(L,*v,nelems,size,sizeof(T), luaM::limitN<T>(limit),what);
 }
 
 
@@ -204,7 +209,7 @@ void luaM_shrinkvector(lua_State* L, T** v, int* size, int final_n)
 {
 // #define luaM_shrinkvector(L,v,size,fs,t) \
 // ((v)=cast(t *, luaM_shrinkvector_(L, v, &(size), fs, sizeof(t))))
-	*v = luaM_shrinkvector_(L, *v, size, final_n, sizeof(T));
+	*v = luaM::shrinkvector_(L, *v, size, final_n, sizeof(T));
 }
 
 
