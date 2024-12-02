@@ -66,6 +66,23 @@ namespace luaM {
 		}
 		return static_cast<uint32_t>(MAX_SIZET/sizeof(T));
 	}
+
+	/* not to be called directly */
+	LUAI_FUNC void *realloc_(
+		lua_State *L,
+		void *block,
+		size_t oldsize,
+		size_t size
+	);
+
+	LUAI_FUNC void *saferealloc_(
+		lua_State *L,
+		void *block,
+		size_t oldsize,
+		size_t size
+	);
+
+	LUAI_FUNC void free_(lua_State *L, void *block, size_t osize);
 }
 
 
@@ -73,20 +90,8 @@ namespace luaM {
 
 
 
-/* not to be called directly */
-LUAI_FUNC void *luaM_realloc_(
-	lua_State *L,
-	void *block,
-	size_t oldsize,
-	size_t size);
 
-LUAI_FUNC void *luaM_saferealloc_(
-	lua_State *L,
-	void *block,
-	size_t oldsize,
-	size_t size);
 
-LUAI_FUNC void luaM_free_(lua_State *L, void *block, size_t osize);
 
 LUAI_FUNC void *luaM_growaux_(
 	lua_State *L,
@@ -113,25 +118,25 @@ LUAI_FUNC void *luaM_malloc_(lua_State *L, size_t size, int tag);
 template<typename T>
 T* luaM_realloc (lua_State* L, T* block, size_t oldsize, size_t newsize)
 {
-	return luaM_saferealloc_(L, block, oldsize*sizeof(T), newsize*sizeof(T));
+	return luaM::saferealloc_(L, block, oldsize*sizeof(T), newsize*sizeof(T));
 }
 
 template<typename T>
 void luaM_freemem(lua_State* L, T* b, size_t s)
 {
-	luaM_free_(L, b, s);
+	luaM::free_(L, b, s);
 }
 
 template<typename T>
 void luaM_free(lua_State* L, T* b)
 {
-	luaM_free_(L, b, sizeof(T));
+	luaM::free_(L, b, sizeof(T));
 }
 
 template<typename T>
 void luaM_freearray(lua_State* L, T* b, size_t n)
 {
-	luaM_free_(L, b, n*sizeof(T));
+	luaM::free_(L, b, n*sizeof(T));
 }
 
 

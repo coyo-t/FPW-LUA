@@ -110,7 +110,7 @@ void *luaM_growaux_(lua_State *L, void *block, int nelems, int *psize,
 	}
 	lua_assert(nelems + 1 <= size && size <= limit);
 	/* 'limit' ensures that multiplication will not overflow */
-	newblock = luaM_saferealloc_(L, block, cast_sizet(*psize) * size_elems,
+	newblock = luaM::saferealloc_(L, block, cast_sizet(*psize) * size_elems,
 											cast_sizet(size) * size_elems);
 	*psize = size; /* update only when everything else is OK */
 	return newblock;
@@ -130,7 +130,7 @@ void *luaM_shrinkvector_(lua_State *L, void *block, int *size,
 	size_t oldsize = cast_sizet((*size) * size_elem);
 	size_t newsize = cast_sizet(final_n * size_elem);
 	lua_assert(newsize <= oldsize);
-	newblock = luaM_saferealloc_(L, block, oldsize, newsize);
+	newblock = luaM::saferealloc_(L, block, oldsize, newsize);
 	*size = final_n;
 	return newblock;
 }
@@ -147,7 +147,7 @@ l_noret luaM::toobig(lua_State *L)
 /*
 ** Free memory
 */
-void luaM_free_(lua_State *L, void *block, size_t osize)
+void luaM::free_(lua_State *L, void *block, size_t osize)
 {
 	global_State *g = G(L);
 	lua_assert((osize == 0) == (block == NULL));
@@ -177,7 +177,7 @@ static void *tryagain(lua_State *L, void *block,
 /*
 ** Generic allocation routine.
 */
-void *luaM_realloc_(lua_State *L, void *block, size_t osize, size_t nsize)
+void *luaM::realloc_(lua_State *L, void *block, size_t osize, size_t nsize)
 {
 	void *newblock;
 	global_State *g = G(L);
@@ -198,7 +198,7 @@ void *luaM_realloc_(lua_State *L, void *block, size_t osize, size_t nsize)
 void *luaM_saferealloc_(lua_State *L, void *block, size_t osize,
 								size_t nsize)
 {
-	void *newblock = luaM_realloc_(L, block, osize, nsize);
+	void *newblock = luaM::realloc_(L, block, osize, nsize);
 	if (l_unlikely(newblock == nullptr && nsize > 0)) /* allocation failed? */
 		luaM::error(L);
 	return newblock;
