@@ -17,6 +17,11 @@
 #include "lua.hpp"
 
 
+namespace luaM {
+
+}
+
+
 l_noret luaM_error (lua_State* L)
 {
 	luaD_throw(L, LUA_ERRMEM);
@@ -165,9 +170,20 @@ void* luaM_newobject(lua_State* L, int tag, size_t s)
 ((v)=cast(t *, luaM_growaux_(L,v,nelems,&(size),sizeof(t), \
 luaM_limitN(limit,t),e)))
 
-#define luaM_reallocvector(L, v,oldn,n,t) \
-(cast(t *, luaM_realloc_(L, v, cast_sizet(oldn) * sizeof(t), \
-cast_sizet(n) * sizeof(t))))
+template<typename T>
+T* luaM_reallocvector(lua_State* L, T* v, size_t oldn, size_t newn)
+{
+	// #define luaM_reallocvector(L, v,oldn,n,t) \
+	// (cast(t *, luaM_realloc_(L, v, cast_sizet(oldn) * sizeof(t), \
+	// cast_sizet(n) * sizeof(t))))
+	return luaM_realloc_(
+		L,
+		v,
+		oldn * sizeof(T),
+		newn * sizeof(T)
+	);
+}
+
 
 #define luaM_shrinkvector(L,v,size,fs,t) \
 ((v)=cast(t *, luaM_shrinkvector_(L, v, &(size), fs, sizeof(t))))

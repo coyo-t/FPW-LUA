@@ -616,7 +616,7 @@ void luaH_resize(lua_State *L, Table *t, unsigned int newasize,
 		exchangehashpart(t, &newt); /* and hash (in case of errors) */
 	}
 	/* allocate new array */
-	newarray = luaM_reallocvector(L, t->array, oldasize, newasize, TValue);
+	newarray = luaM_reallocvector(L, t->array, oldasize, newasize);
 	if (l_unlikely(newarray == NULL && newasize > 0))
 	{
 		/* allocation failed? */

@@ -232,13 +232,16 @@ int luaD_reallocstack(lua_State *L, int newsize, int raiseerror)
 {
 	int oldsize = stacksize(L);
 	int i;
-	StkId newstack;
 	int oldgcstop = G(L)->gcstopem;
 	lua_assert(newsize <= LUAI_MAXSTACK || newsize == ERRORSTACKSIZE);
 	relstack(L); /* change pointers to offsets */
 	G(L)->gcstopem = 1; /* stop emergency collection */
-	newstack = luaM_reallocvector(L, L->stack.p, oldsize + EXTRA_STACK,
-											newsize + EXTRA_STACK, StackValue);
+	StkId newstack = luaM_reallocvector<StackValue>(
+		L,
+		L->stack.p,
+		oldsize + EXTRA_STACK,
+		newsize + EXTRA_STACK
+	);
 	G(L)->gcstopem = oldgcstop; /* restore emergency collection */
 	if (l_unlikely(newstack == NULL))
 	{
