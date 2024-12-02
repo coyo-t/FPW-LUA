@@ -112,8 +112,7 @@ static Node *hashint(const Table *t, lua_Integer i)
 	lua_Unsigned ui = l_castS2U(i);
 	if (ui <= cast_uint(INT_MAX))
 		return hashmod(t, cast_int(ui));
-	else
-		return hashmod(t, ui);
+	return hashmod(t, ui);
 }
 
 

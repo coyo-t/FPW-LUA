@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 #include "lua.hpp"
 
 #include "lauxlib.h"
@@ -113,8 +114,8 @@ static int utflen(lua_State *L)
 						"final position out of bounds");
 	while (posi <= posj)
 	{
-		const char *s1 = utf8_decode(s + posi, NULL, !lax);
-		if (s1 == NULL)
+		const char *s1 = utf8_decode(s + posi, nullptr, !lax);
+		if (s1 == nullptr)
 		{
 			/* conversion error? */
 			luaL_pushfail(L); /* return fail ... */
@@ -166,9 +167,9 @@ static int codepoint(lua_State *L)
 
 static void pushutfchar(lua_State *L, int arg)
 {
-	lua_Unsigned code = (lua_Unsigned) luaL_checkinteger(L, arg);
+	auto code = static_cast<lua_Unsigned>(luaL_checkinteger(L, arg));
 	luaL_argcheck(L, code <= MAXUTF, arg, "value out of range");
-	lua_pushfstring(L, "%U", (long) code);
+	lua_pushfstring(L, "%U", static_cast<long>(code));
 }
 
 
@@ -182,10 +183,9 @@ static int utfchar(lua_State *L)
 		pushutfchar(L, 1);
 	else
 	{
-		int i;
 		luaL_Buffer b;
 		luaL_buffinit(L, &b);
-		for (i = 1; i <= n; i++)
+		for (int i = 1; i <= n; i++)
 		{
 			pushutfchar(L, i);
 			luaL_addvalue(&b);

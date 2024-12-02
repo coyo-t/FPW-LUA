@@ -27,7 +27,7 @@ add_executable(LuaMod
     src/lfunc.h
     src/lgc.c
     src/lgc.h
-    src/linit.c
+        src/libs/linit.c
     src/ljumptab.h
         src/libs/liolib.c
     src/llex.c
@@ -65,7 +65,7 @@ add_executable(LuaMod
     src/libs/lualib.h
     src/lundump.c
     src/lundump.h
-        src/libs/lutf8lib.c
+        src/libs/lutf8lib.cpp
     src/lvm.c
     src/lvm.h
     src/lzio.c
