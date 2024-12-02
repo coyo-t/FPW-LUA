@@ -2224,16 +2224,20 @@ LClosure *luaY_parser(
 	FuncState funcstate;
 	/* create main closure */
 	LClosure *cl = luaF_newLclosure(L, 1);
+
 	/* anchor it (to avoid being collected) */
 	setclLvalue2s(L, L->top.p, cl);
 	luaD_inctop(L);
+
 	/* create table for scanner */
 	lexstate.h = luaH_new(L);
+
 	/* anchor it */
 	sethvalue2s(L, L->top.p, lexstate.h);
 	luaD_inctop(L);
 	funcstate.f = cl->p = luaF_newproto(L);
 	luaC_objbarrier(L, cl, cl->p);
+
 	/* create and anchor TString */
 	funcstate.f->source = luaS_new(L, name);
 	luaC_objbarrier(L, funcstate.f, funcstate.f->source);
@@ -2243,10 +2247,13 @@ LClosure *luaY_parser(
 	luaX_setinput(L, &lexstate, z, funcstate.f->source, firstchar);
 	mainfunc(&lexstate, &funcstate);
 	lua_assert(!funcstate.prev && funcstate.nups == 1 && !lexstate.fs);
+
 	/* all scopes should be correctly finished */
 	lua_assert(dyd->actvar.n == 0 && dyd->gt.n == 0 && dyd->label.n == 0);
+
 	/* remove scanner's table */
 	L->top.p--;
+
 	/* closure is on the stack, too */
 	return cl;
 }

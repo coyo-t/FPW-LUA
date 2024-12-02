@@ -136,10 +136,10 @@ struct lua_longjmp; /* defined in ldo.c */
 ** there will be a stack check soon after the push. Function frames
 ** never use this extra space, so it does not need to be kept clean.
 */
-#define EXTRA_STACK   5
+constexpr int EXTRA_STACK = 5;
 
 
-#define BASIC_STACK_SIZE        (2*LUA_MINSTACK)
+constexpr int BASIC_STACK_SIZE = 2 * LUA_MINSTACK;
 
 #define stacksize(th)	cast_int((th)->stack_last.p - (th)->stack.p)
 

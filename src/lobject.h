@@ -154,7 +154,7 @@ typedef union StackValue {
 
 
 /* index to stack elements */
-typedef StackValue *StkId;
+typedef StackValue* StkId;
 
 
 /*
@@ -303,9 +303,12 @@ typedef struct GCObject {
 
 #define gcvalueraw(v)	((v).gc)
 
-#define setgcovalue(L,obj,x) \
-  { TValue *io = (obj); GCObject *i_g=(x); \
-    val_(io).gc = i_g; settt_(io, ctb(i_g->tt)); }
+#define setgcovalue(L,obj,x) { \
+	TValue *io = (obj);         \
+	GCObject *i_g=(x);          \
+	val_(io).gc = i_g;          \
+	settt_(io, ctb(i_g->tt));   \
+}
 
 /* }================================================================== */
 
