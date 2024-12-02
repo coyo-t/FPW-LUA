@@ -28,6 +28,7 @@ add_executable(LuaMod
     src/lgc.c
     src/lgc.h
     src/linit.c
+    src/ljumptab.h
         src/libs/liolib.c
     src/llex.c
     src/llex.h

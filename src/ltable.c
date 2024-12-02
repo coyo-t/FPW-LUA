@@ -142,12 +142,9 @@ static int l_hashfloat(lua_Number n)
 		lua_assert(luai_numisnan(n) || l_mathop(fabs)(n) == cast_num(HUGE_VAL));
 		return 0;
 	}
-	else
-	{
-		/* normal case */
-		unsigned int u = cast_uint(i) + cast_uint(ni);
-		return cast_int(u <= cast_uint(INT_MAX) ? u : ~u);
-	}
+	/* normal case */
+	unsigned int u = cast_uint(i) + cast_uint(ni);
+	return cast_int(u <= cast_uint(INT_MAX) ? u : ~u);
 }
 #endif
 
@@ -266,24 +263,21 @@ LUAI_FUNC unsigned int luaH_realasize(const Table *t)
 {
 	if (limitequalsasize(t))
 		return t->alimit; /* this is the size */
-	else
-	{
-		unsigned int size = t->alimit;
-		/* compute the smallest power of 2 not smaller than 'size' */
-		size |= (size >> 1);
-		size |= (size >> 2);
-		size |= (size >> 4);
-		size |= (size >> 8);
+	unsigned int size = t->alimit;
+	/* compute the smallest power of 2 not smaller than 'size' */
+	size |= (size >> 1);
+	size |= (size >> 2);
+	size |= (size >> 4);
+	size |= (size >> 8);
 #if (UINT_MAX >> 14) > 3  /* unsigned int has more than 16 bits */
-		size |= (size >> 16);
+	size |= (size >> 16);
 #if (UINT_MAX >> 30) > 3
     size |= (size >> 32);  /* unsigned int has more than 32 bits */
 #endif
 #endif
-		size++;
-		lua_assert(ispow2(size) && size/2 < t->alimit && t->alimit < size);
-		return size;
-	}
+	size++;
+	lua_assert(ispow2(size) && size/2 < t->alimit && t->alimit < size);
+	return size;
 }
 
 
@@ -338,8 +332,7 @@ static unsigned int arrayindex(lua_Integer k)
 {
 	if (l_castS2U(k) - 1u < MAXASIZE) /* 'k' in [1, MAXASIZE]? */
 		return cast_uint(k); /* 'key' is an appropriate array index */
-	else
-		return 0;
+	return 0;
 }
 
 
@@ -452,8 +445,7 @@ static int countint(lua_Integer key, unsigned int *nums)
 		nums[luaO_ceillog2(k)]++; /* count as such */
 		return 1;
 	}
-	else
-		return 0;
+	return 0;
 }
 
 
@@ -555,9 +547,8 @@ static void setnodevector(lua_State *L, Table *t, unsigned int size)
 */
 static void reinsert(lua_State *L, Table *ot, Table *t)
 {
-	int j;
 	int size = sizenode(ot);
-	for (j = 0; j < size; j++)
+	for (int j = 0; j < size; j++)
 	{
 		Node *old = gnode(ot, j);
 		if (!isempty(gval(old)))
@@ -1095,17 +1086,8 @@ lua_Unsigned luaH_getn(Table *t)
 		(limit == 0 || !isempty(&t->array[limit - 1])));
 	if (isdummy(t) || isempty(luaH_getint(t, cast(lua_Integer, limit + 1))))
 		return limit; /* 'limit + 1' is absent */
-	else /* 'limit + 1' is also present */
-		return hash_search(t, limit);
+	/* 'limit + 1' is also present */
+	return hash_search(t, limit);
 }
 
 
-#if defined(LUA_DEBUG)
-
-/* export these functions for the test library */
-
-Node *luaH_mainposition (const Table *t, const TValue *key) {
-  return mainpositionTV(t, key);
-}
-
-#endif
