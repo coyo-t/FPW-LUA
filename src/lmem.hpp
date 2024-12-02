@@ -184,9 +184,14 @@ T* luaM_reallocvector(lua_State* L, T* v, size_t oldn, size_t newn)
 	);
 }
 
+template<typename T>
+T* luaM_shrinkvector(lua_State* L, T* v, int* size, int final_n)
+{
+	*v = luaM_shrinkvector_(L, *v, size, final_n, sizeof(T));
+}
 
-#define luaM_shrinkvector(L,v,size,fs,t) \
-((v)=cast(t *, luaM_shrinkvector_(L, v, &(size), fs, sizeof(t))))
+// #define luaM_shrinkvector(L,v,size,fs,t) \
+// ((v)=cast(t *, luaM_shrinkvector_(L, v, &(size), fs, sizeof(t))))
 
 
 #endif
