@@ -384,17 +384,30 @@ LUA_API void (lua_warning)(lua_State *L, const char *msg, int tocont);
 ** garbage-collection function and options
 */
 
-#define LUA_GCSTOP		0
-#define LUA_GCRESTART		1
-#define LUA_GCCOLLECT		2
-#define LUA_GCCOUNT		3
-#define LUA_GCCOUNTB		4
-#define LUA_GCSTEP		5
-#define LUA_GCSETPAUSE		6
-#define LUA_GCSETSTEPMUL	7
-#define LUA_GCISRUNNING		9
-#define LUA_GCGEN		10
-#define LUA_GCINC		11
+LUA_API const int LUA_GCSTOP = 0;
+LUA_API const int LUA_GCRESTART = 1;
+LUA_API const int LUA_GCCOLLECT = 2;
+LUA_API const int LUA_GCCOUNT = 3;
+LUA_API const int LUA_GCCOUNTB = 4;
+LUA_API const int LUA_GCSTEP = 5;
+LUA_API const int LUA_GCSETPAUSE = 6;
+LUA_API const int LUA_GCSETSTEPMUL = 7;
+LUA_API const int LUA_GCISRUNNING = 9;
+LUA_API const int LUA_GCGEN  = 10;
+LUA_API const int LUA_GCINC  = 11;
+
+
+// #define LUA_GCSTOP		0
+// #define LUA_GCRESTART		1
+// #define LUA_GCCOLLECT		2
+// #define LUA_GCCOUNT		3
+// #define LUA_GCCOUNTB		4
+// #define LUA_GCSTEP		5
+// #define LUA_GCSETPAUSE		6
+// #define LUA_GCSETSTEPMUL	7
+// #define LUA_GCISRUNNING		9
+// #define LUA_GCGEN		10
+// #define LUA_GCINC		11
 
 LUA_API int (lua_gc)(lua_State *L, int what, ...);
 
