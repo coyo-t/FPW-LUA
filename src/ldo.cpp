@@ -248,7 +248,7 @@ int luaD_reallocstack(lua_State *L, int newsize, int raiseerror)
 		/* reallocation failed? */
 		correctstack(L); /* change offsets back to pointers */
 		if (raiseerror)
-			luaM_error(L);
+			luaM::error(L);
 		else return 0; /* do not raise an error */
 	}
 	L->stack.p = newstack;

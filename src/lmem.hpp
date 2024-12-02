@@ -18,64 +18,60 @@
 
 
 namespace luaM {
-
-}
-
-
-l_noret luaM_error (lua_State* L)
-{
-	luaD_throw(L, LUA_ERRMEM);
-}
-
-
-
-
-
-
-LUAI_FUNC l_noret luaM_toobig(lua_State *L);
-
-
-/*
-** This macro tests whether it is safe to multiply 'n' by the size of
-** type 't' without overflows. Because 'e' is always constant, it avoids
-** the runtime division MAX_SIZET/(e).
-** (The macro is somewhat complex to avoid warnings:  The 'sizeof'
-** comparison avoids a runtime comparison when overflow cannot occur.
-** The compiler should be able to optimize the real test by itself, but
-** when it does it, it may give a warning about "comparison is always
-** false due to limited range of data type"; the +1 tricks the compiler,
-** avoiding this warning but also this optimization.)
-*/
-template<typename N>
-constexpr bool luaM_testsize (N n, size_t e)
-{
-	return sizeof(n) >= sizeof(size_t) && static_cast<size_t>(n) + 1 > MAX_SIZET/e;
-}
-
-template<typename N>
-void luaM_checksize (lua_State* L, N n, size_t e)
-{
-	if (luaM_testsize(n,e))
+	inline l_noret error (lua_State* L)
 	{
-		luaM_toobig(L);
+		luaD_throw(L, LUA_ERRMEM);
+	}
+
+	l_noret toobig(lua_State *L);
+
+	/*
+	** This macro tests whether it is safe to multiply 'n' by the size of
+	** type 't' without overflows. Because 'e' is always constant, it avoids
+	** the runtime division MAX_SIZET/(e).
+	** (The macro is somewhat complex to avoid warnings:  The 'sizeof'
+	** comparison avoids a runtime comparison when overflow cannot occur.
+	** The compiler should be able to optimize the real test by itself, but
+	** when it does it, it may give a warning about "comparison is always
+	** false due to limited range of data type"; the +1 tricks the compiler,
+	** avoiding this warning but also this optimization.)
+	*/
+	template<typename N>
+	constexpr bool testsize (N n, size_t e)
+	{
+		return sizeof(n) >= sizeof(size_t) && static_cast<size_t>(n) + 1 > MAX_SIZET/e;
+	}
+
+	template<typename N>
+	void checksize (lua_State* L, N n, size_t e)
+	{
+		if (testsize(n,e))
+		{
+			toobig(L);
+		}
+	}
+
+	/*
+	** Computes the minimum between 'n' and 'MAX_SIZET/sizeof(t)', so that
+	** the result is not larger than 'n' and cannot overflow a 'size_t'
+	** when multiplied by the size of type 't'. (Assumes that 'n' is an
+	** 'int' or 'unsigned int' and that 'int' is not larger than 'size_t'.)
+	*/
+	template<typename T, typename N>
+	constexpr bool limitN (N n)
+	{
+		if (static_cast<size_t>(n) <= MAX_SIZET/sizeof(T))
+		{
+			return n;
+		}
+		return static_cast<uint32_t>(MAX_SIZET/sizeof(T));
 	}
 }
 
-/*
-** Computes the minimum between 'n' and 'MAX_SIZET/sizeof(t)', so that
-** the result is not larger than 'n' and cannot overflow a 'size_t'
-** when multiplied by the size of type 't'. (Assumes that 'n' is an
-** 'int' or 'unsigned int' and that 'int' is not larger than 'size_t'.)
-*/
-template<typename T, typename N>
-constexpr bool luaM_limitN (N n)
-{
-	if (static_cast<size_t>(n) <= MAX_SIZET/sizeof(T))
-	{
-		return n;
-	}
-	return static_cast<uint32_t>(MAX_SIZET/sizeof(T));
-}
+
+
+
+
 
 /* not to be called directly */
 LUAI_FUNC void *luaM_realloc_(
@@ -154,7 +150,7 @@ T* luaM_newvector(lua_State* L, size_t n)
 template<typename T>
 T* luaM_newvectorchecked(lua_State* L, size_t n)
 {
-	luaM_checksize(L,n,sizeof(T));
+	luaM::checksize(L,n,sizeof(T));
 	return luaM_newvector<T>(L,n);
 }
 
@@ -177,7 +173,7 @@ void luaM_growvector (
 // #define luaM_growvector(L,v,nelems,size,t,limit,e) \
 // ((v)=cast(t *, luaM_growaux_(L,v,nelems,&(size),sizeof(t), \
 // luaM_limitN(limit,t),e)))
-	*v=luaM_growaux_(L,*v,nelems,size,sizeof(T), luaM_limitN<T>(limit),what);
+	*v=luaM_growaux_(L,*v,nelems,size,sizeof(T), luaM::limitN<T>(limit),what);
 }
 
 

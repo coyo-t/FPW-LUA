@@ -25,7 +25,7 @@
 /*
 ** Maximum size for string table.
 */
-constexpr auto MAXSTRTB = static_cast<int>(luaM_limitN<TString>(MAX_INT));
+constexpr auto MAXSTRTB = static_cast<int>(luaM::limitN<TString>(MAX_INT));
 // #define MAXSTRTB	cast_int(luaM_limitN(MAX_INT, TString*))
 
 
@@ -208,7 +208,7 @@ static void growstrtab(lua_State *L, stringtable *tb)
 		/* too many strings? */
 		luaC_fullgc(L, 1); /* try to free some... */
 		if (tb->nuse == MAX_INT) /* still too many? */
-			luaM_error(L); /* cannot even create a message... */
+			luaM::error(L); /* cannot even create a message... */
 	}
 	if (tb->size <= MAXSTRTB / 2) /* can grow string table? */
 		luaS_resize(L, tb->size * 2);
@@ -262,7 +262,7 @@ TString *luaS_newlstr(lua_State *L, const char *str, size_t l)
 		return internshrstr(L, str, l);
 	TString *ts;
 	if (l_unlikely(l * sizeof(char) >= (MAX_SIZE - sizeof(TString))))
-		luaM_toobig(L);
+		luaM::toobig(L);
 	ts = luaS_createlngstrobj(L, l);
 	memcpy(getlngstr(ts), str, l * sizeof(char));
 	return ts;
@@ -300,7 +300,7 @@ Udata *luaS_newudata(lua_State *L, size_t s, int nuvalue)
 	int i;
 	GCObject *o;
 	if (l_unlikely(s > MAX_SIZE - udatamemoffset(nuvalue)))
-		luaM_toobig(L);
+		luaM::toobig(L);
 	o = luaC_newobj(L, LUA_VUSERDATA, sizeudata(nuvalue, s));
 	u = gco2u(o);
 	u->len = s;

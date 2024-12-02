@@ -51,7 +51,7 @@ constexpr auto MAXABITS =	static_cast<int>(sizeof(int) * CHAR_BIT - 1);
 ** between 2^MAXABITS and the maximum size that, measured in bytes,
 ** fits in a 'size_t'.
 */
-constexpr auto MAXASIZE = luaM_limitN<TValue>(1u << MAXABITS);
+constexpr auto MAXASIZE = luaM::limitN<TValue>(1u << MAXABITS);
 
 /*
 ** MAXHBITS is the largest integer such that 2^MAXHBITS fits in a
@@ -65,7 +65,7 @@ constexpr auto MAXASIZE = luaM_limitN<TValue>(1u << MAXABITS);
 ** between 2^MAXHBITS and the maximum size such that, measured in bytes,
 ** it fits in a 'size_t'.
 */
-constexpr auto MAXHSIZE = luaM_limitN<Node>(1u << MAXHBITS);
+constexpr auto MAXHSIZE = luaM::limitN<Node>(1u << MAXHBITS);
 
 
 /*
@@ -527,7 +527,7 @@ static void setnodevector(lua_State *L, Table *t, unsigned int size)
 		if (lsize > MAXHBITS || (1u << lsize) > MAXHSIZE)
 			luaG_runerror(L, "table overflow");
 		size = twoto(lsize);
-		t->node = luaM_newvector(L, size, Node);
+		t->node = luaM_newvector<Node>(L, size);
 		for (i = 0; i < cast_int(size); i++)
 		{
 			Node *n = gnode(t, i);
@@ -621,7 +621,7 @@ void luaH_resize(lua_State *L, Table *t, unsigned int newasize,
 	{
 		/* allocation failed? */
 		freehash(L, &newt); /* release new hash part */
-		luaM_error(L); /* raise error (with array unchanged) */
+		luaM::error(L); /* raise error (with array unchanged) */
 	}
 	/* allocation ok; initialize new part of the array */
 	exchangehashpart(t, &newt); /* 't' has the new hash ('newt' has the old) */

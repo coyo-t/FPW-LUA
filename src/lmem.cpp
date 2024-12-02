@@ -138,7 +138,7 @@ void *luaM_shrinkvector_(lua_State *L, void *block, int *size,
 /* }================================================================== */
 
 
-l_noret luaM_toobig(lua_State *L)
+l_noret luaM::toobig(lua_State *L)
 {
 	luaG_runerror(L, "memory allocation error: block too big");
 }
@@ -200,7 +200,7 @@ void *luaM_saferealloc_(lua_State *L, void *block, size_t osize,
 {
 	void *newblock = luaM_realloc_(L, block, osize, nsize);
 	if (l_unlikely(newblock == nullptr && nsize > 0)) /* allocation failed? */
-		luaM_error(L);
+		luaM::error(L);
 	return newblock;
 }
 
@@ -215,7 +215,7 @@ void *luaM_malloc_(lua_State *L, size_t size, int tag)
 	{
 		newblock = tryagain(L, nullptr, tag, size);
 		if (newblock == nullptr)
-			luaM_error(L);
+			luaM::error(L);
 	}
 	g->GCdebt += size;
 	return newblock;
