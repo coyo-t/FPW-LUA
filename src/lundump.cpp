@@ -161,7 +161,7 @@ static TString *loadString(LoadState *S, Proto *p)
 static void loadCode(LoadState *S, Proto *f)
 {
 	int n = loadInt(S);
-	f->code = luaM_newvectorchecked(S->L, n, Instruction);
+	f->code = luaM_newvectorchecked<Instruction>(S->L, n);
 	f->sizecode = n;
 	loadVector(S, f->code, n);
 }
@@ -174,7 +174,7 @@ static void loadConstants(LoadState *S, Proto *f)
 {
 	int i;
 	int n = loadInt(S);
-	f->k = luaM_newvectorchecked(S->L, n, TValue);
+	f->k = luaM_newvectorchecked<TValue>(S->L, n);
 	f->sizek = n;
 	for (i = 0; i < n; i++)
 		setnilvalue(&f->k[i]);
@@ -213,7 +213,7 @@ static void loadProtos(LoadState *S, Proto *f)
 {
 	int i;
 	int n = loadInt(S);
-	f->p = luaM_newvectorchecked(S->L, n, Proto *);
+	f->p = luaM_newvectorchecked<Proto*>(S->L, n);
 	f->sizep = n;
 	for (i = 0; i < n; i++)
 		f->p[i] = nullptr;
@@ -236,7 +236,7 @@ static void loadUpvalues(LoadState *S, Proto *f)
 {
 	int i, n;
 	n = loadInt(S);
-	f->upvalues = luaM_newvectorchecked(S->L, n, Upvaldesc);
+	f->upvalues = luaM_newvectorchecked<Upvaldesc>(S->L, n);
 	f->sizeupvalues = n;
 	for (i = 0; i < n; i++) /* make array valid for GC */
 		f->upvalues[i].name = nullptr;
@@ -254,11 +254,11 @@ static void loadDebug(LoadState *S, Proto *f)
 {
 	int i, n;
 	n = loadInt(S);
-	f->lineinfo = luaM_newvectorchecked(S->L, n, ls_byte);
+	f->lineinfo = luaM_newvectorchecked<ls_byte>(S->L, n);
 	f->sizelineinfo = n;
 	loadVector(S, f->lineinfo, n);
 	n = loadInt(S);
-	f->abslineinfo = luaM_newvectorchecked(S->L, n, AbsLineInfo);
+	f->abslineinfo = luaM_newvectorchecked<AbsLineInfo>(S->L, n);
 	f->sizeabslineinfo = n;
 	for (i = 0; i < n; i++)
 	{
@@ -266,7 +266,7 @@ static void loadDebug(LoadState *S, Proto *f)
 		f->abslineinfo[i].line = loadInt(S);
 	}
 	n = loadInt(S);
-	f->locvars = luaM_newvectorchecked(S->L, n, LocVar);
+	f->locvars = luaM_newvectorchecked<LocVar>(S->L, n);
 	f->sizelocvars = n;
 	for (i = 0; i < n; i++)
 		f->locvars[i].varname = nullptr;

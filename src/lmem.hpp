@@ -19,6 +19,13 @@
 #define luaM_error(L) luaD_throw(L, LUA_ERRMEM)
 
 
+
+
+
+
+LUAI_FUNC l_noret luaM_toobig(lua_State *L);
+
+
 /*
 ** This macro tests whether it is safe to multiply 'n' by the size of
 ** type 't' without overflows. Because 'e' is always constant, it avoids
@@ -30,15 +37,6 @@
 ** false due to limited range of data type"; the +1 tricks the compiler,
 ** avoiding this warning but also this optimization.)
 */
-
-
-
-// #define luaM_testsize(n,e)  \
-// 	(sizeof(n) >= sizeof(size_t) && cast_sizet((n)) + 1 > MAX_SIZET/(e))
-
-LUAI_FUNC l_noret luaM_toobig(lua_State *L);
-
-
 template<typename N>
 constexpr bool luaM_testsize (N n, size_t e)
 {
@@ -63,11 +61,7 @@ void luaM_checksize (lua_State* L, N n, size_t e)
 template<typename T, typename N>
 constexpr bool luaM_limitN (N n)
 {
-// #define luaM_limitN(n,t)  \
-//   ((cast_sizet(n) <= MAX_SIZET/sizeof(t)) ? (n) :  \
-//      cast_uint((MAX_SIZET/sizeof(t))))
-
-	if (cast_sizet(n) <= MAX_SIZET/sizeof(T))
+	if (static_cast<size_t>(n) <= MAX_SIZET/sizeof(T))
 	{
 		return n;
 	}
@@ -120,21 +114,18 @@ T* luaM_realloc (lua_State* L, T* block, size_t oldsize, size_t newsize)
 template<typename T>
 void luaM_freemem(lua_State* L, T* b, size_t s)
 {
-// #define luaM_freemem(L, b, s)	luaM_free_(L, (b), (s))
 	luaM_free_(L, b, s);
 }
 
 template<typename T>
 void luaM_free(lua_State* L, T* b)
 {
-// #define luaM_free(L, b)		luaM_free_(L, (b), sizeof(*(b)))
 	luaM_free_(L, b, sizeof(T));
 }
 
 template<typename T>
 void luaM_freearray(lua_State* L, T* b, size_t n)
 {
-// #define luaM_freearray(L, b, n)   luaM_free_(L, (b), (n)*sizeof(*(b)))
 	luaM_free_(L, b, n*sizeof(T));
 }
 
@@ -142,28 +133,21 @@ void luaM_freearray(lua_State* L, T* b, size_t n)
 template<typename T>
 T* luaM_new(lua_State* L)
 {
-// #define luaM_new(L,t)		cast(t*, luaM_malloc_(L, sizeof(t), 0))
 	return luaM_malloc_(L, sizeof(T), 0);
 }
 
 template<typename T>
 T* luaM_newvector(lua_State* L, size_t n)
 {
-// #define luaM_newvector(L,n,t)	cast(t*, luaM_malloc_(L, (n)*sizeof(t), 0))
 	return luaM_malloc_(L, n*sizeof(T), 0);
 }
 
-
-
 template<typename T>
-T* luaM_checksize(lua_State* L, size_t n)
+T* luaM_newvectorchecked(lua_State* L, size_t n)
 {
-// #define luaM_newvectorchecked(L,n,t) \
-// (luaM_checksize(L,n,sizeof(t)), luaM_newvector(L,n,t))
 	luaM_checksize(L,n,sizeof(T));
 	return luaM_newvector<T>(L,n);
 }
-
 
 void* luaM_newobject(lua_State* L, int tag, size_t s)
 {
