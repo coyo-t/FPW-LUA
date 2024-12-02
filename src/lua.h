@@ -33,7 +33,7 @@
 #define LUA_SIGNATURE	"\x1bLua"
 
 /* option for multiple returns in 'lua_pcall' and 'lua_call' */
-LUA_API const int LUA_MULTRET = -1;
+constexpr int LUA_MULTRET = -1;
 
 
 /*
@@ -41,17 +41,17 @@ LUA_API const int LUA_MULTRET = -1;
 ** (-LUAI_MAXSTACK is the minimum valid index; we keep some free empty
 ** space after that to help overflow detection)
 */
-LUA_API const int LUA_REGISTRYINDEX = -LUAI_MAXSTACK - 1000;
+constexpr int LUA_REGISTRYINDEX = -LUAI_MAXSTACK - 1000;
 #define lua_upvalueindex(i)	(LUA_REGISTRYINDEX - (i))
 
 
 /* thread status */
-LUA_API const int LUA_OK = 0;
-LUA_API const int LUA_YIELD = 1;
-LUA_API const int LUA_ERRRUN = 2;
-LUA_API const int LUA_ERRSYNTAX = 3;
-LUA_API const int LUA_ERRMEM = 4;
-LUA_API const int LUA_ERRERR = 5;
+constexpr int LUA_OK = 0;
+constexpr int LUA_YIELD = 1;
+constexpr int LUA_ERRRUN = 2;
+constexpr int LUA_ERRSYNTAX = 3;
+constexpr int LUA_ERRMEM = 4;
+constexpr int LUA_ERRERR = 5;
 
 
 typedef struct lua_State lua_State;
@@ -60,19 +60,19 @@ typedef struct lua_State lua_State;
 /*
 ** basic types
 */
-LUA_API const int LUA_TNONE = -1;
+constexpr int LUA_TNONE = -1;
 
-LUA_API const int LUA_TNIL = 0;
-LUA_API const int LUA_TBOOLEAN = 1;
-LUA_API const int LUA_TLIGHTUSERDATA = 2;
-LUA_API const int LUA_TNUMBER = 3;
-LUA_API const int LUA_TSTRING = 4;
-LUA_API const int LUA_TTABLE = 5;
-LUA_API const int LUA_TFUNCTION = 6;
-LUA_API const int LUA_TUSERDATA = 7;
-LUA_API const int LUA_TTHREAD = 8;
+constexpr int LUA_TNIL = 0;
+constexpr int LUA_TBOOLEAN = 1;
+constexpr int LUA_TLIGHTUSERDATA = 2;
+constexpr int LUA_TNUMBER = 3;
+constexpr int LUA_TSTRING = 4;
+constexpr int LUA_TTABLE = 5;
+constexpr int LUA_TFUNCTION = 6;
+constexpr int LUA_TUSERDATA = 7;
+constexpr int LUA_TTHREAD = 8;
 
-LUA_API const int LUA_NUMTYPES = 9;
+constexpr int LUA_NUMTYPES = 9;
 
 
 /* minimum Lua stack available to a C function */
@@ -236,22 +236,22 @@ LUA_API const void *(lua_topointer)(lua_State *L, int idx);
 ** Comparison and arithmetic functions
 */
 
-LUA_API const int LUA_OPADD  = 0;	/* ORDER TM, ORDER OP */
-LUA_API const int LUA_OPSUB  = 1;
-LUA_API const int LUA_OPMUL  = 2;
-LUA_API const int LUA_OPMOD  = 3;
-LUA_API const int LUA_OPPOW  = 4;
-LUA_API const int LUA_OPDIV  = 5;
-LUA_API const int LUA_OPIDIV = 6;
-LUA_API const int LUA_OPBAND = 7;
-LUA_API const int LUA_OPBOR  = 8;
-LUA_API const int LUA_OPBXOR = 9;
-LUA_API const int LUA_OPSHL  = 10;
-LUA_API const int LUA_OPSHR  = 11;
-LUA_API const int LUA_OPUNM  = 12;
-LUA_API const int LUA_OPBNOT = 13;
+constexpr int LUA_OPADD  = 0;	/* ORDER TM, ORDER OP */
+constexpr int LUA_OPSUB  = 1;
+constexpr int LUA_OPMUL  = 2;
+constexpr int LUA_OPMOD  = 3;
+constexpr int LUA_OPPOW  = 4;
+constexpr int LUA_OPDIV  = 5;
+constexpr int LUA_OPIDIV = 6;
+constexpr int LUA_OPBAND = 7;
+constexpr int LUA_OPBOR  = 8;
+constexpr int LUA_OPBXOR = 9;
+constexpr int LUA_OPSHL  = 10;
+constexpr int LUA_OPSHR  = 11;
+constexpr int LUA_OPUNM  = 12;
+constexpr int LUA_OPBNOT = 13;
 
-LUA_API void (lua_arith)(lua_State *L, int op);
+void (lua_arith)(lua_State *L, int op);
 
 #define LUA_OPEQ 0
 #define LUA_OPLT 1
@@ -384,17 +384,17 @@ LUA_API void (lua_warning)(lua_State *L, const char *msg, int tocont);
 ** garbage-collection function and options
 */
 
-LUA_API const int LUA_GCSTOP = 0;
-LUA_API const int LUA_GCRESTART = 1;
-LUA_API const int LUA_GCCOLLECT = 2;
-LUA_API const int LUA_GCCOUNT = 3;
-LUA_API const int LUA_GCCOUNTB = 4;
-LUA_API const int LUA_GCSTEP = 5;
-LUA_API const int LUA_GCSETPAUSE = 6;
-LUA_API const int LUA_GCSETSTEPMUL = 7;
-LUA_API const int LUA_GCISRUNNING = 9;
-LUA_API const int LUA_GCGEN  = 10;
-LUA_API const int LUA_GCINC  = 11;
+constexpr int LUA_GCSTOP = 0;
+constexpr int LUA_GCRESTART = 1;
+constexpr int LUA_GCCOLLECT = 2;
+constexpr int LUA_GCCOUNT = 3;
+constexpr int LUA_GCCOUNTB = 4;
+constexpr int LUA_GCSTEP = 5;
+constexpr int LUA_GCSETPAUSE = 6;
+constexpr int LUA_GCSETSTEPMUL = 7;
+constexpr int LUA_GCISRUNNING = 9;
+constexpr int LUA_GCGEN  = 10;
+constexpr int LUA_GCINC  = 11;
 
 
 LUA_API int (lua_gc)(lua_State *L, int what, ...);
@@ -485,7 +485,7 @@ LUA_API void (lua_closeslot)(lua_State *L, int idx);
 #define lua_getuservalue(L,idx)	lua_getiuservalue(L,idx,1)
 #define lua_setuservalue(L,idx)	lua_setiuservalue(L,idx,1)
 
-LUA_API const int LUA_NUMTAGS = LUA_NUMTYPES;
+constexpr int LUA_NUMTAGS = LUA_NUMTYPES;
 
 /* }============================================================== */
 
@@ -499,20 +499,20 @@ LUA_API const int LUA_NUMTAGS = LUA_NUMTYPES;
 /*
 ** Event codes
 */
-LUA_API const int LUA_HOOKCALL = 0;
-LUA_API const int LUA_HOOKRET = 1;
-LUA_API const int LUA_HOOKLINE = 2;
-LUA_API const int LUA_HOOKCOUNT = 3;
-LUA_API const int LUA_HOOKTAILCALL = 4;
+constexpr int LUA_HOOKCALL = 0;
+constexpr int LUA_HOOKRET = 1;
+constexpr int LUA_HOOKLINE = 2;
+constexpr int LUA_HOOKCOUNT = 3;
+constexpr int LUA_HOOKTAILCALL = 4;
 
 
 /*
 ** Event masks
 */
-LUA_API const int LUA_MASKCALL  = 1 << LUA_HOOKCALL;
-LUA_API const int LUA_MASKRET   = 1 << LUA_HOOKRET;
-LUA_API const int LUA_MASKLINE  = 1 << LUA_HOOKLINE;
-LUA_API const int LUA_MASKCOUNT = 1 << LUA_HOOKCOUNT;
+constexpr int LUA_MASKCALL  = 1 << LUA_HOOKCALL;
+constexpr int LUA_MASKRET   = 1 << LUA_HOOKRET;
+constexpr int LUA_MASKLINE  = 1 << LUA_HOOKLINE;
+constexpr int LUA_MASKCOUNT = 1 << LUA_HOOKCOUNT;
 
 
 LUA_API int (lua_getstack)(lua_State *L, int level, lua_Debug *ar);
