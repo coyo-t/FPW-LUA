@@ -8,6 +8,7 @@
 #ifndef lzio_h
 #define lzio_h
 
+#include<cstdint>
 #include "lua.hpp"
 
 #include "lmem.hpp"
@@ -20,6 +21,38 @@ typedef struct Zio ZIO;
 
 inline int zgetc (ZIO* z);
 
+struct CoyoteBuffer
+{
+	uint8_t* buffer; // data
+	size_t n; // limit
+	size_t buffsize; // capacity
+
+	void initbuffer ()
+	{
+		buffer = nullptr;
+		buffsize = 0;
+	}
+
+	size_t sizebuffer() const
+	{
+		return buffsize;
+	}
+
+	size_t bufflen() const
+	{
+		return n;
+	}
+
+	void buffremove(size_t i)
+	{
+		n -= i;
+	}
+
+	void resetbuffer()
+	{
+		n = 0;
+	}
+};
 
 typedef struct Mbuffer
 {

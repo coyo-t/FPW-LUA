@@ -7,8 +7,8 @@ extern "C" {
 
 #define LC_MACRO_GETTER(NAME, MACRO) \
 LUA_API \
-int luacoyote_get_ ## NAME ## (void);\
-int luacoyote_get_ ## NAME ## (void) { return (MACRO); }
+int luacoyote_get_ ## NAME (void);\
+int luacoyote_get_ ## NAME (void) { return (MACRO); }
 
 
 LC_MACRO_GETTER(ridx_mainthread, LUA_RIDX_MAINTHREAD)
