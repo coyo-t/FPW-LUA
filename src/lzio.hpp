@@ -55,7 +55,7 @@ struct CoyoteBuffer
 
 	void resizebuffer(lua_State *L, size_t size)
 	{
-		buffer = luaM_realloc(
+		buffer = luaM::realloc(
 			L,
 			buffer,
 			buffsize,

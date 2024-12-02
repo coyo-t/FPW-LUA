@@ -103,6 +103,33 @@ namespace luaM {
 	);
 
 	LUAI_FUNC void *malloc_(lua_State *L, size_t size, int tag);
+
+	/*
+	** Arrays of chars do not need any test
+	*/
+	template<typename T>
+	T* realloc (lua_State* L, T* block, size_t oldsize, size_t newsize)
+	{
+		return luaM::saferealloc_(L, block, oldsize*sizeof(T), newsize*sizeof(T));
+	}
+
+	template<typename T>
+	void freemem(lua_State* L, T* b, size_t s)
+	{
+		luaM::free_(L, b, s);
+	}
+
+	template<typename T>
+	void free(lua_State* L, T* b)
+	{
+		luaM::free_(L, b, sizeof(T));
+	}
+
+	template<typename T>
+	void freearray(lua_State* L, T* b, size_t n)
+	{
+		luaM::free_(L, b, n*sizeof(T));
+	}
 }
 
 
@@ -117,32 +144,9 @@ namespace luaM {
 
 
 
-/*
-** Arrays of chars do not need any test
-*/
-template<typename T>
-T* luaM_realloc (lua_State* L, T* block, size_t oldsize, size_t newsize)
-{
-	return luaM::saferealloc_(L, block, oldsize*sizeof(T), newsize*sizeof(T));
-}
 
-template<typename T>
-void luaM_freemem(lua_State* L, T* b, size_t s)
-{
-	luaM::free_(L, b, s);
-}
 
-template<typename T>
-void luaM_free(lua_State* L, T* b)
-{
-	luaM::free_(L, b, sizeof(T));
-}
 
-template<typename T>
-void luaM_freearray(lua_State* L, T* b, size_t n)
-{
-	luaM::free_(L, b, n*sizeof(T));
-}
 
 
 template<typename T>
