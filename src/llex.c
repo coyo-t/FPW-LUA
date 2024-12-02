@@ -72,7 +72,7 @@ static void save(LexState *ls, int c)
 		newsize = luaZ_sizebuffer(b) * 2;
 		luaZ_resizebuffer(ls->L, b, newsize);
 	}
-	b->buffer[luaZ_bufflen(b)++] = cast_char(c);
+	b->buffer[b->n++] = cast_char(c);
 }
 
 static void save_and_next (LexState *ls)
@@ -191,8 +191,12 @@ static void inclinenumber(LexState *ls)
 }
 
 
-void luaX_setinput(lua_State *L, LexState *ls, ZIO *z, TString *source,
-						int firstchar)
+void luaX_setinput(
+	lua_State *L,
+	LexState *ls,
+	ZIO *z,
+	TString *source,
+	int firstchar)
 {
 	ls->t.token = 0;
 	ls->L = L;
@@ -455,24 +459,15 @@ static void read_string(LexState *ls, int del, SemInfo *seminfo)
 				save_and_next(ls); /* keep '\\' for error messages */
 				switch (ls->current)
 				{
-					case 'a': c = '\a';
-						goto read_save;
-					case 'b': c = '\b';
-						goto read_save;
-					case 'f': c = '\f';
-						goto read_save;
-					case 'n': c = '\n';
-						goto read_save;
-					case 'r': c = '\r';
-						goto read_save;
-					case 't': c = '\t';
-						goto read_save;
-					case 'v': c = '\v';
-						goto read_save;
-					case 'x': c = readhexaesc(ls);
-						goto read_save;
-					case 'u': utf8esc(ls);
-						goto no_save;
+					case 'a': c = '\a'; goto read_save;
+					case 'b': c = '\b'; goto read_save;
+					case 'f': c = '\f'; goto read_save;
+					case 'n': c = '\n'; goto read_save;
+					case 'r': c = '\r'; goto read_save;
+					case 't': c = '\t'; goto read_save;
+					case 'v': c = '\v'; goto read_save;
+					case 'x': c = readhexaesc(ls); goto read_save;
+					case 'u': utf8esc(ls); goto no_save;
 					case '\n':
 					case '\r':
 						inclinenumber(ls);
@@ -490,7 +485,8 @@ static void read_string(LexState *ls, int del, SemInfo *seminfo)
 						next(ls); /* skip the 'z' */
 						while (lisspace(ls->current))
 						{
-							if (currIsNewline(ls)) inclinenumber(ls);
+							if (currIsNewline(ls))
+								inclinenumber(ls);
 							else
 								next(ls);
 						}

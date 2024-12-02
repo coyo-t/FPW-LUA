@@ -390,7 +390,8 @@ int luaO_utf8esc(char *buff, unsigned long x)
 	else
 	{
 		/* need continuation bytes */
-		unsigned int mfb = 0x3f; /* maximum that fits in first byte */
+		/* maximum that fits in first byte */
+		unsigned int mfb = 0x3f;
 		do
 		{
 			/* add continuation bytes */

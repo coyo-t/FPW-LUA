@@ -50,6 +50,7 @@ static l_noret error(LoadState *S, const char *why)
 */
 #define loadVector(S,b,n)	loadBlock(S,b,(n)*sizeof((b)[0]))
 
+
 static void loadBlock(LoadState *S, void *b, size_t size)
 {
 	if (luaZ_read(S->Z, b, size) != 0)
@@ -57,7 +58,7 @@ static void loadBlock(LoadState *S, void *b, size_t size)
 }
 
 
-#define loadVar(S,x)		loadVector(S,&x,1)
+#define loadVar(S,x) loadVector(S,&x,1)
 
 
 static lu_byte loadByte(LoadState *S)

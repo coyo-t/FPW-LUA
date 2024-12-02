@@ -19,6 +19,11 @@
 #include "lstate.h"
 #include "lzio.h"
 
+int zgetc(ZIO *z)
+{
+	return (z->n--) > 0 ? cast_uchar(*z->p++) : luaZ_fill(z);
+}
+
 void luaZ_initbuffer(lua_State* L, Mbuffer* buff)
 {
 	buff->buffer = NULL;

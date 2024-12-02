@@ -236,20 +236,20 @@ LUA_API const void *(lua_topointer)(lua_State *L, int idx);
 ** Comparison and arithmetic functions
 */
 
-#define LUA_OPADD    0	/* ORDER TM, ORDER OP */
-#define LUA_OPSUB    1
-#define LUA_OPMUL    2
-#define LUA_OPMOD    3
-#define LUA_OPPOW    4
-#define LUA_OPDIV    5
-#define LUA_OPIDIV   6
-#define LUA_OPBAND   7
-#define LUA_OPBOR    8
-#define LUA_OPBXOR   9
-#define LUA_OPSHL   10
-#define LUA_OPSHR   11
-#define LUA_OPUNM   12
-#define LUA_OPBNOT  13
+LUA_API const int LUA_OPADD  = 0;	/* ORDER TM, ORDER OP */
+LUA_API const int LUA_OPSUB  = 1;
+LUA_API const int LUA_OPMUL  = 2;
+LUA_API const int LUA_OPMOD  = 3;
+LUA_API const int LUA_OPPOW  = 4;
+LUA_API const int LUA_OPDIV  = 5;
+LUA_API const int LUA_OPIDIV = 6;
+LUA_API const int LUA_OPBAND = 7;
+LUA_API const int LUA_OPBOR  = 8;
+LUA_API const int LUA_OPBXOR = 9;
+LUA_API const int LUA_OPSHL  = 10;
+LUA_API const int LUA_OPSHR  = 11;
+LUA_API const int LUA_OPUNM  = 12;
+LUA_API const int LUA_OPBNOT = 13;
 
 LUA_API void (lua_arith)(lua_State *L, int op);
 
