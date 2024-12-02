@@ -7,7 +7,7 @@
 #define lobject_c
 #define LUA_CORE
 
-#include "lprefix.h"
+#include "lprefix.hpp"
 
 
 #include <locale.h>
@@ -19,13 +19,13 @@
 
 #include "lua.hpp"
 
-#include "lctype.h"
-#include "ldebug.h"
-#include "ldo.h"
+#include "lctype.hpp"
+#include "ldebug.hpp"
+#include "ldo.hpp"
 #include "lobject.hpp"
-#include "lstate.h"
-#include "lstring.h"
-#include "lvm.h"
+#include "lstate.hpp"
+#include "lstring.hpp"
+#include "lvm.hpp"
 
 
 /*

@@ -12,7 +12,7 @@
 #include <stdarg.h>
 
 
-#include "llimits.h"
+#include "llimits.hpp"
 #include "lua.hpp"
 
 

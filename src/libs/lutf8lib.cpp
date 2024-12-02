@@ -7,7 +7,7 @@
 #define lutf8lib_c
 #define LUA_LIB
 
-#include "lprefix.h"
+#include "lprefix.hpp"
 
 
 #include <assert.h>
@@ -18,8 +18,8 @@
 
 #include "lua.hpp"
 
-#include "lauxlib.h"
-#include "./lualib.h"
+#include "lauxlib.hpp"
+#include "./lualib.hpp"
 
 
 #define MAXUNICODE	0x10FFFFu

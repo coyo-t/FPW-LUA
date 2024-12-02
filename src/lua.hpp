@@ -14,7 +14,7 @@ extern "C" {
 #include <stddef.h>
 
 
-#include "luaconf.h"
+#include "luaconf.hpp"
 
 
 #define LUA_VERSION_MAJOR	"5"
