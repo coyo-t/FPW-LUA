@@ -165,10 +165,23 @@ void* luaM_newobject(lua_State* L, int tag, size_t s)
 }
 
 
+template<typename T>
+void luaM_growvector (
+	lua_State* L,
+	T** v,
+	int nelems,
+	int* size,
+	int limit,
+	const char* what)
+{
+// #define luaM_growvector(L,v,nelems,size,t,limit,e) \
+// ((v)=cast(t *, luaM_growaux_(L,v,nelems,&(size),sizeof(t), \
+// luaM_limitN(limit,t),e)))
+	*v=luaM_growaux_(L,*v,nelems,size,sizeof(T), luaM_limitN<T>(limit),what);
+}
 
-#define luaM_growvector(L,v,nelems,size,t,limit,e) \
-((v)=cast(t *, luaM_growaux_(L,v,nelems,&(size),sizeof(t), \
-luaM_limitN(limit,t),e)))
+
+
 
 template<typename T>
 T* luaM_reallocvector(lua_State* L, T* v, size_t oldn, size_t newn)
@@ -186,11 +199,11 @@ T* luaM_reallocvector(lua_State* L, T* v, size_t oldn, size_t newn)
 
 // TODO: might not have recreated this one 1:1. double pointers hurt braen!!!
 template<typename T>
-T* luaM_shrinkvector(lua_State* L, T** v, int* size, int final_n)
+void luaM_shrinkvector(lua_State* L, T** v, int* size, int final_n)
 {
 // #define luaM_shrinkvector(L,v,size,fs,t) \
 // ((v)=cast(t *, luaM_shrinkvector_(L, v, &(size), fs, sizeof(t))))
-	*v = luaM_shrinkvector_(L, **v, size, final_n, sizeof(T));
+	*v = luaM_shrinkvector_(L, *v, size, final_n, sizeof(T));
 }
 
 

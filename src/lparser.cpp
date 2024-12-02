@@ -198,8 +198,7 @@ static int registerlocalvar(LexState *ls, FuncState *fs, TString *varname)
 {
 	Proto *f = fs->f;
 	int oldsize = f->sizelocvars;
-	luaM_growvector(ls->L, f->locvars, fs->ndebugvars, f->sizelocvars,
-						LocVar, SHRT_MAX, "local variables");
+	luaM_growvector(ls->L, &f->locvars, fs->ndebugvars, &f->sizelocvars, SHRT_MAX, "local variables");
 	while (oldsize < f->sizelocvars)
 		f->locvars[oldsize++].varname = NULL;
 	f->locvars[fs->ndebugvars].varname = varname;
@@ -221,8 +220,8 @@ static int new_localvar(LexState *ls, TString *name)
 	Vardesc *var;
 	checklimit(fs, dyd->actvar.n + 1 - fs->firstlocal,
 					MAXVARS, "local variables");
-	luaM_growvector(L, dyd->actvar.arr, dyd->actvar.n + 1,
-						dyd->actvar.size, Vardesc, USHRT_MAX, "local variables");
+	luaM_growvector(L, &dyd->actvar.arr, dyd->actvar.n + 1,
+						&dyd->actvar.size, USHRT_MAX, "local variables");
 	var = &dyd->actvar.arr[dyd->actvar.n++];
 	var->vd.kind = VDKREG; /* default */
 	var->vd.name = name;
@@ -393,8 +392,8 @@ static Upvaldesc *allocupvalue(FuncState *fs)
 	Proto *f = fs->f;
 	int oldsize = f->sizeupvalues;
 	checklimit(fs, fs->nups + 1, MAXUPVAL, "upvalues");
-	luaM_growvector(fs->ls->L, f->upvalues, fs->nups, f->sizeupvalues,
-						Upvaldesc, MAXUPVAL, "upvalues");
+	luaM_growvector(fs->ls->L, &f->upvalues, fs->nups, &f->sizeupvalues,
+						MAXUPVAL, "upvalues");
 	while (oldsize < f->sizeupvalues)
 		f->upvalues[oldsize++].name = NULL;
 	return &f->upvalues[fs->nups++];
@@ -632,8 +631,8 @@ static int newlabelentry(
 	int pc)
 {
 	int n = l->n;
-	luaM_growvector(ls->L, l->arr, n, l->size,
-						Labeldesc, SHRT_MAX, "labels/gotos");
+	luaM_growvector(ls->L, &l->arr, n, &l->size,
+						SHRT_MAX, "labels/gotos");
 	l->arr[n].name = name;
 	l->arr[n].line = line;
 	l->arr[n].nactvar = ls->fs->nactvar;
@@ -797,7 +796,7 @@ static Proto *addprototype(LexState *ls)
 	if (fs->np >= f->sizep)
 	{
 		int oldsize = f->sizep;
-		luaM_growvector(L, f->p, fs->np, f->sizep, Proto *, MAXARG_Bx, "functions");
+		luaM_growvector(L, &f->p, fs->np, &f->sizep, MAXARG_Bx, "functions");
 		while (oldsize < f->sizep)
 			f->p[oldsize++] = NULL;
 	}
