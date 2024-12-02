@@ -133,22 +133,6 @@ namespace luaM {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template<typename T>
 T* luaM_new(lua_State* L)
 {
