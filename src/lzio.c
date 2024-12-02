@@ -12,7 +12,7 @@
 
 #include <string.h>
 
-#include "lua.h"
+#include "lua.hpp"
 
 #include "llimits.h"
 #include "lmem.h"

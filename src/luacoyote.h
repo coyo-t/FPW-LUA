@@ -1,7 +1,7 @@
 #ifndef lua_coyote_exts
 #define lua_coyote_exts
 
-#include "lua.h"
+#include "lua.hpp"
 
 #define LC_MACRO_GETTER(NAME, MACRO) \
 LUA_API \

@@ -12,7 +12,7 @@
 
 #include <stdlib.h>
 
-#include "lua.h"
+#include "lua.hpp"
 
 #include "lauxlib.h"
 #include "libs/lualib.h"

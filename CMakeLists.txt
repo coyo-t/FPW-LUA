@@ -56,7 +56,7 @@ add_executable(LuaMod
         src/libs/ltablib.c
     src/ltm.c
     src/ltm.h
-    src/lua.h
+        src/lua.hpp
     src/lua.hpp
     src/luac.c
     src/luaconf.h

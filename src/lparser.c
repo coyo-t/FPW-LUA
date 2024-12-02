@@ -14,7 +14,7 @@
 #include <limits.h>
 #include <string.h>
 
-#include "lua.h"
+#include "lua.hpp"
 
 #include "lcode.h"
 #include "ldebug.h"

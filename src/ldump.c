@@ -13,7 +13,7 @@
 #include <limits.h>
 #include <stddef.h>
 
-#include "lua.h"
+#include "lua.hpp"
 
 #include "lobject.h"
 #include "lstate.h"
