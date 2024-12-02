@@ -64,19 +64,19 @@ void luaM_checksize (lua_State* L, N n, size_t e)
 ** when multiplied by the size of type 't'. (Assumes that 'n' is an
 ** 'int' or 'unsigned int' and that 'int' is not larger than 'size_t'.)
 */
-template<typename N, typename T>
+template<typename T, typename N>
 constexpr bool luaM_limitN (N n)
 {
+// #define luaM_limitN(n,t)  \
+//   ((cast_sizet(n) <= MAX_SIZET/sizeof(t)) ? (n) :  \
+//      cast_uint((MAX_SIZET/sizeof(t))))
+
 	if (cast_sizet(n) <= MAX_SIZET/sizeof(T))
 	{
 		return n;
 	}
 	return static_cast<uint32_t>(MAX_SIZET/sizeof(T));
 }
-// #define luaM_limitN(n,t)  \
-//   ((cast_sizet(n) <= MAX_SIZET/sizeof(t)) ? (n) :  \
-//      cast_uint((MAX_SIZET/sizeof(t))))
-
 
 #define luaM_freemem(L, b, s)	luaM_free_(L, (b), (s))
 #define luaM_free(L, b)		luaM_free_(L, (b), sizeof(*(b)))

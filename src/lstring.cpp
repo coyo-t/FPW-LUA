@@ -25,7 +25,7 @@
 /*
 ** Maximum size for string table.
 */
-constexpr auto MAXSTRTB = static_cast<int>(luaM_limitN<int, TString>(MAX_INT));
+constexpr auto MAXSTRTB = static_cast<int>(luaM_limitN<TString>(MAX_INT));
 // #define MAXSTRTB	cast_int(luaM_limitN(MAX_INT, TString*))
 
 
