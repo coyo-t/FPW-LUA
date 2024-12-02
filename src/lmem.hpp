@@ -12,11 +12,15 @@
 
 #include<cstdint>
 
+#include "ldo.hpp"
 #include "llimits.hpp"
 #include "lua.hpp"
 
 
-#define luaM_error(L) luaD_throw(L, LUA_ERRMEM)
+l_noret luaM_error (lua_State* L)
+{
+	luaD_throw(L, LUA_ERRMEM);
+}
 
 
 
