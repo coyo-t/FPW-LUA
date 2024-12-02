@@ -9,7 +9,7 @@
 
 #include <limits.h>
 
-#include "lobject.h"
+#include "lobject.hpp"
 #include "lzio.h"
 
 

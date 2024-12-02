@@ -15,7 +15,7 @@
 
 #include "lua.hpp"
 
-#include "lobject.h"
+#include "lobject.hpp"
 #include "lstate.h"
 #include "lundump.h"
 

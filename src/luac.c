@@ -19,7 +19,7 @@
 #include "lauxlib.h"
 
 #include "ldebug.h"
-#include "lobject.h"
+#include "lobject.hpp"
 #include "lopcodes.h"
 #include "lopnames.h"
 #include "lstate.h"

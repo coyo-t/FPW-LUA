@@ -22,7 +22,7 @@
 #include "ldo.h"
 #include "lfunc.h"
 #include "lgc.h"
-#include "lobject.h"
+#include "lobject.hpp"
 #include "lopcodes.h"
 #include "lstate.h"
 #include "lstring.h"

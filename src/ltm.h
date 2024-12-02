@@ -8,7 +8,7 @@
 #define ltm_h
 
 
-#include "lobject.h"
+#include "lobject.hpp"
 
 
 /*

@@ -37,8 +37,8 @@ add_executable(LuaMod
     src/lmem.c
     src/lmem.h
         src/libs/loadlib.c
-    src/lobject.c
-    src/lobject.h
+        src/lobject.cpp
+        src/lobject.hpp
     src/lopcodes.c
     src/lopcodes.h
     src/lopnames.h

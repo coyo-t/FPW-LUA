@@ -8,7 +8,7 @@
 #define lundump_h
 
 #include "llimits.h"
-#include "lobject.h"
+#include "lobject.hpp"
 #include "lzio.h"
 
 

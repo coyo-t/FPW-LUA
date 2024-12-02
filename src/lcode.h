@@ -8,7 +8,7 @@
 #define lcode_h
 
 #include "llex.h"
-#include "lobject.h"
+#include "lobject.hpp"
 #include "lopcodes.h"
 #include "lparser.h"
 

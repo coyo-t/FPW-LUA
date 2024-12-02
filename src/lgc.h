@@ -8,7 +8,7 @@
 #define lgc_h
 
 
-#include "lobject.h"
+#include "lobject.hpp"
 #include "lstate.h"
 
 /*

@@ -803,7 +803,7 @@ inline int twoto (int i)
 
 
 /* size of buffer for 'luaO_utf8esc' function */
-#define UTF8BUFFSZ	8
+constexpr int UTF8BUFFSZ = 8;
 
 LUAI_FUNC int luaO_utf8esc(char *buff, unsigned long x);
 

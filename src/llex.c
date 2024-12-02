@@ -20,7 +20,7 @@
 #include "ldo.h"
 #include "lgc.h"
 #include "llex.h"
-#include "lobject.h"
+#include "lobject.hpp"
 #include "lparser.h"
 #include "lstate.h"
 #include "lstring.h"

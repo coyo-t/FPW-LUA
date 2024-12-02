@@ -23,7 +23,7 @@
 #include "lgc.h"
 #include "llex.h"
 #include "lmem.h"
-#include "lobject.h"
+#include "lobject.hpp"
 #include "lopcodes.h"
 #include "lparser.h"
 #include "lstring.h"

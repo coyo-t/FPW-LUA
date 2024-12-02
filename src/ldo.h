@@ -9,7 +9,7 @@
 
 
 #include "llimits.h"
-#include "lobject.h"
+#include "lobject.hpp"
 #include "lstate.h"
 #include "lzio.h"
 

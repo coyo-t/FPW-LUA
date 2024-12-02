@@ -19,7 +19,7 @@
 #include "lfunc.h"
 #include "lgc.h"
 #include "lmem.h"
-#include "lobject.h"
+#include "lobject.hpp"
 #include "lstate.h"
 
 

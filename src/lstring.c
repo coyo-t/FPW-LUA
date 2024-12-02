@@ -17,7 +17,7 @@
 #include "ldebug.h"
 #include "ldo.h"
 #include "lmem.h"
-#include "lobject.h"
+#include "lobject.hpp"
 #include "lstate.h"
 #include "lstring.h"
 
