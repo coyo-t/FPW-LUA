@@ -33,7 +33,7 @@
 #define LUA_SIGNATURE	"\x1bLua"
 
 /* option for multiple returns in 'lua_pcall' and 'lua_call' */
-#define LUA_MULTRET	(-1)
+LUA_API const int LUA_MULTRET = -1;
 
 
 /*
@@ -41,17 +41,17 @@
 ** (-LUAI_MAXSTACK is the minimum valid index; we keep some free empty
 ** space after that to help overflow detection)
 */
-#define LUA_REGISTRYINDEX	(-LUAI_MAXSTACK - 1000)
+LUA_API const int LUA_REGISTRYINDEX = -LUAI_MAXSTACK - 1000;
 #define lua_upvalueindex(i)	(LUA_REGISTRYINDEX - (i))
 
 
 /* thread status */
-#define LUA_OK		0
-#define LUA_YIELD	1
-#define LUA_ERRRUN	2
-#define LUA_ERRSYNTAX	3
-#define LUA_ERRMEM	4
-#define LUA_ERRERR	5
+LUA_API const int LUA_OK = 0;
+LUA_API const int LUA_YIELD = 1;
+LUA_API const int LUA_ERRRUN = 2;
+LUA_API const int LUA_ERRSYNTAX = 3;
+LUA_API const int LUA_ERRMEM = 4;
+LUA_API const int LUA_ERRERR = 5;
 
 
 typedef struct lua_State lua_State;
