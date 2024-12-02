@@ -54,10 +54,6 @@ void luaM_checksize (lua_State* L, N n, size_t e)
 	}
 }
 
-// #define luaM_checksize(L,n,e)  \
-// 	(luaM_testsize(n,e) ? luaM_toobig(L) : cast_void(0))
-
-
 /*
 ** Computes the minimum between 'n' and 'MAX_SIZET/sizeof(t)', so that
 ** the result is not larger than 'n' and cannot overflow a 'size_t'
@@ -78,9 +74,6 @@ constexpr bool luaM_limitN (N n)
 	return static_cast<uint32_t>(MAX_SIZET/sizeof(T));
 }
 
-#define luaM_freemem(L, b, s)	luaM_free_(L, (b), (s))
-#define luaM_free(L, b)		luaM_free_(L, (b), sizeof(*(b)))
-#define luaM_freearray(L, b, n)   luaM_free_(L, (b), (n)*sizeof(*(b)))
 
 #define luaM_new(L,t)		cast(t*, luaM_malloc_(L, sizeof(t), 0))
 #define luaM_newvector(L,n,t)	cast(t*, luaM_malloc_(L, (n)*sizeof(t), 0))
@@ -143,5 +136,27 @@ T* luaM_realloc (lua_State* L, T* block, size_t oldsize, size_t newsize)
 {
 	return luaM_saferealloc_(L, block, oldsize*sizeof(T), newsize*sizeof(T));
 }
+
+template<typename T>
+void luaM_freemem(lua_State* L, T* b, size_t s)
+{
+// #define luaM_freemem(L, b, s)	luaM_free_(L, (b), (s))
+	luaM_free_(L, b, s);
+}
+
+template<typename T>
+void luaM_free(lua_State* L, T* b)
+{
+// #define luaM_free(L, b)		luaM_free_(L, (b), sizeof(*(b)))
+	luaM_free_(L, b, sizeof(T));
+}
+
+template<typename T>
+void luaM_freearray(lua_State* L, T* b, size_t n)
+{
+// #define luaM_freearray(L, b, n)   luaM_free_(L, (b), (n)*sizeof(*(b)))
+	luaM_free_(L, b, n*sizeof(T));
+}
+
 
 #endif
