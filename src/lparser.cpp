@@ -218,7 +218,6 @@ static int new_localvar(LexState *ls, TString *name)
 	Dyndata *dyd = ls->dyd;
 	checklimit(fs, dyd->actvar.n + 1 - fs->firstlocal,
 					MAXVARS, "local variables");
-	// ((dyd->actvar.arr)=cast(Vardesc*, luaM_growaux_(L,dyd->actvar.arr,dyd->actvar.n + 1,&(dyd->actvar.size),sizeof(Vardesc), luaM_limitN<Vardesc>((0x7fff * 2 + 1)),"local variables")));
 	dyd->actvar.arr = luaM_growvector(
 		L,
 		dyd->actvar.arr,
@@ -855,14 +854,13 @@ static void close_func(LexState *ls)
 	leaveblock(fs);
 	lua_assert(fs->bl == NULL);
 	luaK_finish(fs);
-	luaM_shrinkvector(L, f->code, f->sizecode, fs->pc, Instruction);
-	luaM_shrinkvector(L, f->lineinfo, f->sizelineinfo, fs->pc, ls_byte);
-	luaM_shrinkvector(L, f->abslineinfo, f->sizeabslineinfo,
-							fs->nabslineinfo, AbsLineInfo);
-	luaM_shrinkvector(L, f->k, f->sizek, fs->nk, TValue);
-	luaM_shrinkvector(L, f->p, f->sizep, fs->np, Proto *);
-	luaM_shrinkvector(L, f->locvars, f->sizelocvars, fs->ndebugvars, LocVar);
-	luaM_shrinkvector(L, f->upvalues, f->sizeupvalues, fs->nups, Upvaldesc);
+	f->code = luaM_shrinkvector<Instruction>(L, f->code, &f->sizecode, fs->pc);
+	f->lineinfo = luaM_shrinkvector<ls_byte>(L, f->lineinfo, &f->sizelineinfo, fs->pc);
+	f->abslineinfo = luaM_shrinkvector<AbsLineInfo>(L, f->abslineinfo, &f->sizeabslineinfo, fs->nabslineinfo);
+	f->k = luaM_shrinkvector<TValue>(L, f->k, &f->sizek, fs->nk);
+	f->p = luaM_shrinkvector<Proto*>(L, f->p, &f->sizep, fs->np);
+	f->locvars = luaM_shrinkvector<LocVar>(L, f->locvars, &f->sizelocvars, fs->ndebugvars);
+	f->upvalues = luaM_shrinkvector<Upvaldesc>(L, f->upvalues, &f->sizeupvalues, fs->nups);
 	ls->fs = fs->prev;
 	luaC_checkGC(L);
 }
