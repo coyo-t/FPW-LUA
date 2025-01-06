@@ -11,8 +11,6 @@
 #include<cstdint>
 #include "lua.hpp"
 
-#include "lmem.hpp"
-
 
 constexpr int EOZ = -1; /* end of stream */
 
