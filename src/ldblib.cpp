@@ -237,29 +237,23 @@ static int db_getlocal(lua_State *L)
 		lua_pushstring(L, lua_getlocal(L, NULL, nvar)); /* push local name */
 		return 1; /* return only name (there is no value) */
 	}
-	else
+	/* stack-level argument */
+	lua_Debug ar;
+	const char *name;
+	int level = (int) luaL_checkinteger(L, arg + 1);
+	if (l_unlikely(!lua_getstack(L1, level, &ar))) /* out of range? */
+		return luaL_argerror(L, arg + 1, "level out of range");
+	checkstack(L, L1, 1);
+	name = lua_getlocal(L1, &ar, nvar);
+	if (name)
 	{
-		/* stack-level argument */
-		lua_Debug ar;
-		const char *name;
-		int level = (int) luaL_checkinteger(L, arg + 1);
-		if (l_unlikely(!lua_getstack(L1, level, &ar))) /* out of range? */
-			return luaL_argerror(L, arg + 1, "level out of range");
-		checkstack(L, L1, 1);
-		name = lua_getlocal(L1, &ar, nvar);
-		if (name)
-		{
-			lua_xmove(L1, L, 1); /* move local value */
-			lua_pushstring(L, name); /* push name */
-			lua_rotate(L, -2, 1); /* re-order */
-			return 2;
-		}
-		else
-		{
-			luaL_pushfail(L); /* no name (nor value) */
-			return 1;
-		}
+		lua_xmove(L1, L, 1); /* move local value */
+		lua_pushstring(L, name); /* push name */
+		lua_rotate(L, -2, 1); /* re-order */
+		return 2;
 	}
+	luaL_pushfail(L); /* no name (nor value) */
+	return 1;
 }
 
 
