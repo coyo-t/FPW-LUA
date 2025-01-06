@@ -50,7 +50,7 @@ typedef signed char ls_byte;
 #define MAX_LMEM	((l_mem)(MAX_LUMEM >> 1))
 
 
-#define MAX_INT		INT_MAX  /* maximum value of an int */
+constexpr auto MAX_INT =		INT_MAX;  /* maximum value of an int */
 
 
 /*

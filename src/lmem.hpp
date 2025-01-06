@@ -135,13 +135,25 @@ T* luaM_newobject (lua_State* L, int tag, size_t s)
 	return static_cast<T *>(luaM_malloc_(L, (s), tag));
 }
 
-#define luaM_growvector(L,v,nelems,size,t,limit,e) \
-	((v)=cast(t *, luaM_growaux_(L,v,nelems,&(size),sizeof(t), \
-                         luaM_limitN<t>(limit),e)))
+// ((f->code)=cast(Instruction *, luaM_growaux_(fs->ls->L,f->code,fs->pc,&(f->sizecode),sizeof(Instruction), luaM_limitN<Instruction>(MAX_INT),"opcodes")));
 
-#define luaM_reallocvector(L, v,oldn,n,t) \
-   (cast(t *, luaM_realloc_(L, v, cast_sizet(oldn) * sizeof(t), \
-                                  cast_sizet(n) * sizeof(t))))
+
+// #define luaM_growvector(L,v,nelems,size,t,limit,e) \
+// 	((v)=cast(t *, luaM_growaux_(L,v,nelems,&(size),sizeof(t), \
+//                          luaM_limitN<t>(limit),e)))
+
+template<typename T, typename S>
+T* luaM_growvector (lua_State* L, T* v, size_t nelems, S* size, size_t limit, const char* e)
+{
+	return static_cast<T*>(luaM_growaux_(L,v,nelems, size, sizeof(T), luaM_limitN<T>(limit), e));
+}
+
+template<typename T>
+T* luaM_reallocvector (lua_State* L, T* v, size_t oldn, size_t n)
+{
+	return static_cast<T*>(luaM_realloc_(L, v, cast_sizet(oldn) * sizeof(T), cast_sizet(n) * sizeof(T)));
+}
+
 
 #define luaM_shrinkvector(L,v,size,fs,t) \
    ((v)=cast(t *, luaM_shrinkvector_(L, v, &(size), fs, sizeof(t))))

@@ -368,15 +368,27 @@ static void savelineinfo(FuncState *fs, Proto *f, int line)
 	int pc = fs->pc - 1; /* last instruction coded */
 	if (abs(linedif) >= LIMLINEDIFF || fs->iwthabs++ >= MAXIWTHABS)
 	{
-		luaM_growvector(fs->ls->L, f->abslineinfo, fs->nabslineinfo,
-							f->sizeabslineinfo, AbsLineInfo, MAX_INT, "lines");
+		f->abslineinfo = luaM_growvector(
+			fs->ls->L,
+			f->abslineinfo,
+			fs->nabslineinfo,
+			&f->sizeabslineinfo,
+			MAX_INT,
+			"lines"
+		);
 		f->abslineinfo[fs->nabslineinfo].pc = pc;
 		f->abslineinfo[fs->nabslineinfo++].line = line;
 		linedif = ABSLINEINFO; /* signal that there is absolute information */
 		fs->iwthabs = 1; /* restart counter */
 	}
-	luaM_growvector(fs->ls->L, f->lineinfo, pc, f->sizelineinfo, ls_byte,
-						MAX_INT, "opcodes");
+	f->lineinfo = luaM_growvector(
+		fs->ls->L,
+		f->lineinfo,
+		pc,
+		&f->sizelineinfo,
+		MAX_INT,
+		"opcodes"
+	);
 	f->lineinfo[pc] = linedif;
 	fs->previousline = line; /* last line saved */
 }
@@ -427,8 +439,14 @@ int luaK_code(FuncState *fs, Instruction i)
 {
 	Proto *f = fs->f;
 	/* put new instruction in code array */
-	luaM_growvector(fs->ls->L, f->code, fs->pc, f->sizecode, Instruction,
-						MAX_INT, "opcodes");
+	f->code = luaM_growvector<Instruction>(
+		fs->ls->L,
+		f->code,
+		fs->pc,
+		&f->sizecode,
+		MAX_INT,
+		"opcodes"
+	);
 	f->code[fs->pc++] = i;
 	savelineinfo(fs, f, fs->ls->lastline);
 	return fs->pc - 1; /* index of new instruction */
@@ -625,7 +643,7 @@ static int addk(FuncState *fs, TValue *key, TValue *v)
 		table has no metatable, so it does not need to invalidate cache */
 	setivalue(&val, k);
 	luaH_finishset(L, fs->ls->h, key, idx, &val);
-	luaM_growvector(L, f->k, k, f->sizek, TValue, MAXARG_Ax, "constants");
+	f->k = luaM_growvector<TValue>(L, f->k, k, &f->sizek, MAXARG_Ax, "constants");
 	while (oldsize < f->sizek)
 		setnilvalue(&f->k[oldsize++]);
 	setobj(L, &f->k[k], v);

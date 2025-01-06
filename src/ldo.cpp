@@ -221,7 +221,7 @@ int luaD_reallocstack(lua_State *L, int newsize, int raiseerror)
 	relstack(L); /* change pointers to offsets */
 	G(L)->gcstopem = 1; /* stop emergency collection */
 	newstack = luaM_reallocvector(L, L->stack.p, oldsize + EXTRA_STACK,
-											newsize + EXTRA_STACK, StackValue);
+											newsize + EXTRA_STACK);
 	G(L)->gcstopem = oldgcstop; /* restore emergency collection */
 	if (l_unlikely(newstack == NULL))
 	{
