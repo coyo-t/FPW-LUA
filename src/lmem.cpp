@@ -222,3 +222,10 @@ void *luaM_malloc_(lua_State *L, size_t size, int tag)
 		return newblock;
 	}
 }
+
+bool luaM_testsize (int n, size_t e)
+{
+	return sizeof(n) >= sizeof(size_t) && cast_sizet(n) + 1 > MAX_SIZET/e;
+}
+
+

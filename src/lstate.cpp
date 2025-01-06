@@ -110,7 +110,7 @@ CallInfo *luaE_extendCI(lua_State *L)
 {
 	CallInfo *ci;
 	lua_assert(L->ci->next == NULL);
-	ci = luaM_newmem(L, CallInfo);
+	ci = luaM_newmem<CallInfo>(L);
 	lua_assert(L->ci->next == NULL);
 	L->ci->next = ci;
 	ci->previous = L->ci;

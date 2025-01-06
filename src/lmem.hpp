@@ -47,13 +47,8 @@ LUAI_FUNC void *luaM_malloc_(lua_State *L, size_t size, int tag);
 ** false due to limited range of data type"; the +1 tricks the compiler,
 ** avoiding this warning but also this optimization.)
 */
-#define luaM_testsize(n,e) (sizeof(n) >= sizeof(size_t) && cast_sizet((n)) + 1 > MAX_SIZET/(e))
-
-
-
-#define luaM_checksize(L,n,e)  \
-	(luaM_testsize(n,e) ? luaM_toobig(L) : cast_void(0))
-
+// #define luaM_testsize(n,e) (sizeof(n) >= sizeof(size_t) && cast_sizet((n)) + 1 > MAX_SIZET/(e))
+bool luaM_testsize (int n, size_t e);
 
 /*
 ** Computes the minimum between 'n' and 'MAX_SIZET/sizeof(t)', so that
@@ -78,21 +73,33 @@ LUAI_FUNC void *luaM_malloc_(lua_State *L, size_t size, int tag);
 
 
 //
-#define luaM_newmem(L,t)		cast(t*, luaM_malloc_(L, sizeof(t), 0))
-
-
-// #define luaM_newvector(L,n,t)	cast(t*, luaM_malloc_(L, (n)*sizeof(t), 0))
-
+// #define luaM_newmem(L,t)		cast(t*, luaM_malloc_(L, sizeof(t), 0))
 template<typename T>
-T* luaM_newvector (lua_State* L, int n)
+T* luaM_newmem (lua_State* L)
 {
-	return cast(T*, luaM_malloc_(L, (n)*sizeof(T), 0));
+	return static_cast<T*>(luaM_malloc_(L, sizeof(T), 0));
 }
 
 
+// #define luaM_newvector(L,n,t)	cast(t*, luaM_malloc_(L, (n)*sizeof(t), 0))
+template<typename T>
+T* luaM_newvector (lua_State* L, int n)
+{
+	return static_cast<T*>(luaM_malloc_(L, (n)*sizeof(T), 0));
+}
 
-#define luaM_newvectorchecked(L,n,t) \
-  (luaM_checksize(L,n,sizeof(t)), luaM_newvector<t>(L,n))
+
+// #define luaM_newvectorchecked(L,n,t) (luaM_checksize(L,n,sizeof(t)), luaM_newvector<t>(L,n))
+template<typename T>
+T* luaM_newvectorchecked (lua_State* L, int n)
+{
+	if (luaM_testsize(n, sizeof(T)))
+	{
+		luaM_toobig(L);
+	}
+	return luaM_newvector<T>(L,n);
+}
+
 
 //
 
