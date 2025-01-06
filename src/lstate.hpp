@@ -353,6 +353,11 @@ struct lua_State
 	{
 		((this)->nCcalls -= 0x10000);
 	}
+
+	global_State *G ()
+	{
+		return this->l_G;
+	}
 };
 
 
