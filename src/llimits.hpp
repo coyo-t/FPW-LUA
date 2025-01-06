@@ -133,26 +133,69 @@ typedef LUAI_UACINT l_uacInt;
 
 /* type casts (a macro highlights casts in the code) */
 #define cast(t, exp)	((t)(exp))
+// template<typename T, typename Exp>
+// T cast (Exp exp)
+// {
+// 	return (T)(exp);
+// }
 
-#define cast_void(i)	cast(void, (i))
-#define cast_voidp(i)	cast(void *, (i))
-#define cast_num(i)	cast(lua_Number, (i))
-#define cast_int(i)	cast(int, (i))
-#define cast_uint(i)	cast(unsigned int, (i))
-#define cast_byte(i)	cast(lu_byte, (i))
-#define cast_uchar(i)	cast(unsigned char, (i))
-#define cast_char(i)	cast(char, (i))
+// #define cast(t, exp)	((t)(exp))
 
-// #define cast_charp(i)	cast(char *, (i))
+#define cast_void(i)	(cast(void,i))
+
 template<typename T>
-char* cast_charp(T *i)
+void *cast_voidp(T i)
+{
+	return cast(void*, i);
+}
+
+template<typename T>
+lua_Number cast_num(T i)
+{
+	return cast(lua_Number, i);
+}
+
+template<typename T>
+int cast_int(T i)
+{
+	return cast(int, i);
+}
+
+template<typename T>
+unsigned int cast_uint(T i)
+{
+	return cast(unsigned int, i);
+}
+
+template<typename T>
+lu_byte cast_byte(T i)
+{
+	return cast(lu_byte, i);
+}
+
+template<typename T>
+unsigned char cast_uchar(T i)
+{
+	return cast(unsigned char, i);
+}
+
+template<typename T>
+char cast_char(T i)
+{
+	return cast(char, i);
+}
+
+template<typename T>
+char *cast_charp(T i)
 {
 	return cast(char*, i);
 }
 
-
-#define cast_sizet(i)	cast(size_t, (i))
-
+template<typename T>
+size_t cast_sizet(T i)
+{
+	return cast(size_t, i);
+}
 
 /* cast a signed lua_Integer to lua_Unsigned */
 #if !defined(l_castS2U)
