@@ -325,7 +325,7 @@ static int os_date(lua_State *L)
 {
 	size_t slen;
 	const char *s = luaL_optlstring(L, 1, "%c", &slen);
-	time_t t = luaL_opt(L, l_checktime, 2, time(NULL));
+	time_t t = (lua_isnoneornil(L,(2)) ? (time(nullptr)) : l_checktime(L,(2)));
 	const char *se = s + slen; /* 's' end */
 	struct tm tmr, *stm;
 	if (*s == '!')

@@ -490,7 +490,7 @@ LUALIB_API lua_Number luaL_checknumber(lua_State *L, int arg)
 
 LUALIB_API lua_Number luaL_optnumber(lua_State *L, int arg, lua_Number def)
 {
-	return luaL_opt(L, luaL_checknumber, arg, def);
+	return (lua_isnoneornil(L,(arg)) ? (def) : luaL_checknumber(L,(arg)));
 }
 
 
@@ -518,7 +518,7 @@ LUALIB_API lua_Integer luaL_checkinteger(lua_State *L, int arg)
 LUALIB_API lua_Integer luaL_optinteger(lua_State *L, int arg,
 													lua_Integer def)
 {
-	return luaL_opt(L, luaL_checkinteger, arg, def);
+	return (lua_isnoneornil(L,(arg)) ? (def) : luaL_checkinteger(L,(arg)));
 }
 
 /* }====================================================== */

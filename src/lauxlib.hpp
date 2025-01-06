@@ -166,7 +166,7 @@ LUALIB_API bool luaL_dostring(lua_State* L, const char* s);
 
 LUALIB_API int luaL_getmetatable(lua_State* L, const char* n);
 
-#define luaL_opt(L,f,n,d)	(lua_isnoneornil(L,(n)) ? (d) : f(L,(n)))
+// #define luaL_opt(L,f,n,d)	(lua_isnoneornil(L,(n)) ? (d) : f(L,(n)))
 
 #define luaL_loadbuffer(L,s,sz,n)	luaL_loadbufferx(L,s,sz,n,NULL)
 
