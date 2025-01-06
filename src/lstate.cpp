@@ -83,6 +83,26 @@ static unsigned int luai_makeseed(lua_State *L)
 #endif
 
 
+bool yieldable(lua_State *L)
+{
+	return (((L)->nCcalls & 0xffff0000) == 0);
+}
+
+int getCcalls(lua_State *L)
+{
+	return ((L)->nCcalls & 0xffff);
+}
+
+void incnny(lua_State *L)
+{
+	((L)->nCcalls += 0x10000);
+}
+
+void decnny(lua_State *L)
+{
+	((L)->nCcalls -= 0x10000);
+}
+
 /*
 ** set GCdebt to a new value keeping the value (totalbytes + GCdebt)
 ** invariant (and avoiding underflows in 'totalbytes')

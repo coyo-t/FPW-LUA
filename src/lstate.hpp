@@ -100,20 +100,21 @@ typedef struct CallInfo CallInfo;
 
 
 /* true if this thread does not have non-yieldable calls in the stack */
-#define yieldable(L)		(((L)->nCcalls & 0xffff0000) == 0)
+bool yieldable(lua_State* L);
 
 /* real number of C calls */
-#define getCcalls(L)	((L)->nCcalls & 0xffff)
+int getCcalls(lua_State* L);
 
 
 /* Increment the number of non-yieldable calls */
-#define incnny(L)	((L)->nCcalls += 0x10000)
+void incnny(lua_State* L);
 
 /* Decrement the number of non-yieldable calls */
-#define decnny(L)	((L)->nCcalls -= 0x10000)
+// #define decnny(L)	((L)->nCcalls -= 0x10000)
+void decnny (lua_State* L);
 
 /* Non-yieldable call increment */
-#define nyci	(0x10000 | 1)
+constexpr auto nyci =	(0x10000 | 1);
 
 
 struct lua_longjmp; /* defined in ldo.c */
@@ -217,18 +218,18 @@ struct CallInfo
 /*
 ** Bits in CallInfo status
 */
-#define CIST_OAH	(1<<0)	/* original value of 'allowhook' */
-#define CIST_C		(1<<1)	/* call is running a C function */
-#define CIST_FRESH	(1<<2)	/* call is on a fresh "luaV_execute" frame */
-#define CIST_HOOKED	(1<<3)	/* call is running a debug hook */
-#define CIST_YPCALL	(1<<4)	/* doing a yieldable protected call */
-#define CIST_TAIL	(1<<5)	/* call was tail called */
-#define CIST_HOOKYIELD	(1<<6)	/* last hook called yielded */
-#define CIST_FIN	(1<<7)	/* function "called" a finalizer */
-#define CIST_TRAN	(1<<8)	/* 'ci' has transfer information */
-#define CIST_CLSRET	(1<<9)  /* function is closing tbc variables */
+constexpr auto CIST_OAH	(1<<0);	/* original value of 'allowhook' */
+constexpr auto CIST_C		(1<<1);	/* call is running a C function */
+constexpr auto CIST_FRESH	(1<<2);	/* call is on a fresh "luaV_execute" frame */
+constexpr auto CIST_HOOKED	(1<<3);	/* call is running a debug hook */
+constexpr auto CIST_YPCALL	(1<<4);	/* doing a yieldable protected call */
+constexpr auto CIST_TAIL	(1<<5);	/* call was tail called */
+constexpr auto CIST_HOOKYIELD	(1<<6);	/* last hook called yielded */
+constexpr auto CIST_FIN	(1<<7);	/* function "called" a finalizer */
+constexpr auto CIST_TRAN	(1<<8);	/* 'ci' has transfer information */
+constexpr auto CIST_CLSRET	(1<<9);  /* function is closing tbc variables */
 /* Bits 10-12 are used for CIST_RECST (see below) */
-#define CIST_RECST	10
+constexpr auto CIST_RECST =	10;
 #if defined(LUA_COMPAT_LT_LE)
 #define CIST_LEQ	(1<<13)  /* using __lt for __le */
 #endif
