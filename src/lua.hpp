@@ -499,11 +499,11 @@ LUA_API void (lua_closeslot)(lua_State *L, int idx);
 /*
 ** Event codes
 */
-#define LUA_HOOKCALL	0
-#define LUA_HOOKRET	1
-#define LUA_HOOKLINE	2
-#define LUA_HOOKCOUNT	3
-#define LUA_HOOKTAILCALL 4
+constexpr auto LUA_HOOKCALL =	0;
+constexpr auto LUA_HOOKRET =	1;
+constexpr auto LUA_HOOKLINE =	2;
+constexpr auto LUA_HOOKCOUNT =	3;
+constexpr auto LUA_HOOKTAILCALL = 4;
 
 
 /*

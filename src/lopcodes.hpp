@@ -35,27 +35,27 @@ enum OpMode {iABC, iABx, iAsBx, iAx, isJ};  /* basic instruction formats */
 /*
 ** size and position of opcode arguments.
 */
-#define SIZE_C		8
-#define SIZE_B		8
-#define SIZE_Bx		(SIZE_C + SIZE_B + 1)
-#define SIZE_A		8
-#define SIZE_Ax		(SIZE_Bx + SIZE_A)
-#define SIZE_sJ		(SIZE_Bx + SIZE_A)
+constexpr auto SIZE_C =		8;
+constexpr auto SIZE_B =		8;
+constexpr auto SIZE_Bx =		(SIZE_C + SIZE_B + 1);
+constexpr auto SIZE_A =		8;
+constexpr auto SIZE_Ax =		(SIZE_Bx + SIZE_A);
+constexpr auto SIZE_sJ =		(SIZE_Bx + SIZE_A);
 
-#define SIZE_OP		7
+constexpr auto SIZE_OP =		7;
 
-#define POS_OP		0
+constexpr auto POS_OP =		0;
 
-#define POS_A		(POS_OP + SIZE_OP)
-#define POS_k		(POS_A + SIZE_A)
-#define POS_B		(POS_k + 1)
-#define POS_C		(POS_B + SIZE_B)
+constexpr auto POS_A =		(POS_OP + SIZE_OP);
+constexpr auto POS_k =		(POS_A + SIZE_A);
+constexpr auto POS_B =		(POS_k + 1);
+constexpr auto POS_C =		(POS_B + SIZE_B);
 
-#define POS_Bx		POS_k
+constexpr auto POS_Bx =		POS_k;
 
-#define POS_Ax		POS_A
+constexpr auto POS_Ax =		POS_A;
 
-#define POS_sJ		POS_A
+constexpr auto POS_sJ =		POS_A;
 
 
 /*
