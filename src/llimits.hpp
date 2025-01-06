@@ -91,7 +91,6 @@ typedef signed char ls_byte;
 #define point2uint(p)	((unsigned int)((L_P2I)(p) & UINT_MAX))
 
 
-
 /* types of 'usual argument conversions' for lua_Number and lua_Integer */
 typedef LUAI_UACNUMBER l_uacNumber;
 typedef LUAI_UACINT l_uacInt;
@@ -143,7 +142,15 @@ typedef LUAI_UACINT l_uacInt;
 #define cast_byte(i)	cast(lu_byte, (i))
 #define cast_uchar(i)	cast(unsigned char, (i))
 #define cast_char(i)	cast(char, (i))
-#define cast_charp(i)	cast(char *, (i))
+
+// #define cast_charp(i)	cast(char *, (i))
+template<typename T>
+char* cast_charp(T *i)
+{
+	return cast(char*, i);
+}
+
+
 #define cast_sizet(i)	cast(size_t, (i))
 
 
@@ -203,7 +210,6 @@ typedef unsigned long l_uint32;
 #endif
 
 typedef l_uint32 Instruction;
-
 
 
 /*
@@ -303,7 +309,6 @@ typedef l_uint32 Instruction;
 #endif
 
 
-
 /*
 ** The luai_num* macros define the primitive operations over numbers.
 */
@@ -354,9 +359,6 @@ typedef l_uint32 Instruction;
 #define luai_numge(a,b)         ((a)>=(b))
 #define luai_numisnan(a)        (!luai_numeq((a), (a)))
 #endif
-
-
-
 
 
 /*
