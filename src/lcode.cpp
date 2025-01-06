@@ -35,7 +35,12 @@
 constexpr auto MAXREGS =		255;
 
 
-#define hasjumps(e)	((e)->t != (e)->f)
+static bool hasjumps (const expdesc* e)
+{
+	return e->t != e->f;
+}
+
+// #define hasjumps(e)	((e)->t != (e)->f)
 
 
 static int codesJ(FuncState *fs, OpCode o, int sj, int k);
