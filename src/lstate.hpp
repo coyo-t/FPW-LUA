@@ -99,13 +99,6 @@ typedef struct CallInfo CallInfo;
 */
 
 
-/* true if this thread does not have non-yieldable calls in the stack */
-bool yieldable(lua_State* L);
-
-/* real number of C calls */
-int getCcalls(lua_State* L);
-
-
 /* Increment the number of non-yieldable calls */
 void incnny(lua_State* L);
 
@@ -137,17 +130,14 @@ struct lua_longjmp; /* defined in ldo.c */
 ** there will be a stack check soon after the push. Function frames
 ** never use this extra space, so it does not need to be kept clean.
 */
-#define EXTRA_STACK   5
+constexpr auto EXTRA_STACK =   5;
 
 
-#define BASIC_STACK_SIZE        (2*LUA_MINSTACK)
-
-#define stacksize(th)	cast_int((th)->stack_last.p - (th)->stack.p)
-
+constexpr auto BASIC_STACK_SIZE =        (2*LUA_MINSTACK);
 
 /* kinds of Garbage Collection */
-#define KGC_INC		0	/* incremental gc */
-#define KGC_GEN		1	/* generational gc */
+constexpr auto KGC_INC =		0;	/* incremental gc */
+constexpr auto KGC_GEN =		1;	/* generational gc */
 
 
 typedef struct stringtable
@@ -228,11 +218,10 @@ constexpr auto CIST_HOOKYIELD	(1<<6);	/* last hook called yielded */
 constexpr auto CIST_FIN	(1<<7);	/* function "called" a finalizer */
 constexpr auto CIST_TRAN	(1<<8);	/* 'ci' has transfer information */
 constexpr auto CIST_CLSRET	(1<<9);  /* function is closing tbc variables */
+
 /* Bits 10-12 are used for CIST_RECST (see below) */
 constexpr auto CIST_RECST =	10;
-#if defined(LUA_COMPAT_LT_LE)
-#define CIST_LEQ	(1<<13)  /* using __lt for __le */
-#endif
+
 
 
 /*
@@ -342,6 +331,23 @@ struct lua_State
 	int basehookcount;
 	int hookcount;
 	volatile l_signalT hookmask;
+
+	int stacksize ()
+	{
+		return static_cast<int>(this->stack_last.p - this->stack.p);
+	}
+
+	/* true if this thread does not have non-yieldable calls in the stack */
+	bool yieldable ()
+	{
+		return ((this->nCcalls & 0xffff0000) == 0);
+	}
+
+	/* real number of C calls */
+	int getCcalls ()
+	{
+		return (this->nCcalls & 0xffff);
+	}
 };
 
 

@@ -1130,7 +1130,7 @@ LUA_API void lua_callk(lua_State *L, int nargs, int nresults,
 	api_check(L, L->status == LUA_OK, "cannot do calls on non-normal thread");
 	checkresults(L, nargs, nresults);
 	func = L->top.p - (nargs + 1);
-	if (k != NULL && yieldable(L))
+	if (k != NULL && L->yieldable())
 	{
 		/* need to prepare continuation? */
 		L->ci->u.c.k = k; /* save continuation */
@@ -1183,7 +1183,7 @@ LUA_API int lua_pcallk(lua_State *L, int nargs, int nresults, int errfunc,
 		func = savestack(L, o);
 	}
 	c.func = L->top.p - (nargs + 1); /* function to be called */
-	if (k == NULL || !yieldable(L))
+	if (k == NULL || !L->yieldable())
 	{
 		/* no continuation or no yieldable? */
 		c.nresults = nresults; /* do a 'conventional' protected call */

@@ -214,7 +214,7 @@ constexpr auto ERRORSTACKSIZE =	LUAI_MAXSTACK + 200;
 */
 int luaD_reallocstack(lua_State *L, int newsize, int raiseerror)
 {
-	int oldsize = stacksize(L);
+	int oldsize = L->stacksize();
 	StkId newstack;
 	int oldgcstop = G(L)->gcstopem;
 	lua_assert(newsize <= LUAI_MAXSTACK || newsize == ERRORSTACKSIZE);
@@ -246,7 +246,7 @@ int luaD_reallocstack(lua_State *L, int newsize, int raiseerror)
 */
 int luaD_growstack(lua_State *L, int n, int raiseerror)
 {
-	int size = stacksize(L);
+	int size = L->stacksize();
 	if (l_unlikely(size > LUAI_MAXSTACK))
 	{
 		/* if stack is larger than maximum, thread is already using the
@@ -314,7 +314,7 @@ void luaD_shrinkstack(lua_State *L)
 	int max = (inuse > LUAI_MAXSTACK / 3) ? LUAI_MAXSTACK : inuse * 3;
 	/* if thread is currently not handling a stack overflow and its
 		size is larger than maximum "reasonable" size, shrink it */
-	if (inuse <= LUAI_MAXSTACK && stacksize(L) > max)
+	if (inuse <= LUAI_MAXSTACK && L->stacksize() > max)
 	{
 		int nsize = (inuse > LUAI_MAXSTACK / 2) ? LUAI_MAXSTACK : inuse * 2;
 		luaD_reallocstack(L, nsize, 0); /* ok if that fails */
@@ -674,7 +674,7 @@ l_sinline void ccall(lua_State *L, StkId func, int nResults, l_uint32 inc)
 {
 	CallInfo *ci;
 	L->nCcalls += inc;
-	if (l_unlikely(getCcalls(L) >= LUAI_MAXCCALLS))
+	if (l_unlikely(L->getCcalls() >= LUAI_MAXCCALLS))
 	{
 		checkstackp(L, 0, func); /* free any use of EXTRA_STACK */
 		luaE_checkcstack(L);
@@ -925,8 +925,8 @@ LUA_API int lua_resume(lua_State *L, lua_State *from, int nargs,
 	}
 	else if (L->status != LUA_YIELD) /* ended with errors? */
 		return resume_error(L, "cannot resume dead coroutine", nargs);
-	L->nCcalls = (from) ? getCcalls(from) : 0;
-	if (getCcalls(L) >= LUAI_MAXCCALLS)
+	L->nCcalls = (from) ? from->getCcalls() : 0;
+	if (L->getCcalls() >= LUAI_MAXCCALLS)
 		return resume_error(L, "C stack overflow", nargs);
 	L->nCcalls++;
 	luai_userstateresume(L, nargs);
@@ -953,7 +953,7 @@ LUA_API int lua_resume(lua_State *L, lua_State *from, int nargs,
 
 LUA_API int lua_isyieldable(lua_State *L)
 {
-	return yieldable(L);
+	return L->yieldable();
 }
 
 
@@ -965,7 +965,7 @@ LUA_API int lua_yieldk(lua_State *L, int nresults, lua_KContext ctx,
 	lua_lock(L);
 	ci = L->ci;
 	api_checknelems(L, nresults);
-	if (l_unlikely(!yieldable(L)))
+	if (l_unlikely(!L->yieldable()))
 	{
 		if (L != G(L)->mainthread)
 			luaG_runerror(L, "attempt to yield across a C-call boundary");

@@ -719,7 +719,7 @@ static int traversethread(global_State *g, lua_State *th)
 			g->twups = th;
 		}
 	}
-	return 1 + stacksize(th);
+	return 1 + th->stacksize();
 }
 
 

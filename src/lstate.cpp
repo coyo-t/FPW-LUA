@@ -83,16 +83,6 @@ static unsigned int luai_makeseed(lua_State *L)
 #endif
 
 
-bool yieldable(lua_State *L)
-{
-	return (((L)->nCcalls & 0xffff0000) == 0);
-}
-
-int getCcalls(lua_State *L)
-{
-	return ((L)->nCcalls & 0xffff);
-}
-
 void incnny(lua_State *L)
 {
 	((L)->nCcalls += 0x10000);
@@ -192,9 +182,9 @@ void luaE_shrinkCI(lua_State *L)
 */
 void luaE_checkcstack(lua_State *L)
 {
-	if (getCcalls(L) == LUAI_MAXCCALLS)
+	if (L->getCcalls() == LUAI_MAXCCALLS)
 		luaG_runerror(L, "C stack overflow");
-	else if (getCcalls(L) >= (LUAI_MAXCCALLS / 10 * 11))
+	else if (L->getCcalls() >= (LUAI_MAXCCALLS / 10 * 11))
 		luaD_throw(L, LUA_ERRERR); /* error while handling stack error */
 }
 
@@ -202,7 +192,7 @@ void luaE_checkcstack(lua_State *L)
 LUAI_FUNC void luaE_incCstack(lua_State *L)
 {
 	L->nCcalls++;
-	if (l_unlikely(getCcalls(L) >= LUAI_MAXCCALLS))
+	if (l_unlikely(L->getCcalls() >= LUAI_MAXCCALLS))
 		luaE_checkcstack(L);
 }
 
@@ -239,7 +229,7 @@ static void freestack(lua_State *L)
 	L->ci = &L->base_ci; /* free the entire 'ci' list */
 	freeCI(L);
 	lua_assert(L->nci == 0);
-	luaM_freearray(L, L->stack.p, stacksize(L) + EXTRA_STACK); /* free stack */
+	luaM_freearray(L, L->stack.p, L->stacksize() + EXTRA_STACK); /* free stack */
 }
 
 
@@ -385,7 +375,7 @@ LUA_API int lua_closethread(lua_State *L, lua_State *from)
 {
 	int status;
 	lua_lock(L);
-	L->nCcalls = (from) ? getCcalls(from) : 0;
+	L->nCcalls = (from) ? from->getCcalls() : 0;
 	status = luaE_resetthread(L, L->status);
 	lua_unlock(L);
 	return status;
