@@ -11,7 +11,7 @@
 extern "C" {
 
 
-#include "lua.h"
+#include "lua.hpp"
 
 
 /* version suffix for environment variable names */

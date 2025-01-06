@@ -15,7 +15,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-#include "lua.h"
+#include "lua.hpp"
 
 #include "lcode.hpp"
 #include "ldebug.hpp"

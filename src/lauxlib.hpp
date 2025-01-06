@@ -15,7 +15,7 @@ extern "C" {
 #include <stdio.h>
 
 #include "luaconf.hpp"
-#include "lua.h"
+#include "lua.hpp"
 
 
 /* global table */

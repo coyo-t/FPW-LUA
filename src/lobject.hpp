@@ -13,7 +13,7 @@
 
 
 #include "llimits.hpp"
-#include "lua.h"
+#include "lua.hpp"
 
 
 /*

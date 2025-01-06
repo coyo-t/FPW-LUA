@@ -12,7 +12,7 @@
 
 #include <string.h>
 
-#include "lua.h"
+#include "lua.hpp"
 
 #include "ldebug.hpp"
 #include "ldo.hpp"

@@ -29,7 +29,7 @@
 
 #include <stddef.h>
 
-#include "lua.h"
+#include "lua.hpp"
 
 #include "lualib.hpp"
 #include "lauxlib.hpp"
