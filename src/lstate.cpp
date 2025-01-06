@@ -157,11 +157,8 @@ void luaE_shrinkCI(lua_State *L)
 		luaM_free(L, next); /* free next */
 		if (next2 == NULL)
 			break; /* no more elements */
-		else
-		{
-			next2->previous = ci;
-			ci = next2; /* continue */
-		}
+		next2->previous = ci;
+		ci = next2; /* continue */
 	}
 }
 

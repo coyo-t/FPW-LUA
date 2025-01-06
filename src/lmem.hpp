@@ -67,16 +67,32 @@ size_t luaM_limitN (size_t n)
 }
 
 
+//
+
 /*
 ** Arrays of chars do not need any test
 */
-#define luaM_reallocvchar(L,b,on,n)  \
-  cast_charp(luaM_saferealloc_(L, (b), (on)*sizeof(char), (n)*sizeof(char)))
+#define luaM_reallocvchar(L,b,on,n) cast_charp(luaM_saferealloc_(L, (b), (on)*sizeof(char), (n)*sizeof(char)))
 
-#define luaM_freemem(L, b, s)	luaM_free_(L, (b), (s))
-#define luaM_free(L, b)		luaM_free_(L, (b), sizeof(*(b)))
+
+// #define luaM_freemem(L, b, s)	luaM_free_(L, (b), (s))
+template<typename T>
+void luaM_freemem (lua_State* L, T* b, size_t s)
+{
+	luaM_free_(L, b, s);
+}
+
+
+// #define luaM_free(L, b)		luaM_free_(L, (b), sizeof(*(b)))
+template<typename T>
+void luaM_free (lua_State* L, T* b)
+{
+	luaM_free_(L, b, sizeof(*b));
+}
+
 #define luaM_freearray(L, b, n)   luaM_free_(L, (b), (n)*sizeof(*(b)))
 
+//
 
 //
 // #define luaM_newmem(L,t)		cast(t*, luaM_malloc_(L, sizeof(t), 0))
