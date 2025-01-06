@@ -44,7 +44,7 @@ void luaZ_resetbuffer (Mbuffer* buff);
 template<typename N>
 void luaZ_resizebuffer (lua_State* L, Mbuffer* buff, N size)
 {
-	buff->buffer = luaM_reallocvchar(
+	buff->buffer = luaM::reallocvchar(
 		L,
 		(buff)->buffer,
 		(buff)->buffsize,

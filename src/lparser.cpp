@@ -190,7 +190,7 @@ static int registerlocalvar(LexState *ls, FuncState *fs, TString *varname)
 {
 	Proto *f = fs->f;
 	int oldsize = f->sizelocvars;
-	f->locvars = luaM_growvector(
+	f->locvars = luaM::growvector(
 		ls->L,
 		f->locvars,
 		fs->ndebugvars,
@@ -218,7 +218,7 @@ static int new_localvar(LexState *ls, TString *name)
 	Dyndata *dyd = ls->dyd;
 	checklimit(fs, dyd->actvar.n + 1 - fs->firstlocal,
 					MAXVARS, "local variables");
-	dyd->actvar.arr = luaM_growvector(
+	dyd->actvar.arr = luaM::growvector(
 		L,
 		dyd->actvar.arr,
 		dyd->actvar.n + 1,
@@ -396,7 +396,7 @@ static Upvaldesc *allocupvalue(FuncState *fs)
 	Proto *f = fs->f;
 	int oldsize = f->sizeupvalues;
 	checklimit(fs, fs->nups + 1, MAXUPVAL, "upvalues");
-	f->upvalues = luaM_growvector<Upvaldesc>(fs->ls->L, f->upvalues, fs->nups, &f->sizeupvalues, MAXUPVAL, "upvalues");
+	f->upvalues = luaM::growvector<Upvaldesc>(fs->ls->L, f->upvalues, fs->nups, &f->sizeupvalues, MAXUPVAL, "upvalues");
 	while (oldsize < f->sizeupvalues)
 		f->upvalues[oldsize++].name = NULL;
 	return &f->upvalues[fs->nups++];
@@ -631,7 +631,7 @@ static int newlabelentry(LexState *ls, Labellist *l, TString *name,
 								int line, int pc)
 {
 	int n = l->n;
-	l->arr = luaM_growvector<Labeldesc>(ls->L, l->arr, n, &l->size, SHRT_MAX, "labels/gotos");
+	l->arr = luaM::growvector<Labeldesc>(ls->L, l->arr, n, &l->size, SHRT_MAX, "labels/gotos");
 	l->arr[n].name = name;
 	l->arr[n].line = line;
 	l->arr[n].nactvar = ls->fs->nactvar;
@@ -792,7 +792,7 @@ static Proto *addprototype(LexState *ls)
 	if (fs->np >= f->sizep)
 	{
 		int oldsize = f->sizep;
-		f->p = luaM_growvector<Proto*>(L, f->p, fs->np, &f->sizep, MAXARG_Bx, "functions");
+		f->p = luaM::growvector<Proto*>(L, f->p, fs->np, &f->sizep, MAXARG_Bx, "functions");
 		while (oldsize < f->sizep)
 			f->p[oldsize++] = NULL;
 	}
@@ -854,13 +854,13 @@ static void close_func(LexState *ls)
 	leaveblock(fs);
 	lua_assert(fs->bl == NULL);
 	luaK_finish(fs);
-	f->code = luaM_shrinkvector<Instruction>(L, f->code, &f->sizecode, fs->pc);
-	f->lineinfo = luaM_shrinkvector<ls_byte>(L, f->lineinfo, &f->sizelineinfo, fs->pc);
-	f->abslineinfo = luaM_shrinkvector<AbsLineInfo>(L, f->abslineinfo, &f->sizeabslineinfo, fs->nabslineinfo);
-	f->k = luaM_shrinkvector<TValue>(L, f->k, &f->sizek, fs->nk);
-	f->p = luaM_shrinkvector<Proto*>(L, f->p, &f->sizep, fs->np);
-	f->locvars = luaM_shrinkvector<LocVar>(L, f->locvars, &f->sizelocvars, fs->ndebugvars);
-	f->upvalues = luaM_shrinkvector<Upvaldesc>(L, f->upvalues, &f->sizeupvalues, fs->nups);
+	f->code = luaM::shrinkvector<Instruction>(L, f->code, &f->sizecode, fs->pc);
+	f->lineinfo = luaM::shrinkvector<ls_byte>(L, f->lineinfo, &f->sizelineinfo, fs->pc);
+	f->abslineinfo = luaM::shrinkvector<AbsLineInfo>(L, f->abslineinfo, &f->sizeabslineinfo, fs->nabslineinfo);
+	f->k = luaM::shrinkvector<TValue>(L, f->k, &f->sizek, fs->nk);
+	f->p = luaM::shrinkvector<Proto*>(L, f->p, &f->sizep, fs->np);
+	f->locvars = luaM::shrinkvector<LocVar>(L, f->locvars, &f->sizelocvars, fs->ndebugvars);
+	f->upvalues = luaM::shrinkvector<Upvaldesc>(L, f->upvalues, &f->sizeupvalues, fs->nups);
 	ls->fs = fs->prev;
 	luaC_checkGC(L);
 }

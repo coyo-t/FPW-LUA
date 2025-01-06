@@ -274,7 +274,7 @@ void luaC_fix(lua_State *L, GCObject *o)
 GCObject *luaC_newobjdt(lua_State *L, int tt, size_t sz, size_t offset)
 {
 	global_State *g = G(L);
-	char *p = luaM_newobject<char>(L, novariant(tt), sz);
+	char *p = luaM::newobject<char>(L, novariant(tt), sz);
 	GCObject *o = cast(GCObject *, p + offset);
 	o->marked = luaC_white(g);
 	o->tt = tt;
@@ -852,7 +852,7 @@ static void freeupval(lua_State *L, UpVal *uv)
 {
 	if (upisopen(uv))
 		luaF_unlinkupval(uv);
-	luaM_free(L, uv);
+	luaM::free(L, uv);
 }
 
 
@@ -868,12 +868,12 @@ static void freeobj(lua_State *L, GCObject *o)
 			break;
 		case LUA_VLCL: {
 			LClosure *cl = gco2lcl(o);
-			luaM_freemem(L, cl, sizeLclosure(cl->nupvalues));
+			luaM::freemem(L, cl, sizeLclosure(cl->nupvalues));
 			break;
 		}
 		case LUA_VCCL: {
 			CClosure *cl = gco2ccl(o);
-			luaM_freemem(L, cl, sizeCclosure(cl->nupvalues));
+			luaM::freemem(L, cl, sizeCclosure(cl->nupvalues));
 			break;
 		}
 		case LUA_VTABLE:
@@ -884,18 +884,18 @@ static void freeobj(lua_State *L, GCObject *o)
 			break;
 		case LUA_VUSERDATA: {
 			Udata *u = gco2u(o);
-			luaM_freemem(L, o, sizeudata(u->nuvalue, u->len));
+			luaM::freemem(L, o, sizeudata(u->nuvalue, u->len));
 			break;
 		}
 		case LUA_VSHRSTR: {
 			TString *ts = gco2ts(o);
 			luaS_remove(L, ts); /* remove it from hash table */
-			luaM_freemem(L, ts, sizelstring(ts->shrlen));
+			luaM::freemem(L, ts, sizelstring(ts->shrlen));
 			break;
 		}
 		case LUA_VLNGSTR: {
 			TString *ts = gco2ts(o);
-			luaM_freemem(L, ts, sizelstring(ts->u.lnglen));
+			luaM::freemem(L, ts, sizelstring(ts->u.lnglen));
 			break;
 		}
 		default: lua_assert(0);

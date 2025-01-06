@@ -220,7 +220,7 @@ int luaD_reallocstack(lua_State *L, int newsize, int raiseerror)
 	lua_assert(newsize <= LUAI_MAXSTACK || newsize == ERRORSTACKSIZE);
 	relstack(L); /* change pointers to offsets */
 	G(L)->gcstopem = 1; /* stop emergency collection */
-	newstack = luaM_reallocvector(L, L->stack.p, oldsize + EXTRA_STACK,
+	newstack = luaM::reallocvector(L, L->stack.p, oldsize + EXTRA_STACK,
 											newsize + EXTRA_STACK);
 	G(L)->gcstopem = oldgcstop; /* restore emergency collection */
 	if (l_unlikely(newstack == NULL))
@@ -1131,9 +1131,9 @@ int luaD_protectedparser(lua_State *L, ZIO *z, const char *name,
 	luaZ_initbuffer(L, &p.buff);
 	status = luaD_pcall(L, f_parser, &p, savestack(L, L->top.p), L->errfunc);
 	luaZ_freebuffer(L, &p.buff);
-	luaM_freearray(L, p.dyd.actvar.arr, p.dyd.actvar.size);
-	luaM_freearray(L, p.dyd.gt.arr, p.dyd.gt.size);
-	luaM_freearray(L, p.dyd.label.arr, p.dyd.label.size);
+	luaM::freearray(L, p.dyd.actvar.arr, p.dyd.actvar.size);
+	luaM::freearray(L, p.dyd.gt.arr, p.dyd.gt.size);
+	luaM::freearray(L, p.dyd.label.arr, p.dyd.label.size);
 	L->decnny();
 	return status;
 }

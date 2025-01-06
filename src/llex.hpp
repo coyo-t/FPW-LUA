@@ -44,7 +44,7 @@ enum RESERVED
 };
 
 /* number of reserved words */
-constexpr auto NUM_RESERVED = static_cast<int>(TK_WHILE-FIRST_RESERVED + 1);
+constexpr auto NUM_RESERVED = TK_WHILE-FIRST_RESERVED + 1;
 
 
 typedef union

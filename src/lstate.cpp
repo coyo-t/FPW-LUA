@@ -110,7 +110,7 @@ CallInfo *luaE_extendCI(lua_State *L)
 {
 	CallInfo *ci;
 	lua_assert(L->ci->next == NULL);
-	ci = luaM_newmem<CallInfo>(L);
+	ci = luaM::newmem<CallInfo>(L);
 	lua_assert(L->ci->next == NULL);
 	L->ci->next = ci;
 	ci->previous = L->ci;
@@ -132,7 +132,7 @@ static void freeCI(lua_State *L)
 	while ((ci = next) != NULL)
 	{
 		next = ci->next;
-		luaM_free(L, ci);
+		luaM::free(L, ci);
 		L->nci--;
 	}
 }
@@ -154,7 +154,7 @@ void luaE_shrinkCI(lua_State *L)
 		CallInfo *next2 = next->next; /* next's next */
 		ci->next = next2; /* remove next from the list */
 		L->nci--;
-		luaM_free(L, next); /* free next */
+		luaM::free(L, next); /* free next */
 		if (next2 == NULL)
 			break; /* no more elements */
 		next2->previous = ci;
@@ -192,7 +192,7 @@ static void stack_init(lua_State *L1, lua_State *L)
 	int i;
 	CallInfo *ci;
 	/* initialize stack array */
-	L1->stack.p = luaM_newvector<StackValue>(L, BASIC_STACK_SIZE + EXTRA_STACK);
+	L1->stack.p = luaM::newvector<StackValue>(L, BASIC_STACK_SIZE + EXTRA_STACK);
 	L1->tbclist.p = L1->stack.p;
 	for (i = 0; i < BASIC_STACK_SIZE + EXTRA_STACK; i++)
 		setnilvalue(s2v(L1->stack.p + i)); /* erase new stack */
@@ -219,7 +219,7 @@ static void freestack(lua_State *L)
 	L->ci = &L->base_ci; /* free the entire 'ci' list */
 	freeCI(L);
 	lua_assert(L->nci == 0);
-	luaM_freearray(L, L->stack.p, L->stacksize() + EXTRA_STACK); /* free stack */
+	luaM::freearray(L, L->stack.p, L->stacksize() + EXTRA_STACK); /* free stack */
 }
 
 
@@ -295,7 +295,7 @@ static void close_state(lua_State *L)
 		luaC_freeallobjects(L); /* collect all objects */
 		luai_userstateclose(L);
 	}
-	luaM_freearray(L, G(L)->strt.hash, G(L)->strt.size);
+	luaM::freearray(L, G(L)->strt.hash, G(L)->strt.size);
 	freestack(L);
 	lua_assert(gettotalbytes(g) == sizeof(LG));
 	(*g->frealloc)(g->ud, fromstate(L), sizeof(LG), 0); /* free main block */
@@ -337,7 +337,7 @@ void luaE_freethread(lua_State *L, lua_State *L1)
 	lua_assert(L1->openupval == NULL);
 	luai_userstatefree(L, L1);
 	freestack(L1);
-	luaM_free(L, l);
+	luaM::free(L, l);
 }
 
 

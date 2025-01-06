@@ -25,7 +25,7 @@
 /*
 ** Maximum size for string table.
 */
-#define MAXSTRTB	cast_int(luaM_limitN<TString*>(MAX_INT))
+#define MAXSTRTB	cast_int(luaM::limitN<TString*>(MAX_INT))
 
 
 /*
@@ -98,7 +98,7 @@ void luaS_resize(lua_State *L, int nsize)
 	int osize = tb->size;
 	if (nsize < osize) /* shrinking table? */
 		tablerehash(tb->hash, osize, nsize); /* depopulate shrinking part */
-	TString **newvect = luaM_reallocvector(L, tb->hash, osize, nsize);
+	TString **newvect = luaM::reallocvector(L, tb->hash, osize, nsize);
 	if (l_unlikely(newvect == NULL))
 	{
 		/* reallocation failed? */
@@ -141,7 +141,7 @@ void luaS_init(lua_State *L)
 	global_State *g = G(L);
 	int i, j;
 	stringtable *tb = &G(L)->strt;
-	tb->hash = luaM_newvector<TString*>(L, MINSTRTABSIZE);
+	tb->hash = luaM::newvector<TString*>(L, MINSTRTABSIZE);
 	tablerehash(tb->hash, 0, MINSTRTABSIZE); /* clear array */
 	tb->size = MINSTRTABSIZE;
 	/* pre-create memory-error message */
@@ -254,7 +254,7 @@ TString *luaS_newlstr(lua_State *L, const char *str, size_t l)
 	{
 		TString *ts;
 		if (l_unlikely(l * sizeof(char) >= (MAX_SIZE - sizeof(TString))))
-			luaM_toobig(L);
+			luaM::toobig(L);
 		ts = luaS_createlngstrobj(L, l);
 		memcpy(getlngstr(ts), str, l * sizeof(char));
 		return ts;
@@ -293,7 +293,7 @@ Udata *luaS_newudata(lua_State *L, size_t s, int nuvalue)
 	int i;
 	GCObject *o;
 	if (l_unlikely(s > MAX_SIZE - udatamemoffset(nuvalue)))
-		luaM_toobig(L);
+		luaM::toobig(L);
 	o = luaC_newobj(L, LUA_VUSERDATA, sizeudata(nuvalue, s));
 	u = gco2u(o);
 	u->len = s;

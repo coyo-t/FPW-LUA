@@ -299,7 +299,7 @@ typedef struct GCObject
 
 
 /* Bit mark for collectable types */
-#define BIT_ISCOLLECTABLE	(1 << 6)
+constexpr auto BIT_ISCOLLECTABLE =	(1 << 6);
 
 #define iscollectable(o)	(rawtt(o) & BIT_ISCOLLECTABLE)
 

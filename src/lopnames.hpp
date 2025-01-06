@@ -7,8 +7,6 @@
 #ifndef lopnames_h
 #define lopnames_h
 
-#include <stddef.h>
-
 
 /* ORDER OP */
 

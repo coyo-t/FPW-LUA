@@ -51,7 +51,7 @@
 ** between 2^MAXABITS and the maximum size that, measured in bytes,
 ** fits in a 'size_t'.
 */
-#define MAXASIZE	luaM_limitN<TValue>(1u << MAXABITS)
+#define MAXASIZE	luaM::limitN<TValue>(1u << MAXABITS)
 
 /*
 ** MAXHBITS is the largest integer such that 2^MAXHBITS fits in a
@@ -65,7 +65,7 @@
 ** between 2^MAXHBITS and the maximum size such that, measured in bytes,
 ** it fits in a 'size_t'.
 */
-#define MAXHSIZE	luaM_limitN<Node>(1u << MAXHBITS)
+#define MAXHSIZE	luaM::limitN<Node>(1u << MAXHBITS)
 
 
 /*
@@ -398,7 +398,7 @@ int luaH_next(lua_State *L, Table *t, StkId key)
 static void freehash(lua_State *L, Table *t)
 {
 	if (!isdummy(t))
-		luaM_freearray(L, t->node, cast_sizet(sizenode(t)));
+		luaM::freearray(L, t->node, cast_sizet(sizenode(t)));
 }
 
 
@@ -534,7 +534,7 @@ static void setnodevector(lua_State *L, Table *t, unsigned int size)
 		if (lsize > MAXHBITS || (1u << lsize) > MAXHSIZE)
 			luaG_runerror(L, "table overflow");
 		size = twoto(lsize);
-		t->node = luaM_newvector<Node>(L, size);
+		t->node = luaM::newvector<Node>(L, size);
 		for (int i = 0; i < cast_int(size); i++)
 		{
 			Node *n = gnode(t, i);
@@ -622,7 +622,7 @@ void luaH_resize(lua_State *L, Table *t, unsigned int newasize,
 		exchangehashpart(t, &newt); /* and hash (in case of errors) */
 	}
 	/* allocate new array */
-	TValue *newarray = luaM_reallocvector(L, t->array, oldasize, newasize);
+	TValue *newarray = luaM::reallocvector(L, t->array, oldasize, newasize);
 	if (l_unlikely(newarray == NULL && newasize > 0))
 	{
 		/* allocation failed? */
@@ -694,8 +694,8 @@ Table *luaH_new(lua_State *L)
 void luaH_free(lua_State *L, Table *t)
 {
 	freehash(L, t);
-	luaM_freearray(L, t->array, luaH_realasize(t));
-	luaM_free(L, t);
+	luaM::freearray(L, t->array, luaH_realasize(t));
+	luaM::free(L, t);
 }
 
 
