@@ -1285,3 +1285,23 @@ int luaL_loadfile(lua_State *L, const char *f)
 {
 	return luaL_loadfilex(L,f,nullptr);
 }
+
+bool luaL_dofile(lua_State *L, const char * fn)
+{
+	return (luaL_loadfile(L, fn) || lua_pcall(L, 0, LUA_MULTRET, 0));
+}
+
+const char * luaL_typename(lua_State *L, int i)
+{
+	return lua_typename(L, lua_type(L,(i)));
+}
+
+bool luaL_dostring(lua_State *L, const char *s)
+{
+	return (luaL_loadstring(L, s) || lua_pcall(L, 0, LUA_MULTRET, 0));
+}
+
+int luaL_getmetatable(lua_State *L, const char* n)
+{
+	return (lua_getfield(L, LUA_REGISTRYINDEX, (n)));
+}

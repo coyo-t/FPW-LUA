@@ -24,7 +24,7 @@ typedef struct luaL_Buffer luaL_Buffer;
 
 
 /* extra error code for 'luaL_loadfilex' */
-#define LUA_ERRFILE     (LUA_ERRERR+1)
+constexpr auto LUA_ERRFILE =     (LUA_ERRERR+1);
 
 
 /* key, in the registry, for table of loaded modules */
@@ -145,8 +145,7 @@ LUALIB_API void (luaL_requiref)(lua_State *L, const char *modname,
 */
 
 
-#define luaL_newlibtable(L,l)	\
-  lua_createtable(L, 0, sizeof(l)/sizeof((l)[0]) - 1)
+#define luaL_newlibtable(L,l)	lua_createtable(L, 0, sizeof(l)/sizeof((l)[0]) - 1)
 
 #define luaL_newlib(L,l)  \
   (luaL_checkversion(L), luaL_newlibtable(L,l), luaL_setfuncs(L,l,0))
@@ -160,15 +159,12 @@ LUALIB_API void (luaL_requiref)(lua_State *L, const char *modname,
 #define luaL_checkstring(L,n)	(luaL_checklstring(L, (n), NULL))
 #define luaL_optstring(L,n,d)	(luaL_optlstring(L, (n), (d), NULL))
 
-#define luaL_typename(L,i)	lua_typename(L, lua_type(L,(i)))
 
-#define luaL_dofile(L, fn) \
-	(luaL_loadfile(L, fn) || lua_pcall(L, 0, LUA_MULTRET, 0))
+LUALIB_API const char * luaL_typename (lua_State* L, int i);
+LUALIB_API bool luaL_dofile (lua_State* L, const char * fn);
+LUALIB_API bool luaL_dostring(lua_State* L, const char* s);
 
-#define luaL_dostring(L, s) \
-	(luaL_loadstring(L, s) || lua_pcall(L, 0, LUA_MULTRET, 0))
-
-#define luaL_getmetatable(L,n)	(lua_getfield(L, LUA_REGISTRYINDEX, (n)))
+LUALIB_API int luaL_getmetatable(lua_State* L, const char* n);
 
 #define luaL_opt(L,f,n,d)	(lua_isnoneornil(L,(n)) ? (d) : f(L,(n)))
 
