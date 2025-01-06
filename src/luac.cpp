@@ -16,7 +16,7 @@
 #include <string.h>
 
 #include "lua.h"
-#include "lauxlib.h"
+#include "lauxlib.hpp"
 
 #include "ldebug.hpp"
 #include "lobject.hpp"

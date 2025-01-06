@@ -24,7 +24,7 @@
 
 #include "lua.h"
 
-#include "lauxlib.h"
+#include "lauxlib.hpp"
 
 
 #if !defined(MAX_SIZET)
