@@ -31,10 +31,10 @@ constexpr auto LUA_VERSION_RELEASE_NUM =		(LUA_VERSION_NUM * 100 + 7);
 
 
 /* mark for precompiled code ('<esc>Lua') */
-#define LUA_SIGNATURE	"\x1bLua"
+constexpr auto LUA_SIGNATURE =	"\x1bLua";
 
 /* option for multiple returns in 'lua_pcall' and 'lua_call' */
-#define LUA_MULTRET	(-1)
+constexpr auto LUA_MULTRET =	(-1);
 
 
 /*
@@ -42,17 +42,18 @@ constexpr auto LUA_VERSION_RELEASE_NUM =		(LUA_VERSION_NUM * 100 + 7);
 ** (-LUAI_MAXSTACK is the minimum valid index; we keep some free empty
 ** space after that to help overflow detection)
 */
-#define LUA_REGISTRYINDEX	(-LUAI_MAXSTACK - 1000)
-#define lua_upvalueindex(i)	(LUA_REGISTRYINDEX - (i))
+constexpr auto LUA_REGISTRYINDEX =	(-LUAI_MAXSTACK - 1000);
 
+// #define lua_upvalueindex(i)	(LUA_REGISTRYINDEX - (i))
+LUA_API int lua_upvalueindex (int i);
 
 /* thread status */
-#define LUA_OK		0
-#define LUA_YIELD	1
-#define LUA_ERRRUN	2
-#define LUA_ERRSYNTAX	3
-#define LUA_ERRMEM	4
-#define LUA_ERRERR	5
+constexpr auto LUA_OK =		0;
+constexpr auto LUA_YIELD =	1;
+constexpr auto LUA_ERRRUN =	2;
+constexpr auto LUA_ERRSYNTAX =	3;
+constexpr auto LUA_ERRMEM =	4;
+constexpr auto LUA_ERRERR =	5;
 
 
 typedef struct lua_State lua_State;
@@ -77,13 +78,13 @@ constexpr auto LUA_NUMTYPES =		9;
 
 
 /* minimum Lua stack available to a C function */
-#define LUA_MINSTACK	20
+constexpr auto LUA_MINSTACK =	20;
 
 
 /* predefined values in the registry */
-#define LUA_RIDX_MAINTHREAD	1
-#define LUA_RIDX_GLOBALS	2
-#define LUA_RIDX_LAST		LUA_RIDX_GLOBALS
+constexpr auto LUA_RIDX_MAINTHREAD =	1;
+constexpr auto LUA_RIDX_GLOBALS =	2;
+constexpr auto LUA_RIDX_LAST =		LUA_RIDX_GLOBALS;
 
 
 /* type of numbers in Lua */
@@ -237,26 +238,26 @@ LUA_API const void *(lua_topointer)(lua_State *L, int idx);
 ** Comparison and arithmetic functions
 */
 
-#define LUA_OPADD	0	/* ORDER TM, ORDER OP */
-#define LUA_OPSUB	1
-#define LUA_OPMUL	2
-#define LUA_OPMOD	3
-#define LUA_OPPOW	4
-#define LUA_OPDIV	5
-#define LUA_OPIDIV	6
-#define LUA_OPBAND	7
-#define LUA_OPBOR	8
-#define LUA_OPBXOR	9
-#define LUA_OPSHL	10
-#define LUA_OPSHR	11
-#define LUA_OPUNM	12
-#define LUA_OPBNOT	13
+constexpr auto LUA_OPADD =	0;	/* ORDER TM, ORDER OP */
+constexpr auto LUA_OPSUB =	1;
+constexpr auto LUA_OPMUL =	2;
+constexpr auto LUA_OPMOD =	3;
+constexpr auto LUA_OPPOW =	4;
+constexpr auto LUA_OPDIV =	5;
+constexpr auto LUA_OPIDIV =	6;
+constexpr auto LUA_OPBAND =	7;
+constexpr auto LUA_OPBOR =	8;
+constexpr auto LUA_OPBXOR =	9;
+constexpr auto LUA_OPSHL =	10;
+constexpr auto LUA_OPSHR =	11;
+constexpr auto LUA_OPUNM =	12;
+constexpr auto LUA_OPBNOT =	13;
 
 LUA_API void (lua_arith)(lua_State *L, int op);
 
-#define LUA_OPEQ	0
-#define LUA_OPLT	1
-#define LUA_OPLE	2
+constexpr auto LUA_OPEQ =	0;
+constexpr auto LUA_OPLT =	1;
+constexpr auto LUA_OPLE =	2;
 
 LUA_API int (lua_rawequal)(lua_State *L, int idx1, int idx2);
 
@@ -370,8 +371,7 @@ LUA_API int (lua_status)(lua_State *L);
 
 LUA_API int (lua_isyieldable)(lua_State *L);
 
-#define lua_yield(L,n)		lua_yieldk(L, (n), 0, NULL)
-
+LUA_API int lua_yield (lua_State* L, int nresults);
 
 /*
 ** Warning-related functions
@@ -385,17 +385,17 @@ LUA_API void (lua_warning)(lua_State *L, const char *msg, int tocont);
 ** garbage-collection function and options
 */
 
-#define LUA_GCSTOP		0
-#define LUA_GCRESTART		1
-#define LUA_GCCOLLECT		2
-#define LUA_GCCOUNT		3
-#define LUA_GCCOUNTB		4
-#define LUA_GCSTEP		5
-#define LUA_GCSETPAUSE		6
-#define LUA_GCSETSTEPMUL	7
-#define LUA_GCISRUNNING		9
-#define LUA_GCGEN		10
-#define LUA_GCINC		11
+constexpr auto LUA_GCSTOP =		0;
+constexpr auto LUA_GCRESTART =		1;
+constexpr auto LUA_GCCOLLECT =		2;
+constexpr auto LUA_GCCOUNT =		3;
+constexpr auto LUA_GCCOUNTB =		4;
+constexpr auto LUA_GCSTEP =		5;
+constexpr auto LUA_GCSETPAUSE =		6;
+constexpr auto LUA_GCSETSTEPMUL =	7;
+constexpr auto LUA_GCISRUNNING =		9;
+constexpr auto LUA_GCGEN =		10;
+constexpr auto LUA_GCINC =		11;
 
 LUA_API int (lua_gc)(lua_State *L, int what, ...);
 
@@ -429,7 +429,8 @@ LUA_API void (lua_closeslot)(lua_State *L, int idx);
 ** ===============================================================
 */
 
-#define lua_getextraspace(L)	((void *)((char *)(L) - LUA_EXTRASPACE))
+LUA_API void* lua_getextraspace (lua_State* L);
+
 
 #define lua_tonumber(L,i)	lua_tonumberx(L,(i),NULL)
 #define lua_tointeger(L,i)	lua_tointegerx(L,(i),NULL)
@@ -456,14 +457,12 @@ LUA_API void (lua_closeslot)(lua_State *L, int idx);
 #define lua_pushglobaltable(L)  \
 	((void)lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS))
 
-#define lua_tostring(L,i)	lua_tolstring(L, (i), NULL)
+// #define lua_tostring(L,i)	lua_tolstring(L, (i), NULL)
+LUA_API const char * lua_tostring(lua_State* L, int i);
 
-
-#define lua_insert(L,idx)	lua_rotate(L, (idx), 1)
-
-#define lua_remove(L,idx)	(lua_rotate(L, (idx), -1), lua_pop(L, 1))
-
-#define lua_replace(L,idx)	(lua_copy(L, -1, (idx)), lua_pop(L, 1))
+LUA_API void lua_insert (lua_State* L, int idx);
+LUA_API void lua_remove (lua_State* L, int idx);
+LUA_API void lua_replace (lua_State* L, int idx);
 
 /* }============================================================== */
 

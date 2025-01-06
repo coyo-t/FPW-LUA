@@ -9,7 +9,6 @@
 
 #include "lprefix.hpp"
 
-
 #include <limits.h>
 #include <stdarg.h>
 #include <string.h>
@@ -32,8 +31,8 @@
 
 
 const char lua_ident[] =
-		"$LuaVersion: " LUA_COPYRIGHT " $"
-		"$LuaAuthors: " LUA_AUTHORS " $";
+	"$LuaVersion: " LUA_COPYRIGHT " $"
+	"$LuaAuthors: " LUA_AUTHORS " $";
 
 
 /*
@@ -603,7 +602,7 @@ LUA_API const char *lua_pushlstring(lua_State *L, const char *s, size_t len)
 LUA_API const char *lua_pushstring(lua_State *L, const char *s)
 {
 	lua_lock(L);
-	if (s == NULL)
+	if (s == nullptr)
 		setnilvalue(s2v(L->top.p));
 	else
 	{

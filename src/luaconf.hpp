@@ -745,11 +745,7 @@
 ** space (and to reserve some numbers for pseudo-indices).
 ** (It must fit into max(size_t)/32 and max(int)/2.)
 */
-#if LUAI_IS32INT
-#define LUAI_MAXSTACK		1000000
-#else
-#define LUAI_MAXSTACK		15000
-#endif
+constexpr auto LUAI_MAXSTACK =		1000000;
 
 
 /*
@@ -757,7 +753,7 @@
 ** a Lua state with very fast access.
 ** CHANGE it if you need a different size.
 */
-#define LUA_EXTRASPACE		(sizeof(void *))
+constexpr auto LUA_EXTRASPACE =		(sizeof(void *));
 
 
 /*
