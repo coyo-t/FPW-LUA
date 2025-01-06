@@ -49,240 +49,240 @@ cmake_ninja_workdir = D$:/_projects/parallel2shit/c/LuaMod/cmake-build-debug/
 
 build cmake_object_order_depends_target_LuaMod: phony || .
 
-build CMakeFiles/LuaMod.dir/src/lapi.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lapi.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lapi.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/lapi.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lapi.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lapi.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/lauxlib.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lauxlib.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lauxlib.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/lauxlib.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lauxlib.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lauxlib.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/libs/lbaselib.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/libs/lbaselib.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\libs\lbaselib.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
-  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
-  OBJECT_DIR = CMakeFiles\LuaMod.dir
-  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src\libs
-
-build CMakeFiles/LuaMod.dir/src/lcode.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lcode.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lcode.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/lbaselib.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lbaselib.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lbaselib.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/libs/lcorolib.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/libs/lcorolib.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\libs\lcorolib.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
-  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
-  OBJECT_DIR = CMakeFiles\LuaMod.dir
-  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src\libs
-
-build CMakeFiles/LuaMod.dir/src/lctype.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lctype.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lctype.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/lcode.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lcode.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lcode.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/libs/ldblib.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/libs/ldblib.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\libs\ldblib.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
-  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
-  OBJECT_DIR = CMakeFiles\LuaMod.dir
-  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src\libs
-
-build CMakeFiles/LuaMod.dir/src/ldebug.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/ldebug.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\ldebug.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/lcorolib.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lcorolib.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lcorolib.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/ldo.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/ldo.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\ldo.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/lctype.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lctype.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lctype.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/ldump.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/ldump.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\ldump.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/ldblib.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/ldblib.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\ldblib.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/lfunc.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lfunc.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lfunc.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/ldebug.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/ldebug.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\ldebug.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/lgc.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lgc.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lgc.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/ldo.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/ldo.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\ldo.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/libs/linit.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/libs/linit.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\libs\linit.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
-  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
-  OBJECT_DIR = CMakeFiles\LuaMod.dir
-  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src\libs
-
-build CMakeFiles/LuaMod.dir/src/libs/liolib.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/libs/liolib.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\libs\liolib.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
-  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
-  OBJECT_DIR = CMakeFiles\LuaMod.dir
-  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src\libs
-
-build CMakeFiles/LuaMod.dir/src/llex.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/llex.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\llex.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/ldump.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/ldump.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\ldump.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/libs/lmathlib.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/libs/lmathlib.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\libs\lmathlib.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
-  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
-  OBJECT_DIR = CMakeFiles\LuaMod.dir
-  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src\libs
-
-build CMakeFiles/LuaMod.dir/src/lmem.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lmem.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lmem.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/lfunc.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lfunc.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lfunc.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/libs/loadlib.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/libs/loadlib.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\libs\loadlib.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
-  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
-  OBJECT_DIR = CMakeFiles\LuaMod.dir
-  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src\libs
-
-build CMakeFiles/LuaMod.dir/src/lobject.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lobject.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lobject.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/lgc.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lgc.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lgc.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/lopcodes.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lopcodes.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lopcodes.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/linit.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/linit.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\linit.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/libs/loslib.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/libs/loslib.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\libs\loslib.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
-  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
-  OBJECT_DIR = CMakeFiles\LuaMod.dir
-  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src\libs
-
-build CMakeFiles/LuaMod.dir/src/lparser.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lparser.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lparser.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/liolib.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/liolib.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\liolib.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/lstate.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lstate.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lstate.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/llex.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/llex.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\llex.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/lstring.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lstring.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lstring.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/lmathlib.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lmathlib.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lmathlib.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/libs/lstrlib.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/libs/lstrlib.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\libs\lstrlib.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
-  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
-  OBJECT_DIR = CMakeFiles\LuaMod.dir
-  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src\libs
-
-build CMakeFiles/LuaMod.dir/src/ltable.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/ltable.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\ltable.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/lmem.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lmem.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lmem.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/libs/ltablib.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/libs/ltablib.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\libs\ltablib.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
-  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
-  OBJECT_DIR = CMakeFiles\LuaMod.dir
-  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src\libs
-
-build CMakeFiles/LuaMod.dir/src/ltm.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/ltm.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\ltm.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/loadlib.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/loadlib.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\loadlib.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/luac.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/luac.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\luac.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/lobject.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lobject.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lobject.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/luacoyote.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/luacoyote.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\luacoyote.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/lopcodes.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lopcodes.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lopcodes.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/lundump.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lundump.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lundump.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/loslib.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/loslib.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\loslib.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/libs/lutf8lib.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/libs/lutf8lib.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\libs\lutf8lib.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
-  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
-  OBJECT_DIR = CMakeFiles\LuaMod.dir
-  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src\libs
-
-build CMakeFiles/LuaMod.dir/src/lvm.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lvm.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lvm.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/lparser.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lparser.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lparser.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
 
-build CMakeFiles/LuaMod.dir/src/lzio.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lzio.cpp || cmake_object_order_depends_target_LuaMod
-  DEP_FILE = CMakeFiles\LuaMod.dir\src\lzio.cpp.obj.d
-  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always
+build CMakeFiles/LuaMod.dir/src/lstate.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lstate.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lstate.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
+  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
+  OBJECT_DIR = CMakeFiles\LuaMod.dir
+  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
+
+build CMakeFiles/LuaMod.dir/src/lstring.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lstring.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lstring.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
+  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
+  OBJECT_DIR = CMakeFiles\LuaMod.dir
+  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
+
+build CMakeFiles/LuaMod.dir/src/lstrlib.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lstrlib.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lstrlib.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
+  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
+  OBJECT_DIR = CMakeFiles\LuaMod.dir
+  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
+
+build CMakeFiles/LuaMod.dir/src/ltable.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/ltable.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\ltable.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
+  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
+  OBJECT_DIR = CMakeFiles\LuaMod.dir
+  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
+
+build CMakeFiles/LuaMod.dir/src/ltablib.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/ltablib.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\ltablib.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
+  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
+  OBJECT_DIR = CMakeFiles\LuaMod.dir
+  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
+
+build CMakeFiles/LuaMod.dir/src/ltm.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/ltm.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\ltm.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
+  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
+  OBJECT_DIR = CMakeFiles\LuaMod.dir
+  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
+
+build CMakeFiles/LuaMod.dir/src/lua.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lua.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lua.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
+  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
+  OBJECT_DIR = CMakeFiles\LuaMod.dir
+  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
+
+build CMakeFiles/LuaMod.dir/src/luac.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/luac.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\luac.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
+  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
+  OBJECT_DIR = CMakeFiles\LuaMod.dir
+  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
+
+build CMakeFiles/LuaMod.dir/src/lundump.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lundump.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lundump.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
+  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
+  OBJECT_DIR = CMakeFiles\LuaMod.dir
+  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
+
+build CMakeFiles/LuaMod.dir/src/lutf8lib.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lutf8lib.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lutf8lib.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
+  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
+  OBJECT_DIR = CMakeFiles\LuaMod.dir
+  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
+
+build CMakeFiles/LuaMod.dir/src/lvm.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lvm.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lvm.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
+  INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
+  OBJECT_DIR = CMakeFiles\LuaMod.dir
+  OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
+
+build CMakeFiles/LuaMod.dir/src/lzio.c.obj: C_COMPILER__LuaMod_unscanned_Debug D$:/_projects/parallel2shit/c/LuaMod/src/lzio.c || cmake_object_order_depends_target_LuaMod
+  DEP_FILE = CMakeFiles\LuaMod.dir\src\lzio.c.obj.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -ID:/_projects/parallel2shit/c/LuaMod/src
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   OBJECT_FILE_DIR = CMakeFiles\LuaMod.dir\src
@@ -295,7 +295,7 @@ build CMakeFiles/LuaMod.dir/src/lzio.cpp.obj: CXX_COMPILER__LuaMod_unscanned_Deb
 #############################################
 # Link the executable LuaMod.exe
 
-build LuaMod.exe: CXX_EXECUTABLE_LINKER__LuaMod_Debug CMakeFiles/LuaMod.dir/src/lapi.cpp.obj CMakeFiles/LuaMod.dir/src/lauxlib.cpp.obj CMakeFiles/LuaMod.dir/src/libs/lbaselib.cpp.obj CMakeFiles/LuaMod.dir/src/lcode.cpp.obj CMakeFiles/LuaMod.dir/src/libs/lcorolib.cpp.obj CMakeFiles/LuaMod.dir/src/lctype.cpp.obj CMakeFiles/LuaMod.dir/src/libs/ldblib.cpp.obj CMakeFiles/LuaMod.dir/src/ldebug.cpp.obj CMakeFiles/LuaMod.dir/src/ldo.cpp.obj CMakeFiles/LuaMod.dir/src/ldump.cpp.obj CMakeFiles/LuaMod.dir/src/lfunc.cpp.obj CMakeFiles/LuaMod.dir/src/lgc.cpp.obj CMakeFiles/LuaMod.dir/src/libs/linit.cpp.obj CMakeFiles/LuaMod.dir/src/libs/liolib.cpp.obj CMakeFiles/LuaMod.dir/src/llex.cpp.obj CMakeFiles/LuaMod.dir/src/libs/lmathlib.cpp.obj CMakeFiles/LuaMod.dir/src/lmem.cpp.obj CMakeFiles/LuaMod.dir/src/libs/loadlib.cpp.obj CMakeFiles/LuaMod.dir/src/lobject.cpp.obj CMakeFiles/LuaMod.dir/src/lopcodes.cpp.obj CMakeFiles/LuaMod.dir/src/libs/loslib.cpp.obj CMakeFiles/LuaMod.dir/src/lparser.cpp.obj CMakeFiles/LuaMod.dir/src/lstate.cpp.obj CMakeFiles/LuaMod.dir/src/lstring.cpp.obj CMakeFiles/LuaMod.dir/src/libs/lstrlib.cpp.obj CMakeFiles/LuaMod.dir/src/ltable.cpp.obj CMakeFiles/LuaMod.dir/src/libs/ltablib.cpp.obj CMakeFiles/LuaMod.dir/src/ltm.cpp.obj CMakeFiles/LuaMod.dir/src/luac.cpp.obj CMakeFiles/LuaMod.dir/src/luacoyote.cpp.obj CMakeFiles/LuaMod.dir/src/lundump.cpp.obj CMakeFiles/LuaMod.dir/src/libs/lutf8lib.cpp.obj CMakeFiles/LuaMod.dir/src/lvm.cpp.obj CMakeFiles/LuaMod.dir/src/lzio.cpp.obj
+build LuaMod.exe: C_EXECUTABLE_LINKER__LuaMod_Debug CMakeFiles/LuaMod.dir/src/lapi.c.obj CMakeFiles/LuaMod.dir/src/lauxlib.c.obj CMakeFiles/LuaMod.dir/src/lbaselib.c.obj CMakeFiles/LuaMod.dir/src/lcode.c.obj CMakeFiles/LuaMod.dir/src/lcorolib.c.obj CMakeFiles/LuaMod.dir/src/lctype.c.obj CMakeFiles/LuaMod.dir/src/ldblib.c.obj CMakeFiles/LuaMod.dir/src/ldebug.c.obj CMakeFiles/LuaMod.dir/src/ldo.c.obj CMakeFiles/LuaMod.dir/src/ldump.c.obj CMakeFiles/LuaMod.dir/src/lfunc.c.obj CMakeFiles/LuaMod.dir/src/lgc.c.obj CMakeFiles/LuaMod.dir/src/linit.c.obj CMakeFiles/LuaMod.dir/src/liolib.c.obj CMakeFiles/LuaMod.dir/src/llex.c.obj CMakeFiles/LuaMod.dir/src/lmathlib.c.obj CMakeFiles/LuaMod.dir/src/lmem.c.obj CMakeFiles/LuaMod.dir/src/loadlib.c.obj CMakeFiles/LuaMod.dir/src/lobject.c.obj CMakeFiles/LuaMod.dir/src/lopcodes.c.obj CMakeFiles/LuaMod.dir/src/loslib.c.obj CMakeFiles/LuaMod.dir/src/lparser.c.obj CMakeFiles/LuaMod.dir/src/lstate.c.obj CMakeFiles/LuaMod.dir/src/lstring.c.obj CMakeFiles/LuaMod.dir/src/lstrlib.c.obj CMakeFiles/LuaMod.dir/src/ltable.c.obj CMakeFiles/LuaMod.dir/src/ltablib.c.obj CMakeFiles/LuaMod.dir/src/ltm.c.obj CMakeFiles/LuaMod.dir/src/lua.c.obj CMakeFiles/LuaMod.dir/src/luac.c.obj CMakeFiles/LuaMod.dir/src/lundump.c.obj CMakeFiles/LuaMod.dir/src/lutf8lib.c.obj CMakeFiles/LuaMod.dir/src/lvm.c.obj CMakeFiles/LuaMod.dir/src/lzio.c.obj
   FLAGS = -g
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\LuaMod.dir
