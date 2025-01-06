@@ -30,12 +30,12 @@
 #endif
 
 
-typedef struct
+struct LoadState
 {
 	lua_State *L;
 	ZIO *Z;
 	const char *name;
-} LoadState;
+};
 
 
 static l_noret error(LoadState *S, const char *why)
@@ -238,13 +238,15 @@ static void loadUpvalues(LoadState *S, Proto *f)
 	f->upvalues = luaM::newvectorchecked<Upvaldesc>(S->L, n);
 	f->sizeupvalues = n;
 	for (i = 0; i < n; i++) /* make array valid for GC */
-		f->upvalues[i].name = NULL;
+		f->upvalues[i].name = nullptr;
+
 	for (i = 0; i < n; i++)
 	{
+		auto upv = f->upvalues[i];
 		/* following calls can raise errors */
-		f->upvalues[i].instack = loadByte(S);
-		f->upvalues[i].idx = loadByte(S);
-		f->upvalues[i].kind = loadByte(S);
+		upv.instack = loadByte(S);
+		upv.idx = loadByte(S);
+		upv.kind = loadByte(S);
 	}
 }
 
@@ -345,7 +347,6 @@ static void checkHeader(LoadState *S)
 LClosure *luaU_undump(lua_State *L, ZIO *Z, const char *name)
 {
 	LoadState S;
-	LClosure *cl;
 	if (*name == '@' || *name == '=')
 		S.name = name + 1;
 	else if (*name == LUA_SIGNATURE[0])
@@ -355,7 +356,7 @@ LClosure *luaU_undump(lua_State *L, ZIO *Z, const char *name)
 	S.L = L;
 	S.Z = Z;
 	checkHeader(&S);
-	cl = luaF_newLclosure(L, loadByte(&S));
+	LClosure *cl = luaF_newLclosure(L, loadByte(&S));
 	setclLvalue2s(L, L->top.p, cl);
 	luaD_inctop(L);
 	cl->p = luaF_newproto(L);

@@ -15,15 +15,15 @@
 /* data to catch conversion errors */
 constexpr auto LUAC_DATA =	"\x19\x93\r\n\x1a\n";
 
-#define LUAC_INT	0x5678
-#define LUAC_NUM	cast_num(370.5)
+constexpr auto LUAC_INT =	0x5678;
+constexpr auto LUAC_NUM =	static_cast<lua_Number>(370.5);
 
 /*
 ** Encode major-minor version in one byte, one nibble for each
 */
-#define LUAC_VERSION  (((LUA_VERSION_NUM / 100) * 16) + LUA_VERSION_NUM % 100)
+constexpr auto LUAC_VERSION  (((LUA_VERSION_NUM / 100) * 16) + LUA_VERSION_NUM % 100);
 
-#define LUAC_FORMAT	0	/* this is the official format */
+constexpr auto LUAC_FORMAT =	0;	/* this is the official format */
 
 /* load one chunk; from lundump.c */
 LUAI_FUNC LClosure* luaU_undump (lua_State* L, ZIO* Z, const char* name);

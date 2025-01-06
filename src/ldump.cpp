@@ -116,7 +116,7 @@ struct DumpState
 
 	void dumpString(const TString *s)
 	{
-		if (s == NULL)
+		if (s == nullptr)
 			dumpSize(0);
 		else
 		{
@@ -133,7 +133,7 @@ struct DumpState
 		dumpVector(f->code, f->sizecode);
 	}
 
-	inline void dumpFunction(const Proto *f, TString *psource);
+	void dumpFunction(const Proto *f, TString *psource);
 
 	void dumpConstants(const Proto *f)
 	{
@@ -213,7 +213,7 @@ struct DumpState
 
 };
 
-inline void DumpState::dumpFunction(const Proto *f, TString *psource)
+void DumpState::dumpFunction(const Proto *f, TString *psource)
 {
 	if (strip || f->source == psource)
 		dumpString(nullptr); /* no debug info or same source as its parent */
@@ -232,12 +232,6 @@ inline void DumpState::dumpFunction(const Proto *f, TString *psource)
 }
 
 
-
-
-
-
-
-
 /*
 ** dump Lua function as precompiled chunk
 */
@@ -254,6 +248,6 @@ int luaU_dump(lua_State *L, const Proto *f, lua_Writer w, void *data,
 	// TODO: might need to do (&D)->dumpXYZ? silly
 	D.dumpHeader();
 	D.dumpByte(f->sizeupvalues);
-	D.dumpFunction(f, NULL);
+	D.dumpFunction(f, nullptr);
 	return D.status;
 }
