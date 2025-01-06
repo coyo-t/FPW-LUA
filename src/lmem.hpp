@@ -75,35 +75,33 @@ size_t luaM_limitN (size_t n)
 #define luaM_reallocvchar(L,b,on,n) cast_charp(luaM_saferealloc_(L, (b), (on)*sizeof(char), (n)*sizeof(char)))
 
 
-// #define luaM_freemem(L, b, s)	luaM_free_(L, (b), (s))
 template<typename T>
 void luaM_freemem (lua_State* L, T* b, size_t s)
 {
 	luaM_free_(L, b, s);
 }
 
-
-// #define luaM_free(L, b)		luaM_free_(L, (b), sizeof(*(b)))
 template<typename T>
 void luaM_free (lua_State* L, T* b)
 {
 	luaM_free_(L, b, sizeof(*b));
 }
 
-#define luaM_freearray(L, b, n)   luaM_free_(L, (b), (n)*sizeof(*(b)))
+template<typename T>
+void luaM_freearray (lua_State* L, T* b, size_t n)
+{
+	luaM_free_(L, b, n*sizeof(*b));
+}
 
 //
 
 //
-// #define luaM_newmem(L,t)		cast(t*, luaM_malloc_(L, sizeof(t), 0))
 template<typename T>
 T* luaM_newmem (lua_State* L)
 {
 	return static_cast<T*>(luaM_malloc_(L, sizeof(T), 0));
 }
 
-
-// #define luaM_newvector(L,n,t)	cast(t*, luaM_malloc_(L, (n)*sizeof(t), 0))
 template<typename T>
 T* luaM_newvector (lua_State* L, int n)
 {
@@ -111,7 +109,6 @@ T* luaM_newvector (lua_State* L, int n)
 }
 
 
-// #define luaM_newvectorchecked(L,n,t) (luaM_checksize(L,n,sizeof(t)), luaM_newvector<t>(L,n))
 template<typename T>
 T* luaM_newvectorchecked (lua_State* L, int n)
 {
