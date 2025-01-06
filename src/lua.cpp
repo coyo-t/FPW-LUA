@@ -874,3 +874,8 @@ void lua_newtable(lua_State *L)
 {
 	lua_createtable(L, 0, 0);
 }
+
+int lua_pcall(lua_State *L, int n, int r, int f)
+{
+	return lua_pcallk(L, (n), (r), (f), 0, nullptr);
+}
