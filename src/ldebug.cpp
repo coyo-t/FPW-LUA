@@ -122,7 +122,7 @@ static int getcurrentline(CallInfo *ci)
 static void settraps(CallInfo *ci)
 {
 	for (; ci != NULL; ci = ci->previous)
-		if (isLua(ci))
+		if (ci->isLua())
 			ci->u.l.trap = 1;
 }
 
@@ -220,7 +220,7 @@ const char *luaG_findlocal(lua_State *L, CallInfo *ci, int n, StkId *pos)
 {
 	StkId base = ci->func.p + 1;
 	const char *name = NULL;
-	if (isLua(ci))
+	if (ci->isLua())
 	{
 		if (n < 0) /* access to vararg values? */
 			return findvararg(ci, n, pos);
@@ -235,7 +235,7 @@ const char *luaG_findlocal(lua_State *L, CallInfo *ci, int n, StkId *pos)
 		{
 			/* is 'n' inside 'ci' stack? */
 			/* generic name for any valid slot */
-			name = isLua(ci) ? "(temporary)" : "(C temporary)";
+			name = ci->isLua() ? "(temporary)" : "(C temporary)";
 		}
 		else
 			return NULL; /* no name */
@@ -392,7 +392,7 @@ static int auxgetinfo(lua_State *L, const char *what, lua_Debug *ar,
 				break;
 			}
 			case 'l': {
-				ar->currentline = (ci && isLua(ci)) ? getcurrentline(ci) : -1;
+				ar->currentline = (ci && ci->isLua()) ? getcurrentline(ci) : -1;
 				break;
 			}
 			case 'u': {
@@ -774,7 +774,7 @@ static const char *funcnamefromcall(lua_State *L, CallInfo *ci,
 		*name = "__gc";
 		return "metamethod"; /* report it as such */
 	}
-	if (isLua(ci))
+	if (ci->isLua())
 		return funcnamefromcode(L, ci_func(ci)->p, currentpc(ci), name);
 	return NULL;
 }
@@ -838,7 +838,7 @@ static const char *varinfo(lua_State *L, const TValue *o)
 	CallInfo *ci = L->ci;
 	const char *name = NULL; /* to avoid warnings */
 	const char *kind = NULL;
-	if (isLua(ci))
+	if (ci->isLua())
 	{
 		kind = getupvalname(ci, o, &name); /* check whether 'o' is an upvalue */
 		if (!kind)
@@ -977,7 +977,7 @@ l_noret luaG_runerror(lua_State *L, const char *fmt, ...)
 	va_start(argp, fmt);
 	msg = luaO_pushvfstring(L, fmt, argp); /* format message */
 	va_end(argp);
-	if (isLua(ci))
+	if (ci->isLua())
 	{
 		/* if Lua function, add source:line information */
 		luaG_addinfo(L, msg, ci_func(ci)->p->source, getcurrentline(ci));

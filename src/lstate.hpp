@@ -230,19 +230,34 @@ struct CallInfo
 			((this)->callstatus = ((this)->callstatus & ~(7 << CIST_RECST)) | ((st) << CIST_RECST))
 		);
 	}
+
+	/* active function is a Lua function */
+	bool isLua ()
+	{
+		return (!((this)->callstatus & CIST_C));
+	}
+	/* call is running Lua code (not a hook) */
+	bool isLuacode ()
+	{
+		return (!((this)->callstatus & (CIST_C | CIST_HOOKED)));
+	}
+
+	/* assume that CIST_OAH has offset 0 and that 'v' is strictly 0/1 */
+	template<typename T>
+	void setoah (T v)
+	{
+		// #define _setoah(st,v)	((st) = ((st) & ~CIST_OAH) | (v))
+		((this)->callstatus = ((this)->callstatus & ~CIST_OAH) | (v));
+	}
+
+	bool getoah ()
+	{
+		// #define _getoah(st)	((st) & CIST_OAH)
+		return (this->callstatus & CIST_OAH) != 0;
+	}
 };
 
 
-
-/* active function is a Lua function */
-#define isLua(ci)	(!((ci)->callstatus & CIST_C))
-
-/* call is running Lua code (not a hook) */
-#define isLuacode(ci)	(!((ci)->callstatus & (CIST_C | CIST_HOOKED)))
-
-/* assume that CIST_OAH has offset 0 and that 'v' is strictly 0/1 */
-#define setoah(st,v)	((st) = ((st) & ~CIST_OAH) | (v))
-#define getoah(st)	((st) & CIST_OAH)
 
 
 /*

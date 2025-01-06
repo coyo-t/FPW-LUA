@@ -192,7 +192,7 @@ static void correctstack(lua_State *L)
 	{
 		ci->top.p = restorestack(L, ci->top.offset);
 		ci->func.p = restorestack(L, ci->func.offset);
-		if (isLua(ci))
+		if (ci->isLua())
 			ci->u.l.trap = 1; /* signal to update 'trap' in 'luaV_execute' */
 	}
 }
@@ -360,7 +360,7 @@ void luaD_hook(lua_State *L, int event, int line,
 			ci->u2.transferinfo.ftransfer = ftransfer;
 			ci->u2.transferinfo.ntransfer = ntransfer;
 		}
-		if (isLua(ci) && L->top.p < ci->top.p)
+		if (ci->isLua() && L->top.p < ci->top.p)
 			L->top.p = ci->top.p; /* protect entire activation register */
 		luaD_checkstack(L, LUA_MINSTACK); /* ensure minimum stack size */
 		if (ci->top.p < L->top.p + LUA_MINSTACK)
@@ -414,7 +414,7 @@ static void rethook(lua_State *L, CallInfo *ci, int nres)
 		StkId firstres = L->top.p - nres; /* index of first result */
 		int delta = 0; /* correction for vararg functions */
 		int ftransfer;
-		if (isLua(ci))
+		if (ci->isLua())
 		{
 			Proto *p = ci_func(ci)->p;
 			if (p->is_vararg)
@@ -425,7 +425,7 @@ static void rethook(lua_State *L, CallInfo *ci, int nres)
 		luaD_hook(L, LUA_HOOKRET, -1, ftransfer, nres); /* call it */
 		ci->func.p -= delta;
 	}
-	if (isLua(ci = ci->previous))
+	if ((ci = ci->previous)->isLua())
 		L->oldpc = pcRel(ci->u.l.savedpc, ci_func(ci)->p); /* set 'oldpc' */
 }
 
@@ -732,7 +732,7 @@ static int finishpcallk(lua_State *L, CallInfo *ci)
 	{
 		/* error */
 		StkId func = restorestack(L, ci->u2.funcidx);
-		L->allowhook = getoah(ci->callstatus); /* restore 'allowhook' */
+		L->allowhook = ci->getoah(); /* restore 'allowhook' */
 		func = luaF_close(L, func, status, 1); /* can yield or raise an error */
 		luaD_seterrorobj(L, status, func);
 		luaD_shrinkstack(L); /* restore stack size in case of overflow */
@@ -798,7 +798,7 @@ static void unroll(lua_State *L, void *ud)
 	while ((ci = L->ci) != &L->base_ci)
 	{
 		/* something in the stack */
-		if (!isLua(ci)) /* C function? */
+		if (!ci->isLua()) /* C function? */
 			finishCcall(L, ci); /* complete its execution */
 		else
 		{
@@ -861,7 +861,7 @@ static void resume(lua_State *L, void *ud)
 		/* resuming from previous yield */
 		lua_assert(L->status == LUA_YIELD);
 		L->status = LUA_OK; /* mark that it is running (again) */
-		if (isLua(ci))
+		if (ci->isLua())
 		{
 			/* yielded inside a hook? */
 			/* undo increment made by 'luaG_traceexec': instruction was not
@@ -974,7 +974,7 @@ LUA_API int lua_yieldk(lua_State *L, int nresults, lua_KContext ctx,
 	}
 	L->status = LUA_YIELD;
 	ci->u2.nyield = nresults; /* save number of results */
-	if (isLua(ci))
+	if (ci->isLua())
 	{
 		/* inside a hook? */
 		lua_assert(!isLuacode(ci));
