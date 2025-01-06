@@ -36,6 +36,32 @@ int luaZ_fill(ZIO *z)
 }
 
 
+void luaZ_initbuffer(lua_State *L, Mbuffer *buff)
+{
+	buff->buffer = NULL;
+	buff->buffsize = 0;
+}
+
+char * luaZ_buffer(Mbuffer *buff)
+{
+	return buff->buffer;
+}
+
+size_t luaZ_sizebuffer(Mbuffer *buff)
+{
+	return buff->buffsize;
+}
+
+size_t luaZ_bufflen (Mbuffer *buff)
+{
+	return ((buff)->n);
+}
+
+void luaZ_resetbuffer(Mbuffer *buff)
+{
+	buff->n = 0;
+}
+
 void luaZ_init(lua_State *L, ZIO *z, lua_Reader reader, void *data)
 {
 	z->L = L;

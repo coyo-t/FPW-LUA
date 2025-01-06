@@ -27,14 +27,18 @@ typedef struct Mbuffer
 	size_t buffsize;
 } Mbuffer;
 
-#define luaZ_initbuffer(L, buff) ((buff)->buffer = NULL, (buff)->buffsize = 0)
+void luaZ_initbuffer (lua_State* L, Mbuffer* buff);
+char* luaZ_buffer (Mbuffer* buff);
+size_t luaZ_sizebuffer (Mbuffer* buff);
+size_t luaZ_bufflen (Mbuffer* buff);
 
-#define luaZ_buffer(buff)	((buff)->buffer)
-#define luaZ_sizebuffer(buff)	((buff)->buffsize)
-#define luaZ_bufflen(buff)	((buff)->n)
+template<typename N>
+void luaZ_buffremove (Mbuffer* buff, N i)
+{
+	((buff)->n -= (i));
+}
 
-#define luaZ_buffremove(buff,i)	((buff)->n -= (i))
-#define luaZ_resetbuffer(buff) ((buff)->n = 0)
+void luaZ_resetbuffer (Mbuffer* buff);
 
 
 #define luaZ_resizebuffer(L, buff, size) \
