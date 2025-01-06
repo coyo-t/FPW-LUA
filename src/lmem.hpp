@@ -127,10 +127,8 @@ T* luaM_newvectorchecked (lua_State* L, int n)
 
 //
 
-// #define luaM_newobject(L,tag,s)	luaM_malloc_(L, (s), tag)
-
-template<typename T>
-T* luaM_newobject (lua_State* L, int tag, size_t s)
+template<typename T, typename Tag>
+T* luaM_newobject (lua_State* L, Tag tag, size_t s)
 {
 	return static_cast<T *>(luaM_malloc_(L, (s), tag));
 }
