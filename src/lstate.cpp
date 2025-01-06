@@ -83,16 +83,6 @@ static unsigned int luai_makeseed(lua_State *L)
 #endif
 
 
-void incnny(lua_State *L)
-{
-	((L)->nCcalls += 0x10000);
-}
-
-void decnny(lua_State *L)
-{
-	((L)->nCcalls -= 0x10000);
-}
-
 /*
 ** set GCdebt to a new value keeping the value (totalbytes + GCdebt)
 ** invariant (and avoiding underflows in 'totalbytes')
@@ -406,7 +396,7 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud)
 	preinit_thread(L, g);
 	g->allgc = obj2gco(L); /* by now, only object is the main thread */
 	L->next = NULL;
-	incnny(L); /* main thread is always non yieldable */
+	L->incnny(); /* main thread is always non yieldable */
 	g->frealloc = f;
 	g->ud = ud;
 	g->warnf = NULL;

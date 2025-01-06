@@ -99,13 +99,6 @@ typedef struct CallInfo CallInfo;
 */
 
 
-/* Increment the number of non-yieldable calls */
-void incnny(lua_State* L);
-
-/* Decrement the number of non-yieldable calls */
-// #define decnny(L)	((L)->nCcalls -= 0x10000)
-void decnny (lua_State* L);
-
 /* Non-yieldable call increment */
 constexpr auto nyci =	(0x10000 | 1);
 
@@ -347,6 +340,18 @@ struct lua_State
 	int getCcalls ()
 	{
 		return (this->nCcalls & 0xffff);
+	}
+
+	/* Increment the number of non-yieldable calls */
+	void incnny()
+	{
+		((this)->nCcalls += 0x10000);
+	}
+
+	/* Decrement the number of non-yieldable calls */
+	void decnny()
+	{
+		((this)->nCcalls -= 0x10000);
 	}
 };
 

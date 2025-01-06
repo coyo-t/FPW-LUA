@@ -1118,7 +1118,7 @@ int luaD_protectedparser(lua_State *L, ZIO *z, const char *name,
 {
 	struct SParser p;
 	int status;
-	incnny(L); /* cannot yield during parsing */
+	L->incnny(); /* cannot yield during parsing */
 	p.z = z;
 	p.name = name;
 	p.mode = mode;
@@ -1134,6 +1134,6 @@ int luaD_protectedparser(lua_State *L, ZIO *z, const char *name,
 	luaM_freearray(L, p.dyd.actvar.arr, p.dyd.actvar.size);
 	luaM_freearray(L, p.dyd.gt.arr, p.dyd.gt.size);
 	luaM_freearray(L, p.dyd.label.arr, p.dyd.label.size);
-	decnny(L);
+	L->decnny();
 	return status;
 }
