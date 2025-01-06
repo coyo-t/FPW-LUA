@@ -527,7 +527,7 @@ static void setnodevector(lua_State *L, Table *t, unsigned int size)
 		if (lsize > MAXHBITS || (1u << lsize) > MAXHSIZE)
 			luaG_runerror(L, "table overflow");
 		size = twoto(lsize);
-		t->node = luaM_newvector<Node>(L, size);
+		t->node = luaM::newvector<Node>(L, size);
 		for (i = 0; i < cast_int(size); i++)
 		{
 			Node *n = gnode(t, i);
@@ -616,7 +616,7 @@ void luaH_resize(lua_State *L, Table *t, unsigned int newasize,
 		exchangehashpart(t, &newt); /* and hash (in case of errors) */
 	}
 	/* allocate new array */
-	newarray = luaM_reallocvector(L, t->array, oldasize, newasize);
+	newarray = luaM::reallocvector(L, t->array, oldasize, newasize);
 	if (l_unlikely(newarray == NULL && newasize > 0))
 	{
 		/* allocation failed? */

@@ -198,7 +198,7 @@ static int registerlocalvar(LexState *ls, FuncState *fs, TString *varname)
 {
 	Proto *f = fs->f;
 	int oldsize = f->sizelocvars;
-	luaM_growvector(ls->L, &f->locvars, fs->ndebugvars, &f->sizelocvars, SHRT_MAX, "local variables");
+	luaM::growvector(ls->L, &f->locvars, fs->ndebugvars, &f->sizelocvars, SHRT_MAX, "local variables");
 	while (oldsize < f->sizelocvars)
 		f->locvars[oldsize++].varname = NULL;
 	f->locvars[fs->ndebugvars].varname = varname;
@@ -220,7 +220,7 @@ static int new_localvar(LexState *ls, TString *name)
 	Vardesc *var;
 	checklimit(fs, dyd->actvar.n + 1 - fs->firstlocal,
 					MAXVARS, "local variables");
-	luaM_growvector(L, &dyd->actvar.arr, dyd->actvar.n + 1,
+	luaM::growvector(L, &dyd->actvar.arr, dyd->actvar.n + 1,
 						&dyd->actvar.size, USHRT_MAX, "local variables");
 	var = &dyd->actvar.arr[dyd->actvar.n++];
 	var->vd.kind = VDKREG; /* default */
@@ -392,7 +392,7 @@ static Upvaldesc *allocupvalue(FuncState *fs)
 	Proto *f = fs->f;
 	int oldsize = f->sizeupvalues;
 	checklimit(fs, fs->nups + 1, MAXUPVAL, "upvalues");
-	luaM_growvector(fs->ls->L, &f->upvalues, fs->nups, &f->sizeupvalues,
+	luaM::growvector(fs->ls->L, &f->upvalues, fs->nups, &f->sizeupvalues,
 						MAXUPVAL, "upvalues");
 	while (oldsize < f->sizeupvalues)
 		f->upvalues[oldsize++].name = NULL;
@@ -631,7 +631,7 @@ static int newlabelentry(
 	int pc)
 {
 	int n = l->n;
-	luaM_growvector(ls->L, &l->arr, n, &l->size,
+	luaM::growvector(ls->L, &l->arr, n, &l->size,
 						SHRT_MAX, "labels/gotos");
 	l->arr[n].name = name;
 	l->arr[n].line = line;
@@ -796,7 +796,7 @@ static Proto *addprototype(LexState *ls)
 	if (fs->np >= f->sizep)
 	{
 		int oldsize = f->sizep;
-		luaM_growvector(L, &f->p, fs->np, &f->sizep, MAXARG_Bx, "functions");
+		luaM::growvector(L, &f->p, fs->np, &f->sizep, MAXARG_Bx, "functions");
 		while (oldsize < f->sizep)
 			f->p[oldsize++] = NULL;
 	}
@@ -858,13 +858,13 @@ static void close_func(LexState *ls)
 	leaveblock(fs);
 	lua_assert(fs->bl == NULL);
 	luaK_finish(fs);
-	luaM_shrinkvector(L, &f->code, &f->sizecode, fs->pc);
-	luaM_shrinkvector(L, &f->lineinfo, &f->sizelineinfo, fs->pc);
-	luaM_shrinkvector(L, &f->abslineinfo, &f->sizeabslineinfo, fs->nabslineinfo);
-	luaM_shrinkvector(L, &f->k, &f->sizek, fs->nk);
-	luaM_shrinkvector(L, &f->p, &f->sizep, fs->np);
-	luaM_shrinkvector(L, &f->locvars, &f->sizelocvars, fs->ndebugvars);
-	luaM_shrinkvector(L, &f->upvalues, &f->sizeupvalues, fs->nups);
+	luaM::shrinkvector(L, &f->code, &f->sizecode, fs->pc);
+	luaM::shrinkvector(L, &f->lineinfo, &f->sizelineinfo, fs->pc);
+	luaM::shrinkvector(L, &f->abslineinfo, &f->sizeabslineinfo, fs->nabslineinfo);
+	luaM::shrinkvector(L, &f->k, &f->sizek, fs->nk);
+	luaM::shrinkvector(L, &f->p, &f->sizep, fs->np);
+	luaM::shrinkvector(L, &f->locvars, &f->sizelocvars, fs->ndebugvars);
+	luaM::shrinkvector(L, &f->upvalues, &f->sizeupvalues, fs->nups);
 	ls->fs = fs->prev;
 	luaC_checkGC(L);
 }

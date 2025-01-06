@@ -99,7 +99,7 @@ void luaS_resize(lua_State *L, int nsize)
 	int osize = tb->size;
 	if (nsize < osize) /* shrinking table? */
 		tablerehash(tb->hash, osize, nsize); /* depopulate shrinking part */
-	TString **newvect = luaM_reallocvector(L, tb->hash, osize, nsize);
+	TString **newvect = luaM::reallocvector(L, tb->hash, osize, nsize);
 	if (l_unlikely(newvect == NULL))
 	{
 		/* reallocation failed? */
@@ -146,7 +146,7 @@ void luaS_init(lua_State *L)
 {
 	global_State *g = G(L);
 	stringtable *tb = &G(L)->strt;
-	tb->hash = luaM_newvector<TString*>(L, MINSTRTABSIZE);
+	tb->hash = luaM::newvector<TString*>(L, MINSTRTABSIZE);
 	tablerehash(tb->hash, 0, MINSTRTABSIZE); /* clear array */
 	tb->size = MINSTRTABSIZE;
 	/* pre-create memory-error message */

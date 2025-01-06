@@ -236,7 +236,7 @@ int luaD_reallocstack(lua_State *L, int newsize, int raiseerror)
 	lua_assert(newsize <= LUAI_MAXSTACK || newsize == ERRORSTACKSIZE);
 	relstack(L); /* change pointers to offsets */
 	G(L)->gcstopem = 1; /* stop emergency collection */
-	StkId newstack = luaM_reallocvector<StackValue>(
+	StkId newstack = luaM::reallocvector<StackValue>(
 		L,
 		L->stack.p,
 		oldsize + EXTRA_STACK,

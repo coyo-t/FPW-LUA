@@ -363,7 +363,7 @@ static void savelineinfo(FuncState *fs, Proto *f, int line)
 	int pc = fs->pc - 1; /* last instruction coded */
 	if (abs(linedif) >= LIMLINEDIFF || fs->iwthabs++ >= MAXIWTHABS)
 	{
-		luaM_growvector(
+		luaM::growvector(
 			fs->ls->L,
 			&f->abslineinfo,
 			fs->nabslineinfo,
@@ -376,7 +376,7 @@ static void savelineinfo(FuncState *fs, Proto *f, int line)
 		linedif = ABSLINEINFO; /* signal that there is absolute information */
 		fs->iwthabs = 1; /* restart counter */
 	}
-	luaM_growvector(
+	luaM::growvector(
 		fs->ls->L,
 		&f->lineinfo,
 		pc,
@@ -434,7 +434,7 @@ int luaK_code(FuncState *fs, Instruction i)
 {
 	Proto *f = fs->f;
 	/* put new instruction in code array */
-	luaM_growvector(
+	luaM::growvector(
 		fs->ls->L,
 		&f->code,
 		fs->pc,
@@ -638,7 +638,7 @@ static int addk(FuncState *fs, TValue *key, TValue *v)
 		table has no metatable, so it does not need to invalidate cache */
 	setivalue(&val, k);
 	luaH_finishset(L, fs->ls->h, key, idx, &val);
-	luaM_growvector(L, &f->k, k, &f->sizek, MAXARG_Ax, "constants");
+	luaM::growvector(L, &f->k, k, &f->sizek, MAXARG_Ax, "constants");
 	while (oldsize < f->sizek)
 		setnilvalue(&f->k[oldsize++]);
 	setobj(L, &f->k[k], v);
