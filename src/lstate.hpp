@@ -89,7 +89,6 @@ typedef struct CallInfo CallInfo;
 ** of gray lists. (They don't even have a 'gclist' field.)
 */
 
-
 /*
 ** About 'nCcalls':  This count has two parts: the lower 16 bits counts
 ** the number of recursive invocations in the C stack; the higher
@@ -140,6 +139,23 @@ typedef struct stringtable
 	int size;
 } stringtable;
 
+
+/*
+** Bits in CallInfo status
+*/
+constexpr auto CIST_OAH	(1<<0);	/* original value of 'allowhook' */
+constexpr auto CIST_C		(1<<1);	/* call is running a C function */
+constexpr auto CIST_FRESH	(1<<2);	/* call is on a fresh "luaV_execute" frame */
+constexpr auto CIST_HOOKED	(1<<3);	/* call is running a debug hook */
+constexpr auto CIST_YPCALL	(1<<4);	/* doing a yieldable protected call */
+constexpr auto CIST_TAIL	(1<<5);	/* call was tail called */
+constexpr auto CIST_HOOKYIELD	(1<<6);	/* last hook called yielded */
+constexpr auto CIST_FIN	(1<<7);	/* function "called" a finalizer */
+constexpr auto CIST_TRAN	(1<<8);	/* 'ci' has transfer information */
+constexpr auto CIST_CLSRET	(1<<9);  /* function is closing tbc variables */
+
+/* Bits 10-12 are used for CIST_RECST (see below) */
+constexpr auto CIST_RECST =	10;
 
 /*
 ** Information about a call.
@@ -195,39 +211,27 @@ struct CallInfo
 
 	short nresults; /* expected number of results from this function */
 	unsigned short callstatus;
+
+	/*
+	** Field CIST_RECST stores the "recover status", used to keep the error
+	** status while closing to-be-closed variables in coroutines, so that
+	** Lua can correctly resume after an yield from a __close method called
+	** because of an error.  (Three bits are enough for error status.)
+	*/
+	int getcistrecst ()
+	{
+		return ((this->callstatus >> CIST_RECST) & 7);
+	}
+
+	void setcistrecst (int st)
+	{
+		check_exp(
+			((st) & 7) == (st),
+			((this)->callstatus = ((this)->callstatus & ~(7 << CIST_RECST)) | ((st) << CIST_RECST))
+		);
+	}
 };
 
-
-/*
-** Bits in CallInfo status
-*/
-constexpr auto CIST_OAH	(1<<0);	/* original value of 'allowhook' */
-constexpr auto CIST_C		(1<<1);	/* call is running a C function */
-constexpr auto CIST_FRESH	(1<<2);	/* call is on a fresh "luaV_execute" frame */
-constexpr auto CIST_HOOKED	(1<<3);	/* call is running a debug hook */
-constexpr auto CIST_YPCALL	(1<<4);	/* doing a yieldable protected call */
-constexpr auto CIST_TAIL	(1<<5);	/* call was tail called */
-constexpr auto CIST_HOOKYIELD	(1<<6);	/* last hook called yielded */
-constexpr auto CIST_FIN	(1<<7);	/* function "called" a finalizer */
-constexpr auto CIST_TRAN	(1<<8);	/* 'ci' has transfer information */
-constexpr auto CIST_CLSRET	(1<<9);  /* function is closing tbc variables */
-
-/* Bits 10-12 are used for CIST_RECST (see below) */
-constexpr auto CIST_RECST =	10;
-
-
-
-/*
-** Field CIST_RECST stores the "recover status", used to keep the error
-** status while closing to-be-closed variables in coroutines, so that
-** Lua can correctly resume after an yield from a __close method called
-** because of an error.  (Three bits are enough for error status.)
-*/
-#define getcistrecst(ci)     (((ci)->callstatus >> CIST_RECST) & 7)
-#define setcistrecst(ci,st)  \
-  check_exp(((st) & 7) == (st),   /* status must fit in three bits */  \
-            ((ci)->callstatus = ((ci)->callstatus & ~(7 << CIST_RECST))  \
-                                                  | ((st) << CIST_RECST)))
 
 
 /* active function is a Lua function */

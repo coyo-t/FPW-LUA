@@ -725,7 +725,7 @@ void luaD_callnoyield(lua_State *L, StkId func, int nResults)
 */
 static int finishpcallk(lua_State *L, CallInfo *ci)
 {
-	int status = getcistrecst(ci); /* get original status */
+	int status = ci->getcistrecst(); /* get original status */
 	if (l_likely(status == LUA_OK)) /* no error? */
 		status = LUA_YIELD; /* was interrupted by an yield */
 	else
@@ -736,7 +736,7 @@ static int finishpcallk(lua_State *L, CallInfo *ci)
 		func = luaF_close(L, func, status, 1); /* can yield or raise an error */
 		luaD_seterrorobj(L, status, func);
 		luaD_shrinkstack(L); /* restore stack size in case of overflow */
-		setcistrecst(ci, LUA_OK); /* clear original status */
+		ci->setcistrecst(LUA_OK); /* clear original status */
 	}
 	ci->callstatus &= ~CIST_YPCALL;
 	L->errfunc = ci->u.c.old_errfunc;
@@ -903,7 +903,7 @@ static int precover(lua_State *L, int status)
 	while (errorstatus(status) && (ci = findpcall(L)) != NULL)
 	{
 		L->ci = ci; /* go down to recovery functions */
-		setcistrecst(ci, status); /* status to finish 'pcall' */
+		ci->setcistrecst(status); /* status to finish 'pcall' */
 		status = luaD_rawrunprotected(L, unroll, NULL);
 	}
 	return status;
