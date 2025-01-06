@@ -212,6 +212,9 @@ struct CallInfo
 	short nresults; /* expected number of results from this function */
 	unsigned short callstatus;
 
+	// Macros and non-internal functors converted to members
+	// (they should be inlined, right?? >:/ )
+
 	/*
 	** Field CIST_RECST stores the "recover status", used to keep the error
 	** status while closing to-be-closed variables in coroutines, so that
@@ -344,19 +347,19 @@ struct lua_State
 	int hookcount;
 	volatile l_signalT hookmask;
 
-	int stacksize ()
+	int stacksize () const
 	{
 		return static_cast<int>(this->stack_last.p - this->stack.p);
 	}
 
 	/* true if this thread does not have non-yieldable calls in the stack */
-	bool yieldable ()
+	bool yieldable () const
 	{
 		return ((this->nCcalls & 0xffff0000) == 0);
 	}
 
 	/* real number of C calls */
-	int getCcalls ()
+	int getCcalls () const
 	{
 		return (this->nCcalls & 0xffff);
 	}
@@ -373,7 +376,7 @@ struct lua_State
 		((this)->nCcalls -= 0x10000);
 	}
 
-	global_State *G ()
+	global_State *G () const
 	{
 		return this->l_G;
 	}
