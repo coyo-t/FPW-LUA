@@ -431,33 +431,32 @@ LUA_API void (lua_closeslot)(lua_State *L, int idx);
 
 LUA_API void* lua_getextraspace (lua_State* L);
 
+LUA_API lua_Number lua_tonumber (lua_State* L, int i);
+LUA_API lua_Integer lua_tointeger(lua_State* L, int i);
 
-#define lua_tonumber(L,i)	lua_tonumberx(L,(i),NULL)
-#define lua_tointeger(L,i)	lua_tointegerx(L,(i),NULL)
+LUA_API void lua_pop(lua_State*L, int n);
 
-#define lua_pop(L,n)		lua_settop(L, -(n)-1)
+LUA_API void lua_newtable(lua_State* L);
 
-#define lua_newtable(L)		lua_createtable(L, 0, 0)
+LUA_API void lua_register(lua_State* L, const char* n, lua_CFunction f);
 
-#define lua_register(L,n,f) (lua_pushcfunction(L, (f)), lua_setglobal(L, (n)))
+LUA_API void lua_pushcfunction(lua_State *L, lua_CFunction f);
 
-#define lua_pushcfunction(L,f)	lua_pushcclosure(L, (f), 0)
+LUA_API bool lua_isfunction (lua_State* L, int n);
+LUA_API bool lua_istable (lua_State* L, int n);
+LUA_API bool lua_islightuserdata (lua_State* L, int n);
+LUA_API bool lua_isnil (lua_State* L, int n);
+LUA_API bool lua_isboolean (lua_State* L, int n);
+LUA_API bool lua_isthread (lua_State* L, int n);
+LUA_API bool lua_isnone (lua_State* L, int n);
+LUA_API bool lua_isnoneornil (lua_State* L, int  n);
 
-#define lua_isfunction(L,n)	(lua_type(L, (n)) == LUA_TFUNCTION)
-#define lua_istable(L,n)	(lua_type(L, (n)) == LUA_TTABLE)
-#define lua_islightuserdata(L,n)	(lua_type(L, (n)) == LUA_TLIGHTUSERDATA)
-#define lua_isnil(L,n)		(lua_type(L, (n)) == LUA_TNIL)
-#define lua_isboolean(L,n)	(lua_type(L, (n)) == LUA_TBOOLEAN)
-#define lua_isthread(L,n)	(lua_type(L, (n)) == LUA_TTHREAD)
-#define lua_isnone(L,n)		(lua_type(L, (n)) == LUA_TNONE)
-#define lua_isnoneornil(L, n)	(lua_type(L, (n)) <= 0)
 
+// kept as macro. the "" s is used so the compiler yells at you
+// if s is not a string literal
 #define lua_pushliteral(L, s)	lua_pushstring(L, "" s)
 
-#define lua_pushglobaltable(L)  \
-	((void)lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS))
-
-// #define lua_tostring(L,i)	lua_tolstring(L, (i), NULL)
+LUA_API void lua_pushglobaltable(lua_State* L);
 LUA_API const char * lua_tostring(lua_State* L, int i);
 
 LUA_API void lua_insert (lua_State* L, int idx);
@@ -484,7 +483,7 @@ LUA_API void lua_replace (lua_State* L, int idx);
 #define lua_getuservalue(L,idx)	lua_getiuservalue(L,idx,1)
 #define lua_setuservalue(L,idx)	lua_setiuservalue(L,idx,1)
 
-#define LUA_NUMTAGS		LUA_NUMTYPES
+constexpr auto LUA_NUMTAGS =		LUA_NUMTYPES;
 
 /* }============================================================== */
 

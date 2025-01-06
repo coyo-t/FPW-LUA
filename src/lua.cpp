@@ -798,3 +798,79 @@ const char * lua_tostring(lua_State *L, int i)
 {
 	return lua_tolstring(L, (i), nullptr);
 }
+
+void lua_pushglobaltable(lua_State *L)
+{
+	lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
+}
+
+lua_Number lua_tonumber(lua_State *L, int i)
+{
+	return lua_tonumberx(L,(i),nullptr);
+}
+
+lua_Integer lua_tointeger(lua_State *L, int i)
+{
+	return lua_tointegerx(L,(i),nullptr);
+}
+
+void lua_pop(lua_State *L, int n)
+{
+	lua_settop(L, -(n)-1);
+}
+
+bool lua_isfunction(lua_State *L, int n)
+{
+	return (lua_type(L, (n)) == LUA_TFUNCTION);
+}
+
+bool lua_istable(lua_State *L, int n)
+{
+	return (lua_type(L, (n)) == LUA_TTABLE);
+}
+
+bool lua_islightuserdata(lua_State *L, int n)
+{
+	return (lua_type(L, (n)) == LUA_TLIGHTUSERDATA);
+}
+
+bool lua_isnil(lua_State *L, int n)
+{
+	return (lua_type(L, (n)) == LUA_TNIL);
+}
+
+bool lua_isboolean(lua_State *L, int n)
+{
+	return (lua_type(L, (n)) == LUA_TBOOLEAN);
+}
+
+bool lua_isthread(lua_State *L, int n)
+{
+	return (lua_type(L, (n)) == LUA_TTHREAD);
+}
+
+bool lua_isnone(lua_State *L, int n)
+{
+	return (lua_type(L, (n)) == LUA_TNONE);
+}
+
+bool lua_isnoneornil(lua_State *L, int n)
+{
+	return (lua_type(L, (n)) <= 0);
+}
+
+void lua_pushcfunction(lua_State *L, lua_CFunction f)
+{
+	lua_pushcclosure(L, (f), 0);
+}
+
+void lua_register(lua_State *L, const char *n, lua_CFunction f)
+{
+	lua_pushcfunction(L, (f));
+	lua_setglobal(L, (n));
+}
+
+void lua_newtable(lua_State *L)
+{
+	lua_createtable(L, 0, 0);
+}
