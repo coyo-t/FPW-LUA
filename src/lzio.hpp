@@ -41,12 +41,20 @@ void luaZ_buffremove (Mbuffer* buff, N i)
 void luaZ_resetbuffer (Mbuffer* buff);
 
 
-#define luaZ_resizebuffer(L, buff, size) \
-	((buff)->buffer = luaM_reallocvchar(L, (buff)->buffer, \
-				(buff)->buffsize, size), \
-	(buff)->buffsize = size)
+template<typename N>
+void luaZ_resizebuffer (lua_State* L, Mbuffer* buff, N size)
+{
+	buff->buffer = luaM_reallocvchar(
+		L,
+		(buff)->buffer,
+		(buff)->buffsize,
+		size
+	);
+	(buff)->buffsize = size;
+}
 
-#define luaZ_freebuffer(L, buff)	luaZ_resizebuffer(L, buff, 0)
+
+void luaZ_freebuffer (lua_State* L, Mbuffer* buff);
 
 
 LUAI_FUNC void luaZ_init(lua_State *L, ZIO *z, lua_Reader reader,
