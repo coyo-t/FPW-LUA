@@ -59,20 +59,6 @@
 	try { a } catch(...) { if ((c)->status == 0) (c)->status = -1; }
 #define luai_jmpbuf		int  /* dummy variable */
 
-#elif defined(LUA_USE_POSIX)				/* }{ */
-
-/* in POSIX, try _longjmp/_setjmp (more efficient) */
-#define LUAI_THROW(L,c)		_longjmp((c)->b, 1)
-#define LUAI_TRY(L,c,a)		if (_setjmp((c)->b) == 0) { a }
-#define luai_jmpbuf		jmp_buf
-
-#else							/* }{ */
-
-/* ISO C handling with long jumps */
-#define LUAI_THROW(L,c)		longjmp((c)->b, 1)
-#define LUAI_TRY(L,c,a)		if (setjmp((c)->b) == 0) { a }
-#define luai_jmpbuf		jmp_buf
-
 #endif							/* } */
 
 #endif							/* } */
@@ -156,8 +142,7 @@ int luaD_rawrunprotected(lua_State *L, Pfunc f, void *ud)
 	lj.status = LUA_OK;
 	lj.previous = L->errorJmp; /* chain new error handler */
 	L->errorJmp = &lj;
-	LUAI_TRY(L, &lj,
-				(*f)(L, ud);
+	LUAI_TRY(L, &lj, (*f)(L, ud);
 	);
 	L->errorJmp = lj.previous; /* restore old error handler */
 	L->nCcalls = oldnCcalls;
@@ -179,13 +164,12 @@ int luaD_rawrunprotected(lua_State *L, Pfunc f, void *ud)
 */
 static void relstack(lua_State *L)
 {
-	CallInfo *ci;
-	UpVal *up;
 	L->top.offset = savestack(L, L->top.p);
 	L->tbclist.offset = savestack(L, L->tbclist.p);
-	for (up = L->openupval; up != NULL; up = up->u.open.next)
+	for (UpVal *up = L->openupval; up != nullptr; up = up->u.open.next)
 		up->v.offset = savestack(L, uplevel(up));
-	for (ci = L->ci; ci != NULL; ci = ci->previous)
+
+	for (CallInfo *ci = L->ci; ci != nullptr; ci = ci->previous)
 	{
 		ci->top.offset = savestack(L, ci->top.p);
 		ci->func.offset = savestack(L, ci->func.p);
@@ -215,7 +199,7 @@ static void correctstack(lua_State *L)
 
 
 /* some space for error handling */
-#define ERRORSTACKSIZE	(LUAI_MAXSTACK + 200)
+constexpr auto ERRORSTACKSIZE =	LUAI_MAXSTACK + 200;
 
 /*
 ** Reallocate the stack to a new size, correcting all pointers into it.
@@ -231,7 +215,6 @@ static void correctstack(lua_State *L)
 int luaD_reallocstack(lua_State *L, int newsize, int raiseerror)
 {
 	int oldsize = stacksize(L);
-	int i;
 	StkId newstack;
 	int oldgcstop = G(L)->gcstopem;
 	lua_assert(newsize <= LUAI_MAXSTACK || newsize == ERRORSTACKSIZE);
@@ -245,13 +228,13 @@ int luaD_reallocstack(lua_State *L, int newsize, int raiseerror)
 		/* reallocation failed? */
 		correctstack(L); /* change offsets back to pointers */
 		if (raiseerror)
-			luaM_error(L);
+			luaD_throw(L, LUA_ERRMEM);
 		else return 0; /* do not raise an error */
 	}
 	L->stack.p = newstack;
 	correctstack(L); /* change offsets back to pointers */
 	L->stack_last.p = L->stack.p + newsize;
-	for (i = oldsize + EXTRA_STACK; i < newsize + EXTRA_STACK; i++)
+	for (int i = oldsize + EXTRA_STACK; i < newsize + EXTRA_STACK; i++)
 		setnilvalue(s2v(newstack + i)); /* erase new segment */
 	return 1;
 }

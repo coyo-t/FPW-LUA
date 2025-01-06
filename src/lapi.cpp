@@ -1382,7 +1382,7 @@ LUA_API int lua_error(lua_State *L)
 	api_checknelems(L, 1);
 	/* error object is the memory error message? */
 	if (ttisshrstring(errobj) && eqshrstr(tsvalue(errobj), G(L)->memerrmsg))
-		luaM_error(L); /* raise a memory error */
+		luaD_throw(L, LUA_ERRMEM); /* raise a memory error */
 	else
 		luaG_errormsg(L); /* raise a regular error */
 	/* code unreachable; will unlock when control actually leaves the kernel */

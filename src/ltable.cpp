@@ -628,7 +628,7 @@ void luaH_resize(lua_State *L, Table *t, unsigned int newasize,
 	{
 		/* allocation failed? */
 		freehash(L, &newt); /* release new hash part */
-		luaM_error(L); /* raise error (with array unchanged) */
+		luaD_throw(L, LUA_ERRMEM); /* raise error (with array unchanged) */
 	}
 	/* allocation ok; initialize new part of the array */
 	exchangehashpart(t, &newt); /* 't' has the new hash ('newt' has the old) */

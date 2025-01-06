@@ -325,8 +325,7 @@ static int nextline(const Proto *p, int currentline, int pc)
 {
 	if (p->lineinfo[pc] != ABSLINEINFO)
 		return currentline + p->lineinfo[pc];
-	else
-		return luaG_getfuncline(p, pc);
+	return luaG_getfuncline(p, pc);
 }
 
 
@@ -375,7 +374,8 @@ static const char *getfuncname(lua_State *L, CallInfo *ci, const char **name)
 	/* calling function is a known function? */
 	if (ci != NULL && !(ci->callstatus & CIST_TAIL))
 		return funcnamefromcall(L, ci->previous, name);
-	else return NULL; /* no way to find a name */
+	/* no way to find a name */
+	return NULL;
 }
 
 
@@ -559,11 +559,8 @@ static const char *kname(const Proto *p, int index, const char **name)
 		*name = getstr(tsvalue(kvalue));
 		return "constant";
 	}
-	else
-	{
-		*name = "?";
-		return NULL;
-	}
+	*name = "?";
+	return NULL;
 }
 
 
@@ -651,7 +648,7 @@ static const char *getobjname(const Proto *p, int lastpc, int reg,
 	const char *kind = basicgetobjname(p, &lastpc, reg, name);
 	if (kind != NULL)
 		return kind;
-	else if (lastpc != -1)
+	if (lastpc != -1)
 	{
 		/* could find instruction? */
 		Instruction i = p->code[lastpc];
@@ -771,16 +768,15 @@ static const char *funcnamefromcall(lua_State *L, CallInfo *ci,
 		*name = "?";
 		return "hook";
 	}
-	else if (ci->callstatus & CIST_FIN)
+	if (ci->callstatus & CIST_FIN)
 	{
 		/* was it called as a finalizer? */
 		*name = "__gc";
 		return "metamethod"; /* report it as such */
 	}
-	else if (isLua(ci))
+	if (isLua(ci))
 		return funcnamefromcode(L, ci_func(ci)->p, currentpc(ci), name);
-	else
-		return NULL;
+	return NULL;
 }
 
 /* }====================================================== */
@@ -794,9 +790,8 @@ static const char *funcnamefromcall(lua_State *L, CallInfo *ci,
 */
 static int instack(CallInfo *ci, const TValue *o)
 {
-	int pos;
 	StkId base = ci->func.p + 1;
-	for (pos = 0; base + pos < ci->top.p; pos++)
+	for (int pos = 0; base + pos < ci->top.p; pos++)
 	{
 		if (o == s2v(base + pos))
 			return pos;
@@ -814,8 +809,7 @@ static const char *getupvalname(CallInfo *ci, const TValue *o,
 											const char **name)
 {
 	LClosure *c = ci_func(ci);
-	int i;
-	for (i = 0; i < c->nupvalues; i++)
+	for (int i = 0; i < c->nupvalues; i++)
 	{
 		if (c->upvals[i]->v.p == o)
 		{
@@ -832,8 +826,7 @@ static const char *formatvarinfo(lua_State *L, const char *kind,
 {
 	if (kind == NULL)
 		return ""; /* no information */
-	else
-		return luaO_pushfstring(L, " (%s '%s')", kind, name);
+	return luaO_pushfstring(L, " (%s '%s')", kind, name);
 }
 
 /*
@@ -1046,8 +1039,9 @@ int luaG_tracecall(lua_State *L)
 		/* first instruction (not resuming)? */
 		if (p->is_vararg)
 			return 0; /* hooks will start at VARARGPREP instruction */
-		else if (!(ci->callstatus & CIST_HOOKYIELD)) /* not yieded? */
-			luaD_hookcall(L, ci); /* check 'call' hook */
+		if (!(ci->callstatus & CIST_HOOKYIELD)) /* not yieded? */
+			luaD_hookcall(L, ci);
+		/* check 'call' hook */
 	}
 	return 1; /* keep 'trap' on */
 }
