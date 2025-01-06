@@ -64,5 +64,7 @@ add_executable(LuaMod
         src/lvm.h
         src/lzio.c
         src/lzio.h
+        src/luacoyote.hpp
+        src/luacoyote.cpp
 
 )
