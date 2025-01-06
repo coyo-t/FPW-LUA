@@ -41,6 +41,7 @@
 #define makevariant(t,v)	((t) | ((v) << 4))
 
 
+
 /*
 ** Union of all Lua values
 */

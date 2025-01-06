@@ -13,11 +13,10 @@
 #include "lmem.hpp"
 
 
-#define EOZ	(-1)			/* end of stream */
+constexpr auto EOZ =	(-1);			/* end of stream */
 
 typedef struct Zio ZIO;
 
-// #define zgetc(z)  (((z)->n--)>0 ?  cast_uchar(*(z)->p++) : luaZ_fill(z))
 
 int zgetc (ZIO* z);
 

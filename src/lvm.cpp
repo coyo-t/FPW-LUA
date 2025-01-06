@@ -650,6 +650,11 @@ int luaV_lessequal(lua_State *L, const TValue *l, const TValue *r)
 }
 
 
+bool luaV_rawequalobj(const TValue *t1, const TValue *t2)
+{
+	return luaV_equalobj(NULL,t1,t2);
+}
+
 /*
 ** Main operation for equality of Lua values; return 't1 == t2'.
 ** L == NULL means raw equality (no metamethods)

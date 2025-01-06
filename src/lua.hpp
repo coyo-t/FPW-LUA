@@ -61,19 +61,19 @@ typedef struct lua_State lua_State;
 /*
 ** basic types
 */
-#define LUA_TNONE		(-1)
+constexpr auto LUA_TNONE =		(-1);
 
-#define LUA_TNIL		0
-#define LUA_TBOOLEAN		1
-#define LUA_TLIGHTUSERDATA	2
-#define LUA_TNUMBER		3
-#define LUA_TSTRING		4
-#define LUA_TTABLE		5
-#define LUA_TFUNCTION		6
-#define LUA_TUSERDATA		7
-#define LUA_TTHREAD		8
+constexpr auto LUA_TNIL =		0;
+constexpr auto LUA_TBOOLEAN =		1;
+constexpr auto LUA_TLIGHTUSERDATA =	2;
+constexpr auto LUA_TNUMBER =		3;
+constexpr auto LUA_TSTRING =		4;
+constexpr auto LUA_TTABLE =		5;
+constexpr auto LUA_TFUNCTION =		6;
+constexpr auto LUA_TUSERDATA =		7;
+constexpr auto LUA_TTHREAD =		8;
 
-#define LUA_NUMTYPES		9
+constexpr auto LUA_NUMTYPES =		9;
 
 
 /* minimum Lua stack available to a C function */
