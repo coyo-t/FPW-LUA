@@ -49,8 +49,19 @@ typedef enum
 
 
 /* convert an object to a float (including string coercion) */
-#define tonumber(o,n) \
-	(ttisfloat(o) ? (*(n) = fltvalue(o), 1) : luaV_tonumber_(o,n))
+// #define tonumber(o,n) \
+// 	(ttisfloat(o) ? (*(n) = fltvalue(o), 1) : luaV_tonumber_(o,n))
+
+template<typename T>
+bool tonumber (const TValue * o, T* n)
+{
+	if (ttisfloat(o))
+	{
+		*(n) = fltvalue(o);
+		return true;
+	}
+	return luaV_tonumber_(o,n);
+}
 
 
 /* convert an object to a float (without string coercion) */
@@ -74,8 +85,6 @@ typedef enum
 #define intop(op,v1,v2) l_castU2S(l_castS2U(v1) op l_castS2U(v2))
 
 
-
-// #define luaV_rawequalobj(t1,t2)		luaV_equalobj(NULL,t1,t2)
 bool luaV_rawequalobj(const TValue * t1,  const TValue * t2);
 
 
