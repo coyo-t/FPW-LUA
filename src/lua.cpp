@@ -879,3 +879,8 @@ int lua_pcall(lua_State *L, int n, int r, int f)
 {
 	return lua_pcallk(L, (n), (r), (f), 0, nullptr);
 }
+
+void lua_call(lua_State *L, int n, int r)
+{
+	lua_callk(L, (n), (r), 0, nullptr);
+}
