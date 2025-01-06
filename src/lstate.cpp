@@ -195,7 +195,7 @@ static void stack_init(lua_State *L1, lua_State *L)
 	int i;
 	CallInfo *ci;
 	/* initialize stack array */
-	L1->stack.p = luaM_newvector(L, BASIC_STACK_SIZE + EXTRA_STACK, StackValue);
+	L1->stack.p = luaM_newvector<StackValue>(L, BASIC_STACK_SIZE + EXTRA_STACK);
 	L1->tbclist.p = L1->stack.p;
 	for (i = 0; i < BASIC_STACK_SIZE + EXTRA_STACK; i++)
 		setnilvalue(s2v(L1->stack.p + i)); /* erase new stack */

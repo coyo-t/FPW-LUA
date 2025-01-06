@@ -14,6 +14,27 @@
 #include "lua.hpp"
 
 
+//
+LUAI_FUNC l_noret luaM_toobig(lua_State *L);
+
+/* not to be called directly */
+LUAI_FUNC void *luaM_realloc_(lua_State *L, void *block, size_t oldsize,
+										size_t size);
+
+LUAI_FUNC void *luaM_saferealloc_(lua_State *L, void *block, size_t oldsize,
+											size_t size);
+
+LUAI_FUNC void luaM_free_(lua_State *L, void *block, size_t osize);
+
+LUAI_FUNC void *luaM_growaux_(lua_State *L, void *block, int nelems,
+										int *size, int size_elem, int limit,
+										const char *what);
+
+LUAI_FUNC void *luaM_shrinkvector_(lua_State *L, void *block, int *nelem,
+												int final_n, int size_elem);
+
+LUAI_FUNC void *luaM_malloc_(lua_State *L, size_t size, int tag);
+//
 
 /*
 ** This macro tests whether it is safe to multiply 'n' by the size of
@@ -26,8 +47,9 @@
 ** false due to limited range of data type"; the +1 tricks the compiler,
 ** avoiding this warning but also this optimization.)
 */
-#define luaM_testsize(n,e)  \
-	(sizeof(n) >= sizeof(size_t) && cast_sizet((n)) + 1 > MAX_SIZET/(e))
+#define luaM_testsize(n,e) (sizeof(n) >= sizeof(size_t) && cast_sizet((n)) + 1 > MAX_SIZET/(e))
+
+
 
 #define luaM_checksize(L,n,e)  \
 	(luaM_testsize(n,e) ? luaM_toobig(L) : cast_void(0))
@@ -54,10 +76,25 @@
 #define luaM_free(L, b)		luaM_free_(L, (b), sizeof(*(b)))
 #define luaM_freearray(L, b, n)   luaM_free_(L, (b), (n)*sizeof(*(b)))
 
+
+//
 #define luaM_newmem(L,t)		cast(t*, luaM_malloc_(L, sizeof(t), 0))
-#define luaM_newvector(L,n,t)	cast(t*, luaM_malloc_(L, (n)*sizeof(t), 0))
+
+
+// #define luaM_newvector(L,n,t)	cast(t*, luaM_malloc_(L, (n)*sizeof(t), 0))
+
+template<typename T>
+T* luaM_newvector (lua_State* L, int n)
+{
+	return cast(T*, luaM_malloc_(L, (n)*sizeof(T), 0));
+}
+
+
+
 #define luaM_newvectorchecked(L,n,t) \
-  (luaM_checksize(L,n,sizeof(t)), luaM_newvector(L,n,t))
+  (luaM_checksize(L,n,sizeof(t)), luaM_newvector<t>(L,n))
+
+//
 
 #define luaM_newobject(L,tag,s)	luaM_malloc_(L, (s), tag)
 
@@ -72,24 +109,5 @@
 #define luaM_shrinkvector(L,v,size,fs,t) \
    ((v)=cast(t *, luaM_shrinkvector_(L, v, &(size), fs, sizeof(t))))
 
-LUAI_FUNC l_noret luaM_toobig(lua_State *L);
-
-/* not to be called directly */
-LUAI_FUNC void *luaM_realloc_(lua_State *L, void *block, size_t oldsize,
-										size_t size);
-
-LUAI_FUNC void *luaM_saferealloc_(lua_State *L, void *block, size_t oldsize,
-											size_t size);
-
-LUAI_FUNC void luaM_free_(lua_State *L, void *block, size_t osize);
-
-LUAI_FUNC void *luaM_growaux_(lua_State *L, void *block, int nelems,
-										int *size, int size_elem, int limit,
-										const char *what);
-
-LUAI_FUNC void *luaM_shrinkvector_(lua_State *L, void *block, int *nelem,
-												int final_n, int size_elem);
-
-LUAI_FUNC void *luaM_malloc_(lua_State *L, size_t size, int tag);
 
 #endif

@@ -142,7 +142,7 @@ void luaS_init(lua_State *L)
 	global_State *g = G(L);
 	int i, j;
 	stringtable *tb = &G(L)->strt;
-	tb->hash = luaM_newvector(L, MINSTRTABSIZE, TString*);
+	tb->hash = luaM_newvector<TString*>(L, MINSTRTABSIZE);
 	tablerehash(tb->hash, 0, MINSTRTABSIZE); /* clear array */
 	tb->size = MINSTRTABSIZE;
 	/* pre-create memory-error message */
