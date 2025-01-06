@@ -51,7 +51,7 @@
 ** between 2^MAXABITS and the maximum size that, measured in bytes,
 ** fits in a 'size_t'.
 */
-#define MAXASIZE	luaM_limitN(1u << MAXABITS, TValue)
+#define MAXASIZE	luaM_limitN<TValue>(1u << MAXABITS)
 
 /*
 ** MAXHBITS is the largest integer such that 2^MAXHBITS fits in a
@@ -65,7 +65,7 @@
 ** between 2^MAXHBITS and the maximum size such that, measured in bytes,
 ** it fits in a 'size_t'.
 */
-#define MAXHSIZE	luaM_limitN(1u << MAXHBITS, Node)
+#define MAXHSIZE	luaM_limitN<Node>(1u << MAXHBITS)
 
 
 /*

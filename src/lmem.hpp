@@ -56,9 +56,15 @@ bool luaM_testsize (int n, size_t e);
 ** when multiplied by the size of type 't'. (Assumes that 'n' is an
 ** 'int' or 'unsigned int' and that 'int' is not larger than 'size_t'.)
 */
-#define luaM_limitN(n,t)  \
-  ((cast_sizet(n) <= MAX_SIZET/sizeof(t)) ? (n) :  \
-     cast_uint((MAX_SIZET/sizeof(t))))
+// #define luaM_limitN(n,t) ((cast_sizet(n) <= MAX_SIZET/sizeof(t)) ? (n) : cast_uint((MAX_SIZET/sizeof(t))))
+
+template<typename T>
+size_t luaM_limitN (size_t n)
+{
+	return (cast_sizet(n) <= MAX_SIZET/sizeof(T))
+		? n
+		: cast_uint(MAX_SIZET/sizeof(T));
+}
 
 
 /*
@@ -107,7 +113,7 @@ T* luaM_newvectorchecked (lua_State* L, int n)
 
 #define luaM_growvector(L,v,nelems,size,t,limit,e) \
 	((v)=cast(t *, luaM_growaux_(L,v,nelems,&(size),sizeof(t), \
-                         luaM_limitN(limit,t),e)))
+                         luaM_limitN<t>(limit),e)))
 
 #define luaM_reallocvector(L, v,oldn,n,t) \
    (cast(t *, luaM_realloc_(L, v, cast_sizet(oldn) * sizeof(t), \

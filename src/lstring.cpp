@@ -25,7 +25,7 @@
 /*
 ** Maximum size for string table.
 */
-#define MAXSTRTB	cast_int(luaM_limitN(MAX_INT, TString*))
+#define MAXSTRTB	cast_int(luaM_limitN<TString*>(MAX_INT))
 
 
 /*
