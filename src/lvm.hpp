@@ -49,9 +49,6 @@ typedef enum
 
 
 /* convert an object to a float (including string coercion) */
-// #define tonumber(o,n) \
-// 	(ttisfloat(o) ? (*(n) = fltvalue(o), 1) : luaV_tonumber_(o,n))
-
 template<typename T>
 bool tonumber (const TValue * o, T* n)
 {
@@ -69,6 +66,22 @@ bool tonumber (const TValue * o, T* n)
 	(ttisfloat(o) ? ((n) = fltvalue(o), 1) : \
 	(ttisinteger(o) ? ((n) = cast_num(ivalue(o)), 1) : 0))
 
+// template<typename T>
+// bool tonumberns (const TValue * o, T* n)
+// {
+// 	if (ttisfloat(o))
+// 	{
+// 		*n = fltvalue(o);
+// 		return true;
+// 	}
+//
+// 	if (ttisinteger(o))
+// 	{
+// 		*n = cast_num(ivalue(o));
+// 		return true;
+// 	}
+// 	return false;
+// }
 
 /* convert an object to an integer (including string coercion) */
 #define tointeger(o,i) \

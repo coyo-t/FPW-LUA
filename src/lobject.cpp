@@ -129,7 +129,8 @@ int luaO_rawarith(lua_State *L, int op, const TValue *p1, const TValue *p2,
 				setfltvalue(res, numarith(L, op, n1, n2));
 				return 1;
 			}
-			else return 0; /* fail */
+			/* fail */
+			return 0;
 		}
 		default: {
 			/* other operations */
@@ -140,12 +141,13 @@ int luaO_rawarith(lua_State *L, int op, const TValue *p1, const TValue *p2,
 				setivalue(res, intarith(L, op, ivalue(p1), ivalue(p2)));
 				return 1;
 			}
-			else if (tonumberns(p1, n1) && tonumberns(p2, n2))
+			if (tonumberns(p1, n1) && tonumberns(p2, n2))
 			{
 				setfltvalue(res, numarith(L, op, n1, n2));
 				return 1;
 			}
-			else return 0; /* fail */
+			/* fail */
+			return 0;
 		}
 	}
 }
