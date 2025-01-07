@@ -87,9 +87,36 @@ void luaD_checkstackaux_ (lua_State *L, int n, auto(*pre)() -> void, auto(*pos)(
 	}
 }
 
-void luaD_checkstack_(lua_State *L, int n)
+void luaD_checkstack(lua_State *L, int n)
 {
 	luaD_checkstackaux_(L,n, {}, {});
+}
+
+void checkstackp(lua_State *L, int n, StkId&p)
+{
+	luaD_checkstackaux(
+		L,
+		n,
+		/* save 'p' */
+		ptrdiff_t pevStack = savestack(L, p),
+		/* 'pos' part: restore 'p' */
+		p = restorestack(L, pevStack)
+	)
+}
+
+void checkstackGCp(lua_State *L, int n, StkId&p)
+{
+	luaD_checkstackaux(
+		L,
+		n,
+		/* save 'p' */
+		ptrdiff_t pevStack = savestack(L, p);
+		/* stack grow uses memory */
+		luaC_checkGC(L),
+		/* 'pos' part: restore 'p' */
+		p = restorestack(L, pevStack)
+	)
+
 }
 
 void checkstackGC(lua_State *L, int fsize)
@@ -351,7 +378,7 @@ void luaD_shrinkstack(lua_State *L)
 
 void luaD_inctop(lua_State *L)
 {
-	luaD_checkstack_(L, 1);
+	luaD_checkstack(L, 1);
 	L->top.p++;
 }
 
@@ -386,7 +413,7 @@ void luaD_hook(lua_State *L, int event, int line,
 		}
 		if (ci->isLua() && L->top.p < ci->top.p)
 			L->top.p = ci->top.p; /* protect entire activation register */
-		luaD_checkstack_(L, LUA_MINSTACK); /* ensure minimum stack size */
+		luaD_checkstack(L, LUA_MINSTACK); /* ensure minimum stack size */
 		if (ci->top.p < L->top.p + LUA_MINSTACK)
 			ci->top.p = L->top.p + LUA_MINSTACK;
 		L->allowhook = 0; /* cannot call hooks inside a hook */
@@ -703,7 +730,7 @@ l_sinline void ccall(lua_State *L, StkId func, int nResults, l_uint32 inc)
 		checkstackp(L, 0, func); /* free any use of EXTRA_STACK */
 		luaE_checkcstack(L);
 	}
-	if ((ci = luaD_precall(L, func, nResults)) != NULL)
+	if ((ci = luaD_precall(L, func, nResults)) != nullptr)
 	{
 		/* Lua function? */
 		ci->callstatus = CIST_FRESH; /* mark that it is a "fresh" execute */

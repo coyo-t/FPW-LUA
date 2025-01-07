@@ -37,31 +37,30 @@ LUAI_FUNC void luaD_checkstackaux_ (
 
 
 /* In general, 'pre'/'pos' are empty (nothing to save) */
-// #define luaD_checkstack(L,n)	luaD_checkstackaux(L,n,(void)0,(void)0)
-LUAI_FUNC void luaD_checkstack_ (lua_State* L, int n);
+LUAI_FUNC void luaD_checkstack (lua_State* L, int n);
 
 
 #define savestack(L,pt)		(cast_charp(pt) - cast_charp(L->stack.p))
 #define restorestack(L,n)	cast(StkId, cast_charp(L->stack.p) + (n))
 
 
-/* macro to check stack size, preserving 'p' */
-#define checkstackp(L,n,p)  \
-  luaD_checkstackaux(L, n, \
-    ptrdiff_t t__ = savestack(L, p),  /* save 'p' */ \
-    p = restorestack(L, t__))  /* 'pos' part: restore 'p' */
+// #define checkstackp(L,n,p)  \
+//   luaD_checkstackaux(L, n, \
+//     ptrdiff_t t__ = savestack(L, p),  /* save 'p' */ \
+//     p = restorestack(L, t__))  /* 'pos' part: restore 'p' */
 
+/* macro to check stack size, preserving 'p' */
+LUAI_FUNC void checkstackp (lua_State*L, int n, StkId& p);
+
+
+// #define checkstackGCp(L,n,p)  \
+//   luaD_checkstackaux(L, n, \
+//     ptrdiff_t t__ = savestack(L, p);  /* save 'p' */ \
+//     luaC_checkGC(L),  /* stack grow uses memory */ \
+//     p = restorestack(L, t__))  /* 'pos' part: restore 'p' */
 
 /* macro to check stack size and GC, preserving 'p' */
-#define checkstackGCp(L,n,p)  \
-  luaD_checkstackaux(L, n, \
-    ptrdiff_t t__ = savestack(L, p);  /* save 'p' */ \
-    luaC_checkGC(L),  /* stack grow uses memory */ \
-    p = restorestack(L, t__))  /* 'pos' part: restore 'p' */
-
-
-LUAI_FUNC void checkstackGCp_ (lua_State* L, int n, StkId* p);
-
+LUAI_FUNC void checkstackGCp (lua_State* L, int n, StkId& p);
 
 /* macro to check stack size and GC */
 LUAI_FUNC void checkstackGC (lua_State* L, int fsize);
