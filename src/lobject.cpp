@@ -464,7 +464,7 @@ void luaO_tostring(lua_State *L, TValue *obj)
 ** (LUA_IDSIZE + MAXNUMBER2STR) + a minimal space for basic messages,
 ** so that 'luaG_addinfo' can work directly on the buffer.
 */
-#define BUFVFS		(LUA_IDSIZE + MAXNUMBER2STR + 95)
+constexpr auto BUFVFS =		(LUA_IDSIZE + MAXNUMBER2STR + 95);
 
 /* buffer used by 'luaO_pushvfstring' */
 typedef struct BuffFS
@@ -521,8 +521,8 @@ static char *getbuff(BuffFS *buff, int sz)
 }
 
 
-#define addsize(b,sz)	((b)->blen += (sz))
-
+// #define addsize(b,sz)	((b)->blen += (sz))
+const auto addsize = [](BuffFS* b, size_t s) { b->blen += s; };
 
 /*
 ** Add 'str' to the buffer. If string is larger than the buffer space,
