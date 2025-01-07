@@ -13,17 +13,6 @@
 #include "lstate.hpp"
 #include "lzio.hpp"
 
-
-/*
-** Macro to check stack size and grow stack if needed.  Parameters
-** 'pre'/'pos' allow the macro to preserve a pointer into the
-** stack across reallocations, doing the work only when needed.
-** It also allows the running of one GC step when the stack is
-** reallocated.
-** 'condmovestack' is used in heavy tests to force a stack reallocation
-** at every check.
-*/
-
 namespace luaD {
 /* In general, 'pre'/'pos' are empty (nothing to save) */
 LUAI_FUNC auto checkstack (lua_State* L, int n) -> void;
