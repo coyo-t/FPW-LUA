@@ -53,9 +53,8 @@
 
 
 /* macro to check stack size and GC */
-#define checkstackGC(L,fsize)  \
-	luaD_checkstackaux(L, (fsize), luaC_checkGC(L), (void)0)
-
+// #define checkstackGC(L,fsize) luaD_checkstackaux(L, (fsize), luaC_checkGC(L), (void)0)
+LUAI_FUNC void checkstackGC (lua_State* L, int fsize);
 
 /* type of protected functions, to be ran by 'runprotected' */
 typedef void (*Pfunc) (lua_State *L, void *ud);

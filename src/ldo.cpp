@@ -73,6 +73,11 @@ struct lua_longjmp
 };
 
 
+void checkstackGC(lua_State *L, int fsize)
+{
+	luaD_checkstackaux(L, (fsize), luaC_checkGC(L), (void)0);
+}
+
 void luaD_seterrorobj(lua_State *L, int errcode, StkId oldtop)
 {
 	switch (errcode)
@@ -1137,3 +1142,5 @@ int luaD_protectedparser(lua_State *L, ZIO *z, const char *name,
 	L->decnny();
 	return status;
 }
+
+
