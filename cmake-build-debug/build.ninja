@@ -41,7 +41,7 @@ include CMakeFiles/rules.ninja
 
 cmake_ninja_workdir = D$:/_projects/parallel2shit/c/LuaMod/cmake-build-debug/
 # =============================================================================
-# Object build statements for EXECUTABLE target LuaMod
+# Object build statements for STATIC_LIBRARY target LuaMod
 
 
 #############################################
@@ -296,21 +296,19 @@ build CMakeFiles/LuaMod.dir/src/luacoyote.cpp.obj: CXX_COMPILER__LuaMod_unscanne
 
 
 # =============================================================================
-# Link build statements for EXECUTABLE target LuaMod
+# Link build statements for STATIC_LIBRARY target LuaMod
 
 
 #############################################
-# Link the executable LuaMod.exe
+# Link the static library libLuaMod.a
 
-build LuaMod.exe: CXX_EXECUTABLE_LINKER__LuaMod_Debug CMakeFiles/LuaMod.dir/src/lapi.cpp.obj CMakeFiles/LuaMod.dir/src/lauxlib.cpp.obj CMakeFiles/LuaMod.dir/src/lbaselib.cpp.obj CMakeFiles/LuaMod.dir/src/lcode.cpp.obj CMakeFiles/LuaMod.dir/src/lcorolib.cpp.obj CMakeFiles/LuaMod.dir/src/lctype.cpp.obj CMakeFiles/LuaMod.dir/src/ldblib.cpp.obj CMakeFiles/LuaMod.dir/src/ldebug.cpp.obj CMakeFiles/LuaMod.dir/src/ldo.cpp.obj CMakeFiles/LuaMod.dir/src/ldump.cpp.obj CMakeFiles/LuaMod.dir/src/lfunc.cpp.obj CMakeFiles/LuaMod.dir/src/lgc.cpp.obj CMakeFiles/LuaMod.dir/src/linit.cpp.obj CMakeFiles/LuaMod.dir/src/liolib.cpp.obj CMakeFiles/LuaMod.dir/src/llex.cpp.obj CMakeFiles/LuaMod.dir/src/lmathlib.cpp.obj CMakeFiles/LuaMod.dir/src/lmem.cpp.obj CMakeFiles/LuaMod.dir/src/loadlib.cpp.obj CMakeFiles/LuaMod.dir/src/lobject.cpp.obj CMakeFiles/LuaMod.dir/src/lopcodes.cpp.obj CMakeFiles/LuaMod.dir/src/loslib.cpp.obj CMakeFiles/LuaMod.dir/src/lparser.cpp.obj CMakeFiles/LuaMod.dir/src/lstate.cpp.obj CMakeFiles/LuaMod.dir/src/lstring.cpp.obj CMakeFiles/LuaMod.dir/src/lstrlib.cpp.obj CMakeFiles/LuaMod.dir/src/ltable.cpp.obj CMakeFiles/LuaMod.dir/src/ltablib.cpp.obj CMakeFiles/LuaMod.dir/src/ltm.cpp.obj CMakeFiles/LuaMod.dir/src/lua.cpp.obj CMakeFiles/LuaMod.dir/src/luac.cpp.obj CMakeFiles/LuaMod.dir/src/lundump.cpp.obj CMakeFiles/LuaMod.dir/src/lutf8lib.cpp.obj CMakeFiles/LuaMod.dir/src/lvm.cpp.obj CMakeFiles/LuaMod.dir/src/lzio.cpp.obj CMakeFiles/LuaMod.dir/src/luacoyote.cpp.obj
-  FLAGS = -g
-  LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+build libLuaMod.a: CXX_STATIC_LIBRARY_LINKER__LuaMod_Debug CMakeFiles/LuaMod.dir/src/lapi.cpp.obj CMakeFiles/LuaMod.dir/src/lauxlib.cpp.obj CMakeFiles/LuaMod.dir/src/lbaselib.cpp.obj CMakeFiles/LuaMod.dir/src/lcode.cpp.obj CMakeFiles/LuaMod.dir/src/lcorolib.cpp.obj CMakeFiles/LuaMod.dir/src/lctype.cpp.obj CMakeFiles/LuaMod.dir/src/ldblib.cpp.obj CMakeFiles/LuaMod.dir/src/ldebug.cpp.obj CMakeFiles/LuaMod.dir/src/ldo.cpp.obj CMakeFiles/LuaMod.dir/src/ldump.cpp.obj CMakeFiles/LuaMod.dir/src/lfunc.cpp.obj CMakeFiles/LuaMod.dir/src/lgc.cpp.obj CMakeFiles/LuaMod.dir/src/linit.cpp.obj CMakeFiles/LuaMod.dir/src/liolib.cpp.obj CMakeFiles/LuaMod.dir/src/llex.cpp.obj CMakeFiles/LuaMod.dir/src/lmathlib.cpp.obj CMakeFiles/LuaMod.dir/src/lmem.cpp.obj CMakeFiles/LuaMod.dir/src/loadlib.cpp.obj CMakeFiles/LuaMod.dir/src/lobject.cpp.obj CMakeFiles/LuaMod.dir/src/lopcodes.cpp.obj CMakeFiles/LuaMod.dir/src/loslib.cpp.obj CMakeFiles/LuaMod.dir/src/lparser.cpp.obj CMakeFiles/LuaMod.dir/src/lstate.cpp.obj CMakeFiles/LuaMod.dir/src/lstring.cpp.obj CMakeFiles/LuaMod.dir/src/lstrlib.cpp.obj CMakeFiles/LuaMod.dir/src/ltable.cpp.obj CMakeFiles/LuaMod.dir/src/ltablib.cpp.obj CMakeFiles/LuaMod.dir/src/ltm.cpp.obj CMakeFiles/LuaMod.dir/src/lua.cpp.obj CMakeFiles/LuaMod.dir/src/luac.cpp.obj CMakeFiles/LuaMod.dir/src/lundump.cpp.obj CMakeFiles/LuaMod.dir/src/lutf8lib.cpp.obj CMakeFiles/LuaMod.dir/src/lvm.cpp.obj CMakeFiles/LuaMod.dir/src/lzio.cpp.obj CMakeFiles/LuaMod.dir/src/luacoyote.cpp.obj
+  LANGUAGE_COMPILE_FLAGS = -g
   OBJECT_DIR = CMakeFiles\LuaMod.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_FILE = LuaMod.exe
-  TARGET_IMPLIB = libLuaMod.dll.a
-  TARGET_PDB = LuaMod.exe.dbg
+  TARGET_FILE = libLuaMod.a
+  TARGET_PDB = LuaMod.a.dbg
 
 
 #############################################
@@ -338,7 +336,7 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 # =============================================================================
 # Target aliases.
 
-build LuaMod: phony LuaMod.exe
+build LuaMod: phony libLuaMod.a
 
 # =============================================================================
 # Folder targets.
@@ -348,7 +346,7 @@ build LuaMod: phony LuaMod.exe
 #############################################
 # Folder: D:/_projects/parallel2shit/c/LuaMod/cmake-build-debug
 
-build all: phony LuaMod.exe
+build all: phony libLuaMod.a
 
 # =============================================================================
 # Built-in targets
