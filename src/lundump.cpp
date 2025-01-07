@@ -41,7 +41,7 @@ struct LoadState
 static l_noret error(LoadState *S, const char *why)
 {
 	luaO_pushfstring(S->L, "%s: bad binary format (%s)", S->name, why);
-	luaD_throw(S->L, LUA_ERRSYNTAX);
+	luaD::lthrow(S->L, LUA_ERRSYNTAX);
 }
 
 
@@ -136,7 +136,7 @@ static TString *loadStringN(LoadState *S, Proto *p)
 		/* long string */
 		ts = luaS_createlngstrobj(L, size); /* create string */
 		setsvalue2s(L, L->top.p, ts); /* anchor it ('loadVector' can GC) */
-		luaD_inctop(L);
+		luaD::inctop(L);
 		loadVector(S, getlngstr(ts), size); /* load directly in final place */
 		L->top.p--; /* pop string */
 	}
@@ -358,7 +358,7 @@ LClosure *luaU_undump(lua_State *L, ZIO *Z, const char *name)
 	checkHeader(&S);
 	LClosure *cl = luaF_newLclosure(L, loadByte(&S));
 	setclLvalue2s(L, L->top.p, cl);
-	luaD_inctop(L);
+	luaD::inctop(L);
 	cl->p = luaF_newproto(L);
 	luaC_objbarrier(L, cl, cl->p);
 	loadFunction(&S, cl->p, NULL);

@@ -175,7 +175,7 @@ void luaE_checkcstack(lua_State *L)
 	if (L->getCcalls() == LUAI_MAXCCALLS)
 		luaG_runerror(L, "C stack overflow");
 	else if (L->getCcalls() >= (LUAI_MAXCCALLS / 10 * 11))
-		luaD_throw(L, LUA_ERRERR); /* error while handling stack error */
+		luaD::lthrow(L, LUA_ERRERR); /* error while handling stack error */
 }
 
 
@@ -291,7 +291,7 @@ static void close_state(lua_State *L)
 	{
 		/* closing a fully built state */
 		L->ci = &L->base_ci; /* unwind CallInfo list */
-		luaD_closeprotected(L, 1, LUA_OK); /* close all upvalues */
+		luaD::closeprotected(L, 1, LUA_OK); /* close all upvalues */
 		luaC_freeallobjects(L); /* collect all objects */
 		luai_userstateclose(L);
 	}
@@ -353,13 +353,13 @@ int luaE_resetthread(lua_State *L, int status)
 	if (status == LUA_YIELD)
 		status = LUA_OK;
 	L->status = LUA_OK; /* so it can run __close metamethods */
-	status = luaD_closeprotected(L, 1, status);
+	status = luaD::closeprotected(L, 1, status);
 	if (status != LUA_OK) /* errors? */
 		luaD_seterrorobj(L, status, L->stack.p + 1);
 	else
 		L->top.p = L->stack.p + 1;
 	ci->top.p = L->top.p + LUA_MINSTACK;
-	luaD_reallocstack(L, cast_int(ci->top.p - L->stack.p), 0);
+	luaD::reallocstack(L, cast_int(ci->top.p - L->stack.p), 0);
 	return status;
 }
 
@@ -432,7 +432,7 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud)
 	setgcparam(g->genmajormul, LUAI_GENMAJORMUL);
 	g->genminormul = LUAI_GENMINORMUL;
 	for (i = 0; i < LUA_NUMTAGS; i++) g->mt[i] = NULL;
-	if (luaD_rawrunprotected(L, f_luaopen, NULL) != LUA_OK)
+	if (luaD::rawrunprotected(L, f_luaopen, NULL) != LUA_OK)
 	{
 		/* memory allocation error: free partial state */
 		close_state(L);

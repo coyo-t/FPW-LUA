@@ -198,7 +198,7 @@ static void growstrtab(lua_State *L, stringtable *tb)
 		/* too many strings? */
 		luaC_fullgc(L, 1); /* try to free some... */
 		if (tb->nuse == MAX_INT) /* still too many? */
-			luaD_throw(L, LUA_ERRMEM); /* cannot even create a message... */
+			luaD::lthrow(L, LUA_ERRMEM); /* cannot even create a message... */
 	}
 	if (tb->size <= MAXSTRTB / 2) /* can grow string table? */
 		luaS_resize(L, tb->size * 2);

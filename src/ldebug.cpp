@@ -962,9 +962,9 @@ l_noret luaG_errormsg(lua_State *L)
 		setobjs2s(L, L->top.p, L->top.p - 1); /* move argument */
 		setobjs2s(L, L->top.p - 1, errfunc); /* push function */
 		L->top.p++; /* assume EXTRA_STACK */
-		luaD_callnoyield(L, L->top.p - 2, 1); /* call it */
+		luaD::callnoyield(L, L->top.p - 2, 1); /* call it */
 	}
-	luaD_throw(L, LUA_ERRRUN);
+	luaD::lthrow(L, LUA_ERRRUN);
 }
 
 
@@ -1108,7 +1108,7 @@ int luaG_traceexec(lua_State *L, const Instruction *pc)
 		if (counthook)
 			L->hookcount = 1; /* undo decrement to zero */
 		ci->callstatus |= CIST_HOOKYIELD; /* mark that it yielded */
-		luaD_throw(L, LUA_YIELD);
+		luaD::lthrow(L, LUA_YIELD);
 	}
 	return 1; /* keep 'trap' on */
 }

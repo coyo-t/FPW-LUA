@@ -2205,10 +2205,10 @@ LClosure *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff,
 	FuncState funcstate;
 	LClosure *cl = luaF_newLclosure(L, 1); /* create main closure */
 	setclLvalue2s(L, L->top.p, cl); /* anchor it (to avoid being collected) */
-	luaD_inctop(L);
+	luaD::inctop(L);
 	lexstate.h = luaH_new(L); /* create table for scanner */
 	sethvalue2s(L, L->top.p, lexstate.h); /* anchor it */
-	luaD_inctop(L);
+	luaD::inctop(L);
 	funcstate.f = cl->p = luaF_newproto(L);
 	luaC_objbarrier(L, cl, cl->p);
 	funcstate.f->source = luaS_new(L, name); /* create and anchor TString */

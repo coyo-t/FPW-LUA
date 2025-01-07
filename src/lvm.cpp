@@ -1922,7 +1922,7 @@ returning: /* trap already set */
 					L->top.p = ra + b; /* top signals number of arguments */
 				/* else previous instruction set top */
 				savepc(L); /* in case of errors */
-				if ((newci = luaD_precall(L, ra, nresults)) == NULL)
+				if ((newci = luaD::precall(L, ra, nresults)) == NULL)
 					updatetrap(ci); /* C call; nothing else to be done */
 				else
 				{
@@ -1957,8 +1957,8 @@ returning: /* trap already set */
 				{
 					/* C function? */
 					ci->func.p -= delta; /* restore 'func' (if vararg) */
-					luaD_poscall(L, ci, n); /* finish caller */
-					updatetrap(ci); /* 'luaD_poscall' can change hooks */
+					luaD::poscall(L, ci, n); /* finish caller */
+					updatetrap(ci); /* 'luaD::poscall' can change hooks */
 					goto ret; /* caller returns after the tail call */
 				}
 			}
@@ -1982,9 +1982,9 @@ returning: /* trap already set */
 				}
 				if (nparams1) /* vararg function? */
 					ci->func.p -= ci->u.l.nextraargs + nparams1;
-				L->top.p = ra + n; /* set call for 'luaD_poscall' */
-				luaD_poscall(L, ci, n);
-				updatetrap(ci); /* 'luaD_poscall' can change hooks */
+				L->top.p = ra + n; /* set call for 'luaD::poscall' */
+				luaD::poscall(L, ci, n);
+				updatetrap(ci); /* 'luaD::poscall' can change hooks */
 				goto ret;
 			}
 		vmcase(OP_RETURN0)
@@ -1994,7 +1994,7 @@ returning: /* trap already set */
 					StkId ra = RA(i);
 					L->top.p = ra;
 					savepc(ci);
-					luaD_poscall(L, ci, 0); /* no hurry... */
+					luaD::poscall(L, ci, 0); /* no hurry... */
 					trap = 1;
 				}
 				else
@@ -2015,7 +2015,7 @@ returning: /* trap already set */
 					StkId ra = RA(i);
 					L->top.p = ra + 1;
 					savepc(ci);
-					luaD_poscall(L, ci, 1); /* no hurry... */
+					luaD::poscall(L, ci, 1); /* no hurry... */
 					trap = 1;
 				}
 				else
@@ -2098,7 +2098,7 @@ returning: /* trap already set */
 					/* push function, state, and control variable */
 					memcpy(ra + 4, ra, 3 * sizeof(*ra));
 					L->top.p = ra + 4 + 3;
-					ProtectNT(luaD_call(L, ra + 4, GETARG_C(i))); /* do the call */
+					ProtectNT(luaD::call(L, ra + 4, GETARG_C(i))); /* do the call */
 					updatestack(ci); /* stack may have changed */
 					i = *(pc++); /* go to next instruction */
 					lua_assert(GET_OPCODE(i) == OP_TFORLOOP && ra == RA(i));

@@ -709,7 +709,7 @@ static int traversethread(global_State *g, lua_State *th)
 	{
 		/* final traversal? */
 		if (!g->gcemergency)
-			luaD_shrinkstack(th); /* do not change stack in emergency cycle */
+			luaD::shrinkstack(th); /* do not change stack in emergency cycle */
 		for (o = th->top.p; o < th->stack_last.p + EXTRA_STACK; o++)
 			setnilvalue(s2v(o)); /* clear dead stack slice */
 		/* 'remarkupvals' may have removed thread from 'twups' list */
@@ -1003,7 +1003,7 @@ static GCObject *udata2finalize(global_State *g)
 static void dothecall(lua_State *L, void *ud)
 {
 	UNUSED(ud);
-	luaD_callnoyield(L, L->top.p - 2, 0);
+	luaD::callnoyield(L, L->top.p - 2, 0);
 }
 
 
@@ -1026,7 +1026,7 @@ static void GCTM(lua_State *L)
 		setobj2s(L, L->top.p++, tm); /* push finalizer... */
 		setobj2s(L, L->top.p++, &v); /* ... and its argument */
 		L->ci->callstatus |= CIST_FIN; /* will run a finalizer */
-		status = luaD_pcall(L, dothecall, NULL, savestack(L, L->top.p - 2), 0);
+		status = luaD::pcall(L, dothecall, NULL, savestack(L, L->top.p - 2), 0);
 		L->ci->callstatus &= ~CIST_FIN; /* not running a finalizer anymore */
 		L->allowhook = oldah; /* restore hooks */
 		g->gcstp = oldgcstp; /* restore state */

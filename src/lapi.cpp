@@ -129,7 +129,7 @@ LUA_API int lua_checkstack(lua_State *L, int n)
 	if (L->stack_last.p - L->top.p > n) /* stack large enough? */
 		res = 1; /* yes; check is OK */
 	else /* need to grow stack */
-		res = luaD_growstack(L, n, 0);
+		res = luaD::growstack(L, n, 0);
 	if (res && ci->top.p < L->top.p + n)
 		ci->top.p = L->top.p + n; /* adjust frame top */
 	lua_unlock(L);
@@ -1134,10 +1134,10 @@ LUA_API void lua_callk(lua_State *L, int nargs, int nresults,
 		/* need to prepare continuation? */
 		L->ci->u.c.k = k; /* save continuation */
 		L->ci->u.c.ctx = ctx; /* save context */
-		luaD_call(L, func, nresults); /* do the call */
+		luaD::call(L, func, nresults); /* do the call */
 	}
 	else /* no continuation or no yieldable */
-		luaD_callnoyield(L, func, nresults); /* just do the call */
+		luaD::callnoyield(L, func, nresults); /* just do the call */
 	adjustresults(L, nresults);
 	lua_unlock(L);
 }
@@ -1157,7 +1157,7 @@ struct CallS
 static void f_call(lua_State *L, void *ud)
 {
 	struct CallS *c = cast(struct CallS *, ud);
-	luaD_callnoyield(L, c->func, c->nresults);
+	luaD::callnoyield(L, c->func, c->nresults);
 }
 
 
@@ -1186,7 +1186,7 @@ LUA_API int lua_pcallk(lua_State *L, int nargs, int nresults, int errfunc,
 	{
 		/* no continuation or no yieldable? */
 		c.nresults = nresults; /* do a 'conventional' protected call */
-		status = luaD_pcall(L, f_call, &c, savestack(L, c.func), func);
+		status = luaD::pcall(L, f_call, &c, savestack(L, c.func), func);
 	}
 	else
 	{
@@ -1200,7 +1200,7 @@ LUA_API int lua_pcallk(lua_State *L, int nargs, int nresults, int errfunc,
 		L->errfunc = func;
 		ci->setoah(L->allowhook); /* save value of 'allowhook' */
 		ci->callstatus |= CIST_YPCALL; /* function can do error recovery */
-		luaD_call(L, c.func, nresults); /* do the call */
+		luaD::call(L, c.func, nresults); /* do the call */
 		ci->callstatus &= ~CIST_YPCALL;
 		L->errfunc = ci->u.c.old_errfunc;
 		status = LUA_OK; /* if it is here, there were no errors */
@@ -1381,7 +1381,7 @@ LUA_API int lua_error(lua_State *L)
 	api_checknelems(L, 1);
 	/* error object is the memory error message? */
 	if (ttisshrstring(errobj) && eqshrstr(tsvalue(errobj), G(L)->memerrmsg))
-		luaD_throw(L, LUA_ERRMEM); /* raise a memory error */
+		luaD::lthrow(L, LUA_ERRMEM); /* raise a memory error */
 	else
 		luaG_errormsg(L); /* raise a regular error */
 	/* code unreachable; will unlock when control actually leaves the kernel */

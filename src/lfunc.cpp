@@ -122,9 +122,9 @@ static void callclosemethod(lua_State *L, TValue *obj, TValue *err, int yy)
 	setobj2s(L, top + 2, err); /* and error msg. as 2nd argument */
 	L->top.p = top + 3; /* add function and arguments */
 	if (yy)
-		luaD_call(L, top, 0);
+		luaD::call(L, top, 0);
 	else
-		luaD_callnoyield(L, top, 0);
+		luaD::callnoyield(L, top, 0);
 }
 
 

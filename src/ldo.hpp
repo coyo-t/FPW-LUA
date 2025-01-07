@@ -25,10 +25,8 @@
 */
 
 /* In general, 'pre'/'pos' are empty (nothing to save) */
-LUAI_FUNC void luaD_checkstack (lua_State* L, int n);
-
-LUAI_FUNC ptrdiff_t savestack (lua_State* L, StkId pt);
-
+LUAI_FUNC auto luaD_checkstack (lua_State* L, int n) -> void;
+LUAI_FUNC auto savestack (lua_State* L, StkId pt) -> ptrdiff_t;
 LUAI_FUNC auto restorestack(lua_State* L, ptrdiff_t n) -> StkId;
 
 
@@ -52,20 +50,25 @@ LUAI_FUNC void luaD_hook (lua_State *L, int event, int line,
 LUAI_FUNC void luaD_hookcall (lua_State *L, CallInfo *ci);
 LUAI_FUNC int luaD_pretailcall (lua_State *L, CallInfo *ci, StkId func,
                                               int narg1, int delta);
-LUAI_FUNC CallInfo *luaD_precall (lua_State *L, StkId func, int nResults);
-LUAI_FUNC void luaD_call (lua_State *L, StkId func, int nResults);
-LUAI_FUNC void luaD_callnoyield (lua_State *L, StkId func, int nResults);
-LUAI_FUNC int luaD_closeprotected (lua_State *L, ptrdiff_t level, int status);
-LUAI_FUNC int luaD_pcall (lua_State *L, Pfunc func, void *u,
-                                        ptrdiff_t oldtop, ptrdiff_t ef);
-LUAI_FUNC void luaD_poscall (lua_State *L, CallInfo *ci, int nres);
-LUAI_FUNC int luaD_reallocstack (lua_State *L, int newsize, int raiseerror);
-LUAI_FUNC int luaD_growstack (lua_State *L, int n, int raiseerror);
-LUAI_FUNC void luaD_shrinkstack (lua_State *L);
-LUAI_FUNC void luaD_inctop (lua_State *L);
 
-LUAI_FUNC l_noret luaD_throw (lua_State *L, int errcode);
-LUAI_FUNC int luaD_rawrunprotected (lua_State *L, Pfunc f, void *ud);
+
+namespace luaD {
+LUAI_FUNC CallInfo *precall (lua_State *L, StkId func, int nResults);
+LUAI_FUNC void call (lua_State *L, StkId func, int nResults);
+LUAI_FUNC void callnoyield (lua_State *L, StkId func, int nResults);
+LUAI_FUNC int closeprotected (lua_State *L, ptrdiff_t level, int status);
+LUAI_FUNC int pcall (lua_State *L, Pfunc func, void *u, ptrdiff_t oldtop, ptrdiff_t ef);
+LUAI_FUNC void poscall (lua_State *L, CallInfo *ci, int nres);
+LUAI_FUNC int reallocstack (lua_State *L, int newsize, int raiseerror);
+LUAI_FUNC int growstack (lua_State *L, int n, int raiseerror);
+LUAI_FUNC void shrinkstack (lua_State *L);
+LUAI_FUNC void inctop (lua_State *L);
+
+LUAI_FUNC l_noret lthrow (lua_State *L, int errcode);
+
+LUAI_FUNC int rawrunprotected (lua_State *L, Pfunc f, void *ud);
+
+}
 
 #endif
 
