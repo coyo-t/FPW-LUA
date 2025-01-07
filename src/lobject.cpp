@@ -522,7 +522,7 @@ static char *getbuff(BuffFS *buff, int sz)
 
 
 // #define addsize(b,sz)	((b)->blen += (sz))
-const auto addsize = [](BuffFS* b, size_t s) { b->blen += s; };
+static const auto addsize = [](BuffFS* b, size_t s) { b->blen += s; };
 
 /*
 ** Add 'str' to the buffer. If string is larger than the buffer space,
