@@ -27,12 +27,7 @@
 /* In general, 'pre'/'pos' are empty (nothing to save) */
 LUAI_FUNC void luaD_checkstack (lua_State* L, int n);
 
-
-// #define savestack(L,pt)		(cast_charp(pt) - cast_charp(L->stack.p))
-
 LUAI_FUNC ptrdiff_t savestack (lua_State* L, StkId pt);
-
-// #define restorestack(L,n)	cast(StkId, cast_charp(L->stack.p) + (n))
 
 LUAI_FUNC auto restorestack(lua_State* L, ptrdiff_t n) -> StkId;
 
