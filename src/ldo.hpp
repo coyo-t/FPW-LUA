@@ -28,9 +28,17 @@
 	  { pre; luaD_growstack(L, n, 1); pos; } \
         else { condmovestack(L,pre,pos); }
 
-/* In general, 'pre'/'pos' are empty (nothing to save) */
-#define luaD_checkstack(L,n)	luaD_checkstackaux(L,n,(void)0,(void)0)
+LUAI_FUNC void luaD_checkstackaux_ (
+	lua_State* L,
+	int n,
+	auto (*pre)() -> void,
+	auto (*pos)() -> void
+);
 
+
+/* In general, 'pre'/'pos' are empty (nothing to save) */
+// #define luaD_checkstack(L,n)	luaD_checkstackaux(L,n,(void)0,(void)0)
+LUAI_FUNC void luaD_checkstack_ (lua_State* L, int n);
 
 
 #define savestack(L,pt)		(cast_charp(pt) - cast_charp(L->stack.p))
@@ -52,8 +60,10 @@
     p = restorestack(L, t__))  /* 'pos' part: restore 'p' */
 
 
+LUAI_FUNC void checkstackGCp_ (lua_State* L, int n, StkId* p);
+
+
 /* macro to check stack size and GC */
-// #define checkstackGC(L,fsize) luaD_checkstackaux(L, (fsize), luaC_checkGC(L), (void)0)
 LUAI_FUNC void checkstackGC (lua_State* L, int fsize);
 
 /* type of protected functions, to be ran by 'runprotected' */

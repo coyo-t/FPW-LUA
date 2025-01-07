@@ -73,6 +73,25 @@ struct lua_longjmp
 };
 
 
+void luaD_checkstackaux_ (lua_State *L, int n, auto(*pre)() -> void, auto(*pos)() -> void)
+{
+	if (l_unlikely(L->stack_last.p - L->top.p <= (n)))
+	{
+		pre();
+		luaD_growstack(L, n, 1);
+		pos();
+	}
+	else
+	{
+		condmovestack(L,pre,pos);
+	}
+}
+
+void luaD_checkstack_(lua_State *L, int n)
+{
+	luaD_checkstackaux_(L,n, {}, {});
+}
+
 void checkstackGC(lua_State *L, int fsize)
 {
 	luaD_checkstackaux(L, (fsize), luaC_checkGC(L), (void)0);
@@ -332,7 +351,7 @@ void luaD_shrinkstack(lua_State *L)
 
 void luaD_inctop(lua_State *L)
 {
-	luaD_checkstack(L, 1);
+	luaD_checkstack_(L, 1);
 	L->top.p++;
 }
 
@@ -367,7 +386,7 @@ void luaD_hook(lua_State *L, int event, int line,
 		}
 		if (ci->isLua() && L->top.p < ci->top.p)
 			L->top.p = ci->top.p; /* protect entire activation register */
-		luaD_checkstack(L, LUA_MINSTACK); /* ensure minimum stack size */
+		luaD_checkstack_(L, LUA_MINSTACK); /* ensure minimum stack size */
 		if (ci->top.p < L->top.p + LUA_MINSTACK)
 			ci->top.p = L->top.p + LUA_MINSTACK;
 		L->allowhook = 0; /* cannot call hooks inside a hook */
