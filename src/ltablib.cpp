@@ -7,6 +7,8 @@
 #define ltablib_c
 #define LUA_LIB
 
+#include <functional>
+
 #include "lprefix.hpp"
 
 
@@ -24,10 +26,10 @@
 ** Operations that an object must define to mimic a table
 ** (some functions only need some of them)
 */
-#define TAB_R	1			/* read */
-#define TAB_W	2			/* write */
-#define TAB_L	4			/* length */
-#define TAB_RW	(TAB_R | TAB_W)		/* read/write */
+constexpr auto TAB_R =	1;			/* read */
+constexpr auto TAB_W =	2;			/* write */
+constexpr auto TAB_L =	4;			/* length */
+constexpr auto TAB_RW =	(TAB_R | TAB_W);		/* read/write */
 
 
 #define aux_getn(L,n,w)	(checktab(L, n, (w) | TAB_L), luaL_len(L, n))
@@ -67,7 +69,9 @@ static int tinsert(lua_State *L)
 {
 	lua_Integer pos; /* where to insert new element */
 	lua_Integer e = aux_getn(L, 1, TAB_RW);
-	e = luaL_intop(+, e, 1); /* first empty element */
+
+	/* first empty element */
+	e = luaL_intop(+, e, 1);
 	switch (lua_gettop(L))
 	{
 		case 2: {

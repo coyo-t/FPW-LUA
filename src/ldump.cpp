@@ -66,7 +66,7 @@ struct DumpState
 
 	void dumpByte(int y)
 	{
-		lu_byte x = static_cast<lu_byte>(y);
+		auto x = static_cast<lu_byte>(y);
 		dumpVar(&x);
 	}
 
