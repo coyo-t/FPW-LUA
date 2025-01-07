@@ -19,7 +19,7 @@
 ** Memory-allocation error message must be preallocated (it cannot
 ** be created after memory is exhausted)
 */
-#define MEMERRMSG       "not enough memory";
+#define MEMERRMSG       "not enough memory"
 
 
 #define luaS_newliteral(L, s)	(luaS::newlstr(L, "" s, (sizeof(s)/sizeof(char))-1))
@@ -39,35 +39,6 @@
 
 namespace luaS {
 
-template<size_t Len>
-struct Const
-{
-	char text[Len];
-
-	constexpr size_t chars_length () const
-	{
-		return sizeof(text) / sizeof(char) - 1;
-	}
-
-	constexpr explicit Const (const char (&txt)[Len]): text(txt)
-	{
-		std::copy_n(txt, Len, text);
-	}
-};
-
-template<Const str>
-constexpr auto operator"" _literal ()
-{
-	struct ts: std::string_view
-	{
-		constexpr ts(): std::string_view(str.data, str.size()) {}
-	};
-	return ts {};
-}
-
-constexpr auto MEMERRMSG_ = "not enough memory"_literal;
-
-
 LUAI_FUNCA hash (const char *str, size_t l, unsigned int seed) -> unsigned int;
 LUAI_FUNCA hashlongstr (TString *ts) -> unsigned int;
 LUAI_FUNCA eqlngstr (TString *a, TString *b) -> int;
@@ -81,16 +52,9 @@ LUAI_FUNCA news (lua_State *L, const char *str) -> TString*;
 LUAI_FUNCA createlngstrobj (lua_State *L, size_t l) -> TString*;
 
 template<size_t N>
-LUAI_FUNCA newliteral (lua_State* L, Const<N> str) -> TString*
+LUAI_FUNCA newstrlit (lua_State* L, const char (&str)[N]) -> TString*
 {
-	return luaS::newlstr(L, str.text, str.chars_length());
-}
-
-template<size_t N>
-LUAI_FUNCA newliteral (lua_State* L, const char str[N]) -> TString*
-{
-	constexpr auto c = luaS::Const<N>(str);
-	return luaS::newlstr(L, c.text, c.chars_length());
+	return (luaS::newlstr(L, str, (N/sizeof(char))-1));
 }
 
 }

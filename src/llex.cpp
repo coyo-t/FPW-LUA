@@ -71,7 +71,7 @@ void luaX_init(lua_State *L)
 {
 	/* create env name */
 	// TString *e = luaS_newliteral(L, LUA_ENV);
-	TString *e = luaS::newliteral(L, LUA_ENV);
+	TString *e = luaS::newstrlit(L, LUA_ENV);
 	luaC_fix(L, obj2gco(e)); /* never collect this name */
 	for (int i = 0; i < NUM_RESERVED; i++)
 	{

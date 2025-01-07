@@ -248,15 +248,12 @@ TString *luaS::newlstr(lua_State *L, const char *str, size_t l)
 {
 	if (l <= LUAI_MAXSHORTLEN) /* short string? */
 		return internshrstr(L, str, l);
-	else
-	{
-		TString *ts;
-		if (l_unlikely(l * sizeof(char) >= (MAX_SIZE - sizeof(TString))))
-			luaM::toobig(L);
-		ts = luaS::createlngstrobj(L, l);
-		memcpy(getlngstr(ts), str, l * sizeof(char));
-		return ts;
-	}
+	TString *ts;
+	if (l_unlikely(l * sizeof(char) >= (MAX_SIZE - sizeof(TString))))
+		luaM::toobig(L);
+	ts = luaS::createlngstrobj(L, l);
+	memcpy(getlngstr(ts), str, l * sizeof(char));
+	return ts;
 }
 
 
