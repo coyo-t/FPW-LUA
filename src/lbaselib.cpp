@@ -413,7 +413,7 @@ static int luaB_loadfile(lua_State *L)
 ** string to avoid it being collected while parsed. 'load' has four
 ** optional arguments (chunk, source name, mode, and environment).
 */
-#define RESERVEDSLOT	5
+constexpr auto RESERVEDSLOT =	5;
 
 
 /*
@@ -432,9 +432,9 @@ static const char *generic_reader(lua_State *L, void *ud, size_t *size)
 	{
 		lua_pop(L, 1); /* pop result */
 		*size = 0;
-		return NULL;
+		return nullptr;
 	}
-	else if (l_unlikely(!lua_isstring(L, -1)))
+	if (l_unlikely(!lua_isstring(L, -1)))
 		luaL_error(L, "reader function must return a string");
 	lua_replace(L, RESERVEDSLOT); /* save string in reserved slot */
 	return lua_tolstring(L, RESERVEDSLOT, size);
@@ -448,7 +448,7 @@ static int luaB_load(lua_State *L)
 	const char *s = lua_tolstring(L, 1, &l);
 	const char *mode = luaL_optstring(L, 3, "bt");
 	int env = (!lua_isnone(L, 4) ? 4 : 0); /* 'env' index or 0 if no 'env' */
-	if (s != NULL)
+	if (s != nullptr)
 	{
 		/* loading a string? */
 		const char *chunkname = luaL_optstring(L, 2, s);
@@ -491,15 +491,12 @@ static int luaB_assert(lua_State *L)
 {
 	if (l_likely(lua_toboolean(L, 1))) /* condition is true? */
 		return lua_gettop(L); /* return all arguments */
-	else
-	{
-		/* error */
-		luaL_checkany(L, 1); /* there must be a condition */
-		lua_remove(L, 1); /* remove it */
-		lua_pushliteral(L, "assertion failed!"); /* default message */
-		lua_settop(L, 1); /* leave only message (default if no other one) */
-		return luaB_error(L); /* call 'error' */
-	}
+	/* error */
+	luaL_checkany(L, 1); /* there must be a condition */
+	lua_remove(L, 1); /* remove it */
+	lua_pushliteral(L, "assertion failed!"); /* default message */
+	lua_settop(L, 1); /* leave only message (default if no other one) */
+	return luaB_error(L); /* call 'error' */
 }
 
 
@@ -511,14 +508,11 @@ static int luaB_select(lua_State *L)
 		lua_pushinteger(L, n - 1);
 		return 1;
 	}
-	else
-	{
-		lua_Integer i = luaL_checkinteger(L, 1);
-		if (i < 0) i = n + i;
-		else if (i > n) i = n;
-		luaL_argcheck(L, 1 <= i, 1, "index out of range");
-		return n - (int) i;
-	}
+	lua_Integer i = luaL_checkinteger(L, 1);
+	if (i < 0) i = n + i;
+	else if (i > n) i = n;
+	luaL_argcheck(L, 1 <= i, 1, "index out of range");
+	return n - static_cast<int>(i);
 }
 
 
@@ -538,18 +532,17 @@ static int finishpcall(lua_State *L, int status, lua_KContext extra)
 		lua_pushvalue(L, -2); /* error message */
 		return 2; /* return false, msg */
 	}
-	else
-		return lua_gettop(L) - (int) extra; /* return all results */
+	/* return all results */
+	return lua_gettop(L) - static_cast<int>(extra);
 }
 
 
 static int luaB_pcall(lua_State *L)
 {
-	int status;
 	luaL_checkany(L, 1);
 	lua_pushboolean(L, 1); /* first result if no errors */
 	lua_insert(L, 1); /* put it in place */
-	status = lua_pcallk(L, lua_gettop(L) - 2, LUA_MULTRET, 0, 0, finishpcall);
+	int status = lua_pcallk(L, lua_gettop(L) - 2, LUA_MULTRET, 0, 0, finishpcall);
 	return finishpcall(L, status, 0);
 }
 
@@ -561,13 +554,12 @@ static int luaB_pcall(lua_State *L)
 */
 static int luaB_xpcall(lua_State *L)
 {
-	int status;
 	int n = lua_gettop(L);
 	luaL_checktype(L, 2, LUA_TFUNCTION); /* check error function */
 	lua_pushboolean(L, 1); /* first result */
 	lua_pushvalue(L, 1); /* function */
 	lua_rotate(L, 3, 2); /* move them below function's arguments */
-	status = lua_pcallk(L, n - 2, LUA_MULTRET, 2, 2, finishpcall);
+	int status = lua_pcallk(L, n - 2, LUA_MULTRET, 2, 2, finishpcall);
 	return finishpcall(L, status, 2);
 }
 
@@ -575,7 +567,7 @@ static int luaB_xpcall(lua_State *L)
 static int luaB_tostring(lua_State *L)
 {
 	luaL_checkany(L, 1);
-	luaL_tolstring(L, 1, NULL);
+	luaL_tolstring(L, 1, nullptr);
 	return 1;
 }
 
@@ -605,9 +597,9 @@ static const luaL_Reg base_funcs[] = {
 	{"type", luaB_type},
 	{"xpcall", luaB_xpcall},
 	/* placeholders */
-	{LUA_GNAME, NULL},
-	{"_VERSION", NULL},
-	{NULL, NULL}
+	{LUA_GNAME, nullptr},
+	{"_VERSION", nullptr},
+	{nullptr, nullptr}
 };
 
 

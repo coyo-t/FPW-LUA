@@ -8,6 +8,8 @@
 #ifndef lauxlib_h
 #define lauxlib_h
 
+#include <array>
+
 extern "C" {
 #include <stddef.h>
 #include <stdio.h>
@@ -321,5 +323,6 @@ typedef struct luaL_Stream
 /* }============================================================ */
 
 
+} // end extern c
+
 #endif
-}

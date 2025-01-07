@@ -41,8 +41,8 @@
 */
 
 
-#define LEVELS1	10	/* size of the first part of the stack */
-#define LEVELS2	11	/* size of the second part of the stack */
+constexpr auto LEVELS1 =	10;	/* size of the first part of the stack */
+constexpr auto LEVELS2 =	11;	/* size of the second part of the stack */
 
 
 /*
@@ -66,7 +66,7 @@ static int findfield(lua_State *L, int objidx, int level)
 				lua_pop(L, 1); /* remove value (but keep name) */
 				return 1;
 			}
-			else if (findfield(L, objidx, level - 1))
+			if (findfield(L, objidx, level - 1))
 			{
 				/* try recursively */
 				/* stack: lib_name, lib_table, field_name (top) */
@@ -215,7 +215,7 @@ LUALIB_API int luaL_argerror(lua_State *L, int arg, const char *extramsg)
 			return luaL_error(L, "calling '%s' on bad self (%s)",
 									ar.name, extramsg);
 	}
-	if (ar.name == NULL)
+	if (ar.name == nullptr)
 		ar.name = (pushglobalfuncname(L, &ar)) ? lua_tostring(L, -1) : "?";
 	return luaL_error(L, "bad argument #%d to '%s' (%s)",
 							arg, ar.name, extramsg);
@@ -290,18 +290,14 @@ LUALIB_API int luaL_fileresult(lua_State *L, int stat, const char *fname)
 		lua_pushboolean(L, 1);
 		return 1;
 	}
+	luaL_pushfail(L);
+	const char *msg = (en != 0) ? strerror(en) : "(no extra info)";
+	if (fname)
+		lua_pushfstring(L, "%s: %s", fname, msg);
 	else
-	{
-		const char *msg;
-		luaL_pushfail(L);
-		msg = (en != 0) ? strerror(en) : "(no extra info)";
-		if (fname)
-			lua_pushfstring(L, "%s: %s", fname, msg);
-		else
-			lua_pushstring(L, msg);
-		lua_pushinteger(L, en);
-		return 3;
-	}
+		lua_pushstring(L, msg);
+	lua_pushinteger(L, en);
+	return 3;
 }
 
 
@@ -330,19 +326,16 @@ LUALIB_API int luaL_fileresult(lua_State *L, int stat, const char *fname)
 LUALIB_API int luaL_execresult(lua_State *L, int stat)
 {
 	if (stat != 0 && errno != 0) /* error with an 'errno'? */
-		return luaL_fileresult(L, 0, NULL);
+		return luaL_fileresult(L, 0, nullptr);
+	auto what = "exit"; /* type of termination */
+	l_inspectstat(stat, what); /* interpret result */
+	if (*what == 'e' && stat == 0) /* successful termination? */
+		lua_pushboolean(L, 1);
 	else
-	{
-		const char *what = "exit"; /* type of termination */
-		l_inspectstat(stat, what); /* interpret result */
-		if (*what == 'e' && stat == 0) /* successful termination? */
-			lua_pushboolean(L, 1);
-		else
-			luaL_pushfail(L);
-		lua_pushstring(L, what);
-		lua_pushinteger(L, stat);
-		return 3; /* return true/fail,what,code */
-	}
+		luaL_pushfail(L);
+	lua_pushstring(L, what);
+	lua_pushinteger(L, stat);
+	return 3; /* return true/fail,what,code */
 }
 
 /* }====================================================== */
@@ -542,9 +535,9 @@ static void *resizebox(lua_State *L, int idx, size_t newsize)
 {
 	void *ud;
 	lua_Alloc allocf = lua_getallocf(L, &ud);
-	UBox *box = (UBox *) lua_touserdata(L, idx);
+	auto box = static_cast<UBox *>(lua_touserdata(L, idx));
 	void *temp = allocf(ud, box->box, box->bsize, newsize);
-	if (l_unlikely(temp == NULL && newsize > 0))
+	if (l_unlikely(temp == nullptr && newsize > 0))
 	{
 		/* allocation error? */
 		lua_pushliteral(L, "not enough memory");
@@ -573,8 +566,8 @@ static const luaL_Reg boxmt[] = {
 
 static void newbox(lua_State *L)
 {
-	UBox *box = (UBox *) lua_newuserdatauv(L, sizeof(UBox), 0);
-	box->box = NULL;
+	auto box = static_cast<UBox *>(lua_newuserdatauv(L, sizeof(UBox), 0));
+	box->box = nullptr;
 	box->bsize = 0;
 	if (luaL_newmetatable(L, "_UBOX*")) /* creating metatable? */
 		luaL_setfuncs(L, boxmt, 0); /* set its metamethods */
@@ -950,9 +943,9 @@ typedef struct LoadS
 
 static const char *getS(lua_State *L, void *ud, size_t *size)
 {
-	LoadS *ls = (LoadS *) ud;
+	auto *ls = static_cast<LoadS *>(ud);
 	(void) L; /* not used */
-	if (ls->size == 0) return NULL;
+	if (ls->size == 0) return nullptr;
 	*size = ls->size;
 	ls->size = 0;
 	return ls->s;
@@ -981,17 +974,13 @@ LUALIB_API int luaL_getmetafield(lua_State *L, int obj, const char *event)
 {
 	if (!lua_getmetatable(L, obj)) /* no metatable? */
 		return LUA_TNIL;
+	lua_pushstring(L, event);
+	int tt = lua_rawget(L, -2);
+	if (tt == LUA_TNIL) /* is metafield nil? */
+		lua_pop(L, 2); /* remove metatable and metafield */
 	else
-	{
-		int tt;
-		lua_pushstring(L, event);
-		tt = lua_rawget(L, -2);
-		if (tt == LUA_TNIL) /* is metafield nil? */
-			lua_pop(L, 2); /* remove metatable and metafield */
-		else
-			lua_remove(L, -2); /* remove only metatable */
-		return tt; /* return metafield type */
-	}
+		lua_remove(L, -2); /* remove only metatable */
+	return tt; /* return metafield type */
 }
 
 
@@ -1070,15 +1059,14 @@ LUALIB_API const char *luaL_tolstring(lua_State *L, int idx, size_t *len)
 LUALIB_API void luaL_setfuncs(lua_State *L, const luaL_Reg *l, int nup)
 {
 	luaL_checkstack(L, nup, "too many upvalues");
-	for (; l->name != NULL; l++)
+	for (; l->name != nullptr; l++)
 	{
 		/* fill the table with given functions */
-		if (l->func == NULL) /* placeholder? */
+		if (l->func == nullptr) /* placeholder? */
 			lua_pushboolean(L, 0);
 		else
 		{
-			int i;
-			for (i = 0; i < nup; i++) /* copy upvalues to the top */
+			for (int i = 0; i < nup; i++) /* copy upvalues to the top */
 				lua_pushvalue(L, -nup);
 			lua_pushcclosure(L, l->func, nup); /* closure with those upvalues */
 		}
@@ -1171,10 +1159,9 @@ static void *l_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 	if (nsize == 0)
 	{
 		free(ptr);
-		return NULL;
+		return nullptr;
 	}
-	else
-		return realloc(ptr, nsize);
+	return realloc(ptr, nsize);
 }
 
 
@@ -1214,14 +1201,11 @@ static int checkcontrol(lua_State *L, const char *message, int tocont)
 {
 	if (tocont || *(message++) != '@') /* not a control message? */
 		return 0;
-	else
-	{
-		if (strcmp(message, "off") == 0)
-			lua_setwarnf(L, warnfoff, L); /* turn warnings off */
-		else if (strcmp(message, "on") == 0)
-			lua_setwarnf(L, warnfon, L); /* turn warnings on */
-		return 1; /* it was a control message */
-	}
+	if (strcmp(message, "off") == 0)
+		lua_setwarnf(L, warnfoff, L); /* turn warnings off */
+	else if (strcmp(message, "on") == 0)
+		lua_setwarnf(L, warnfon, L); /* turn warnings on */
+	return 1; /* it was a control message */
 }
 
 
