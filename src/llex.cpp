@@ -69,7 +69,9 @@ static void save(LexState *ls, int c)
 
 void luaX_init(lua_State *L)
 {
-	TString *e = luaS_newliteral(L, LUA_ENV); /* create env name */
+	/* create env name */
+	// TString *e = luaS_newliteral(L, LUA_ENV);
+	TString *e = luaS::newliteral(L, LUA_ENV);
 	luaC_fix(L, obj2gco(e)); /* never collect this name */
 	for (int i = 0; i < NUM_RESERVED; i++)
 	{
