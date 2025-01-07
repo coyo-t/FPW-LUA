@@ -129,12 +129,12 @@ static TString *loadStringN(LoadState *S, Proto *p)
 		/* short string? */
 		char buff[LUAI_MAXSHORTLEN];
 		loadVector(S, buff, size); /* load string into buffer */
-		ts = luaS_newlstr(L, buff, size); /* create string */
+		ts = luaS::newlstr(L, buff, size); /* create string */
 	}
 	else
 	{
 		/* long string */
-		ts = luaS_createlngstrobj(L, size); /* create string */
+		ts = luaS::createlngstrobj(L, size); /* create string */
 		setsvalue2s(L, L->top.p, ts); /* anchor it ('loadVector' can GC) */
 		luaD::inctop(L);
 		loadVector(S, getlngstr(ts), size); /* load directly in final place */

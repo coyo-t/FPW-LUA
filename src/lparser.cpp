@@ -2211,7 +2211,7 @@ LClosure *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff,
 	luaD::inctop(L);
 	funcstate.f = cl->p = luaF_newproto(L);
 	luaC_objbarrier(L, cl, cl->p);
-	funcstate.f->source = luaS_new(L, name); /* create and anchor TString */
+	funcstate.f->source = luaS::news(L, name); /* create and anchor TString */
 	luaC_objbarrier(L, funcstate.f, funcstate.f->source);
 	lexstate.buff = buff;
 	lexstate.dyd = dyd;

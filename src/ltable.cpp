@@ -174,7 +174,7 @@ static Node *mainpositionTV(const Table *t, const TValue *key)
 		}
 		case LUA_VLNGSTR: {
 			TString *ts = tsvalue(key);
-			return hashpow2(t, luaS_hashlongstr(ts));
+			return hashpow2(t, luaS::hashlongstr(ts));
 		}
 		case LUA_VFALSE:
 			return hashboolean(t, 0);
@@ -244,7 +244,7 @@ static int equalkey(const TValue *k1, const Node *n2, int deadok)
 		case LUA_VLCF:
 			return fvalue(k1) == fvalueraw(keyval(n2));
 		case ctb(LUA_VLNGSTR):
-			return luaS_eqlngstr(tsvalue(k1), keystrval(n2));
+			return luaS::eqlngstr(tsvalue(k1), keystrval(n2));
 		default:
 			return gcvalue(k1) == gcvalueraw(keyval(n2));
 	}

@@ -590,7 +590,7 @@ LUA_API const char *lua_pushlstring(lua_State *L, const char *s, size_t len)
 {
 	TString *ts;
 	lua_lock(L);
-	ts = (len == 0) ? luaS_new(L, "") : luaS_newlstr(L, s, len);
+	ts = (len == 0) ? luaS::news(L, "") : luaS::newlstr(L, s, len);
 	setsvalue2s(L, L->top.p, ts);
 	api_incr_top(L);
 	luaC_checkGC(L);
@@ -607,7 +607,7 @@ LUA_API const char *lua_pushstring(lua_State *L, const char *s)
 	else
 	{
 		TString *ts;
-		ts = luaS_new(L, s);
+		ts = luaS::news(L, s);
 		setsvalue2s(L, L->top.p, ts);
 		s = getstr(ts); /* internal copy's address */
 	}
@@ -713,7 +713,7 @@ LUA_API int lua_pushthread(lua_State *L)
 l_sinline int auxgetstr(lua_State *L, const TValue *t, const char *k)
 {
 	const TValue *slot;
-	TString *str = luaS_new(L, k);
+	TString *str = luaS::news(L, k);
 	if (luaV_fastget(L, t, str, slot, luaH_getstr))
 	{
 		setobj2s(L, L->top.p, slot);
@@ -925,7 +925,7 @@ LUA_API int lua_getiuservalue(lua_State *L, int idx, int n)
 static void auxsetstr(lua_State *L, const TValue *t, const char *k)
 {
 	const TValue *slot;
-	TString *str = luaS_new(L, k);
+	TString *str = luaS::news(L, k);
 	api_checknelems(L, 1);
 	if (luaV_fastget(L, t, str, slot, luaH_getstr))
 	{
@@ -1433,7 +1433,7 @@ LUA_API void lua_concat(lua_State *L, int n)
 	else
 	{
 		/* nothing to concatenate */
-		setsvalue2s(L, L->top.p, luaS_newlstr(L, "", 0)); /* push empty string */
+		setsvalue2s(L, L->top.p, luaS::newlstr(L, "", 0)); /* push empty string */
 		api_incr_top(L);
 	}
 	luaC_checkGC(L);
@@ -1494,7 +1494,7 @@ LUA_API void *lua_newuserdatauv(lua_State *L, size_t size, int nuvalue)
 	Udata *u;
 	lua_lock(L);
 	api_check(L, 0 <= nuvalue && nuvalue < USHRT_MAX, "invalid value");
-	u = luaS_newudata(L, size, nuvalue);
+	u = luaS::newudata(L, size, nuvalue);
 	setuvalue(L, s2v(L->top.p), u);
 	api_incr_top(L);
 	luaC_checkGC(L);

@@ -690,7 +690,7 @@ int luaV_equalobj(lua_State *L, const TValue *t1, const TValue *t2)
 		case LUA_VLIGHTUSERDATA: return pvalue(t1) == pvalue(t2);
 		case LUA_VLCF: return fvalue(t1) == fvalue(t2);
 		case LUA_VSHRSTR: return eqshrstr(tsvalue(t1), tsvalue(t2));
-		case LUA_VLNGSTR: return luaS_eqlngstr(tsvalue(t1), tsvalue(t2));
+		case LUA_VLNGSTR: return luaS::eqlngstr(tsvalue(t1), tsvalue(t2));
 		case LUA_VUSERDATA: {
 			if (uvalue(t1) == uvalue(t2)) return 1;
 			else if (L == NULL) return 0;
@@ -783,12 +783,12 @@ void luaV_concat(lua_State *L, int total)
 				/* is result a short string? */
 				char buff[LUAI_MAXSHORTLEN];
 				copy2buff(top, n, buff); /* copy strings to buffer */
-				ts = luaS_newlstr(L, buff, tl);
+				ts = luaS::newlstr(L, buff, tl);
 			}
 			else
 			{
 				/* long string; copy strings directly to final result */
-				ts = luaS_createlngstrobj(L, tl);
+				ts = luaS::createlngstrobj(L, tl);
 				copy2buff(top, n, getlngstr(ts));
 			}
 			setsvalue2s(L, top - n, ts); /* create result */

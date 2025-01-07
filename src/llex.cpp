@@ -73,7 +73,7 @@ void luaX_init(lua_State *L)
 	luaC_fix(L, obj2gco(e)); /* never collect this name */
 	for (int i = 0; i < NUM_RESERVED; i++)
 	{
-		TString *ts = luaS_new(L, luaX_tokens[i]);
+		TString *ts = luaS::news(L, luaX_tokens[i]);
 		luaC_fix(L, obj2gco(ts)); /* reserved words are never collected */
 		ts->extra = cast_byte(i+1); /* reserved word */
 	}
@@ -142,7 +142,7 @@ l_noret luaX_syntaxerror(LexState *ls, const char *msg)
 TString *luaX_newstring(LexState *ls, const char *str, size_t l)
 {
 	lua_State *L = ls->L;
-	TString *ts = luaS_newlstr(L, str, l); /* create new string */
+	TString *ts = luaS::newlstr(L, str, l); /* create new string */
 	const TValue *o = luaH_getstr(ls->h, ts);
 	if (!ttisnil(o)) /* string already present? */
 		ts = keystrval(nodefromval(o)); /* get saved copy */
@@ -611,10 +611,12 @@ static int llex(LexState *ls, SemInfo *seminfo)
 				{
 					if (check_next1(ls, '.'))
 						return TK_DOTS; /* '...' */
-					else return TK_CONCAT; /* '..' */
+					/* '..' */
+					return TK_CONCAT;
 				}
-				else if (!lisdigit(ls->current)) return '.';
-				else return read_numeral(ls, seminfo);
+				if (!lisdigit(ls->current))
+					return '.';
+				return read_numeral(ls, seminfo);
 			}
 			case '0':
 			case '1':
@@ -645,18 +647,12 @@ static int llex(LexState *ls, SemInfo *seminfo)
 					seminfo->ts = ts;
 					if (isreserved(ts)) /* reserved word? */
 						return ts->extra - 1 + FIRST_RESERVED;
-					else
-					{
-						return TK_NAME;
-					}
+					return TK_NAME;
 				}
-				else
-				{
-					/* single-char tokens ('+', '*', '%', '{', '}', ...) */
-					int c = ls->current;
-					next(ls);
-					return c;
-				}
+				/* single-char tokens ('+', '*', '%', '{', '}', ...) */
+				int c = ls->current;
+				next(ls);
+				return c;
 			}
 		}
 	}

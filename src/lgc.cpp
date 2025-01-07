@@ -889,13 +889,13 @@ static void freeobj(lua_State *L, GCObject *o)
 		}
 		case LUA_VSHRSTR: {
 			TString *ts = gco2ts(o);
-			luaS_remove(L, ts); /* remove it from hash table */
-			luaM::freemem(L, ts, sizelstring(ts->shrlen));
+			luaS::remove(L, ts); /* remove it from hash table */
+			luaM::freemem(L, ts, TString::sizel(ts->shrlen));
 			break;
 		}
 		case LUA_VLNGSTR: {
 			TString *ts = gco2ts(o);
-			luaM::freemem(L, ts, sizelstring(ts->u.lnglen));
+			luaM::freemem(L, ts, TString::sizel(ts->u.lnglen));
 			break;
 		}
 		default: lua_assert(0);
@@ -973,7 +973,7 @@ static void checkSizes(lua_State *L, global_State *g)
 		{
 			/* string table too big? */
 			l_mem olddebt = g->GCdebt;
-			luaS_resize(L, g->strt.size / 2);
+			luaS::resize(L, g->strt.size / 2);
 			g->GCestimate += g->GCdebt - olddebt; /* correct estimate */
 		}
 	}
@@ -1750,7 +1750,7 @@ static lu_mem atomic(lua_State *L)
 	/* clear values from resurrected weak tables */
 	clearbyvalues(g, g->weak, origweak);
 	clearbyvalues(g, g->allweak, origall);
-	luaS_clearcache(g);
+	luaS::clearcache(g);
 	g->currentwhite = cast_byte(otherwhite(g)); /* flip current white */
 	lua_assert(g->gray == NULL);
 	return work; /* estimate of slots marked by 'atomic' */

@@ -447,7 +447,7 @@ void luaO_tostring(lua_State *L, TValue *obj)
 {
 	char buff[MAXNUMBER2STR];
 	int len = tostringbuff(obj, buff);
-	setsvalue(L, obj, luaS_newlstr(L, buff, len));
+	setsvalue(L, obj, luaS::newlstr(L, buff, len));
 }
 
 
@@ -486,7 +486,7 @@ typedef struct BuffFS
 static void pushstr(BuffFS *buff, const char *str, size_t lstr)
 {
 	lua_State *L = buff->L;
-	setsvalue2s(L, L->top.p, luaS_newlstr(L, str, lstr));
+	setsvalue2s(L, L->top.p, luaS::newlstr(L, str, lstr));
 	L->top.p++; /* may use one slot from EXTRA_STACK */
 	if (!buff->pushed) /* no previous string on the stack? */
 		buff->pushed = 1; /* now there is one */

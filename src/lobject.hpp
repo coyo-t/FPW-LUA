@@ -401,6 +401,15 @@ typedef struct TString
 	} u;
 
 	char contents[1];
+
+	/*
+	** Size of a TString: Size of the header plus space for the string
+	** itself (including final '\0').
+	*/
+	static auto sizel (const size_t l) -> size_t
+	{
+		return offsetof(TString, contents) + (l + 1) * sizeof(char);
+	}
 } TString;
 
 

@@ -77,7 +77,7 @@ static unsigned int luai_makeseed(lua_State *L)
 	addbuff(buff, p, &h); /* local variable */
 	addbuff(buff, p, &lua_newstate); /* public function */
 	lua_assert(p == sizeof(buff));
-	return luaS_hash(buff, p, h);
+	return luaS::hash(buff, p, h);
 }
 
 #endif
@@ -248,7 +248,7 @@ static void f_luaopen(lua_State *L, void *ud)
 	UNUSED(ud);
 	stack_init(L, L); /* init stack */
 	init_registry(L, g);
-	luaS_init(L);
+	luaS::init(L);
 	luaT_init(L);
 	luaX_init(L);
 	g->gcstp = 0; /* allow gc */
