@@ -23,41 +23,22 @@
 ** 'condmovestack' is used in heavy tests to force a stack reallocation
 ** at every check.
 */
-#define luaD_checkstackaux(L,n,pre,pos)  \
-	if (l_unlikely(L->stack_last.p - L->top.p <= (n))) \
-	  { pre; luaD_growstack(L, n, 1); pos; } \
-        else { condmovestack(L,pre,pos); }
-
-LUAI_FUNC void luaD_checkstackaux_ (
-	lua_State* L,
-	int n,
-	auto (*pre)() -> void,
-	auto (*pos)() -> void
-);
-
 
 /* In general, 'pre'/'pos' are empty (nothing to save) */
 LUAI_FUNC void luaD_checkstack (lua_State* L, int n);
 
 
-#define savestack(L,pt)		(cast_charp(pt) - cast_charp(L->stack.p))
-#define restorestack(L,n)	cast(StkId, cast_charp(L->stack.p) + (n))
+// #define savestack(L,pt)		(cast_charp(pt) - cast_charp(L->stack.p))
 
+LUAI_FUNC ptrdiff_t savestack (lua_State* L, StkId pt);
 
-// #define checkstackp(L,n,p)  \
-//   luaD_checkstackaux(L, n, \
-//     ptrdiff_t t__ = savestack(L, p),  /* save 'p' */ \
-//     p = restorestack(L, t__))  /* 'pos' part: restore 'p' */
+// #define restorestack(L,n)	cast(StkId, cast_charp(L->stack.p) + (n))
+
+LUAI_FUNC auto restorestack(lua_State* L, ptrdiff_t n) -> StkId;
+
 
 /* macro to check stack size, preserving 'p' */
 LUAI_FUNC void checkstackp (lua_State*L, int n, StkId& p);
-
-
-// #define checkstackGCp(L,n,p)  \
-//   luaD_checkstackaux(L, n, \
-//     ptrdiff_t t__ = savestack(L, p);  /* save 'p' */ \
-//     luaC_checkGC(L),  /* stack grow uses memory */ \
-//     p = restorestack(L, t__))  /* 'pos' part: restore 'p' */
 
 /* macro to check stack size and GC, preserving 'p' */
 LUAI_FUNC void checkstackGCp (lua_State* L, int n, StkId& p);

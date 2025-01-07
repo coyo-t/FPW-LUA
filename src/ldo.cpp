@@ -73,55 +73,53 @@ struct lua_longjmp
 };
 
 
-void luaD_checkstackaux_ (lua_State *L, int n, auto(*pre)() -> void, auto(*pos)() -> void)
+void luaD_checkstack(lua_State *L, int n)
 {
 	if (l_unlikely(L->stack_last.p - L->top.p <= (n)))
 	{
-		pre();
 		luaD_growstack(L, n, 1);
-		pos();
-	}
-	else
-	{
-		condmovestack(L,pre,pos);
 	}
 }
 
-void luaD_checkstack(lua_State *L, int n)
+ptrdiff_t savestack(lua_State *L, StkId pt)
 {
-	luaD_checkstackaux_(L,n, {}, {});
+	return (cast_charp(pt) - cast_charp(L->stack.p));
+}
+
+auto restorestack(lua_State *L, ptrdiff_t n) -> StkId
+{
+	return cast(StkId, cast_charp(L->stack.p) + (n));
 }
 
 void checkstackp(lua_State *L, int n, StkId&p)
 {
-	luaD_checkstackaux(
-		L,
-		n,
-		/* save 'p' */
-		ptrdiff_t pevStack = savestack(L, p),
-		/* 'pos' part: restore 'p' */
-		p = restorestack(L, pevStack)
-	)
+	if (l_unlikely(L->stack_last.p - L->top.p <= (n)))
+	{
+		auto pevStack = savestack(L, p);
+		luaD_growstack(L, n, 1);
+		p = cast(StkId, cast_charp(L->stack.p) + (pevStack));
+	}
 }
 
 void checkstackGCp(lua_State *L, int n, StkId&p)
 {
-	luaD_checkstackaux(
-		L,
-		n,
-		/* save 'p' */
-		ptrdiff_t pevStack = savestack(L, p);
-		/* stack grow uses memory */
-		luaC_checkGC(L),
-		/* 'pos' part: restore 'p' */
-		p = restorestack(L, pevStack)
-	)
+	if (l_unlikely(L->stack_last.p - L->top.p <= (n)))
+	{
+		auto pevStack = savestack(L, p);
+		luaC_checkGC(L);
+		luaD_growstack(L, n, 1);
+		p = cast(StkId, cast_charp(L->stack.p) + (pevStack));
+	}
 
 }
 
 void checkstackGC(lua_State *L, int fsize)
 {
-	luaD_checkstackaux(L, (fsize), luaC_checkGC(L), (void)0);
+	if (l_unlikely(L->stack_last.p - L->top.p <= ((fsize))))
+	{
+		luaC_checkGC(L);
+		luaD_growstack(L, (fsize), 1);
+	}
 }
 
 void luaD_seterrorobj(lua_State *L, int errcode, StkId oldtop)
@@ -539,7 +537,7 @@ l_sinline void moveresults(lua_State *L, StkId res, int nres, int wanted)
 				if (L->hookmask)
 				{
 					/* if needed, call hook after '__close's */
-					ptrdiff_t savedres = savestack(L, res);
+					auto savedres = savestack(L, res);
 					rethook(L, L->ci, nres);
 					res = restorestack(L, savedres); /* hook can move stack */
 				}
