@@ -6,7 +6,7 @@ set(CMAKE_C_STANDARD 23)
 
 include_directories(src)
 
-add_library(LuaMod
+add_library(LuaMod SHARED
         src/lapi.cpp
         src/lapi.hpp
         src/lauxlib.cpp
