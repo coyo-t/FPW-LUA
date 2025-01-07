@@ -161,9 +161,9 @@ static void prepcallclosemth(lua_State *L, StkId level, int status, int yy)
 		errobj = &G(L)->nilvalue; /* error object is nil */
 	else
 	{
-		/* 'luaD_seterrorobj' will set top to level + 2 */
+		/* 'luaD::seterrorobj' will set top to level + 2 */
 		errobj = s2v(level + 1); /* error object goes after 'uv' */
-		luaD_seterrorobj(L, status, level + 1); /* set error object */
+		luaD::seterrorobj(L, status, level + 1); /* set error object */
 	}
 	callclosemethod(L, uv, errobj, yy);
 }
@@ -250,7 +250,7 @@ static void poptbclist(lua_State *L)
 */
 StkId luaF_close(lua_State *L, StkId level, int status, int yy)
 {
-	ptrdiff_t levelrel = savestack(L, level);
+	ptrdiff_t levelrel = luaD::savestack(L, level);
 	luaF_closeupval(L, level); /* first, close the upvalues */
 	while (L->tbclist.p >= level)
 	{
@@ -258,7 +258,7 @@ StkId luaF_close(lua_State *L, StkId level, int status, int yy)
 		StkId tbc = L->tbclist.p; /* get variable index */
 		poptbclist(L); /* remove it from list */
 		prepcallclosemth(L, tbc, status, yy); /* close variable */
-		level = restorestack(L, levelrel);
+		level = luaD::restorestack(L, levelrel);
 	}
 	return level;
 }

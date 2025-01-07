@@ -24,8 +24,9 @@
 ** at every check.
 */
 
+namespace luaD {
 /* In general, 'pre'/'pos' are empty (nothing to save) */
-LUAI_FUNC auto luaD_checkstack (lua_State* L, int n) -> void;
+LUAI_FUNC auto checkstack (lua_State* L, int n) -> void;
 LUAI_FUNC auto savestack (lua_State* L, StkId pt) -> ptrdiff_t;
 LUAI_FUNC auto restorestack(lua_State* L, ptrdiff_t n) -> StkId;
 
@@ -42,17 +43,14 @@ LUAI_FUNC void checkstackGC (lua_State* L, int fsize);
 /* type of protected functions, to be ran by 'runprotected' */
 typedef void (*Pfunc) (lua_State *L, void *ud);
 
-LUAI_FUNC void luaD_seterrorobj (lua_State *L, int errcode, StkId oldtop);
-LUAI_FUNC int luaD_protectedparser (lua_State *L, ZIO *z, const char *name,
+LUAI_FUNC void seterrorobj (lua_State *L, int errcode, StkId oldtop);
+LUAI_FUNC int protectedparser (lua_State *L, ZIO *z, const char *name,
                                                   const char *mode);
-LUAI_FUNC void luaD_hook (lua_State *L, int event, int line,
+LUAI_FUNC void hook (lua_State *L, int event, int line,
                                         int fTransfer, int nTransfer);
-LUAI_FUNC void luaD_hookcall (lua_State *L, CallInfo *ci);
-LUAI_FUNC int luaD_pretailcall (lua_State *L, CallInfo *ci, StkId func,
+LUAI_FUNC void hookcall (lua_State *L, CallInfo *ci);
+LUAI_FUNC int pretailcall (lua_State *L, CallInfo *ci, StkId func,
                                               int narg1, int delta);
-
-
-namespace luaD {
 LUAI_FUNC CallInfo *precall (lua_State *L, StkId func, int nResults);
 LUAI_FUNC void call (lua_State *L, StkId func, int nResults);
 LUAI_FUNC void callnoyield (lua_State *L, StkId func, int nResults);

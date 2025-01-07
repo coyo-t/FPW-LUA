@@ -355,7 +355,7 @@ int luaE_resetthread(lua_State *L, int status)
 	L->status = LUA_OK; /* so it can run __close metamethods */
 	status = luaD::closeprotected(L, 1, status);
 	if (status != LUA_OK) /* errors? */
-		luaD_seterrorobj(L, status, L->stack.p + 1);
+		luaD::seterrorobj(L, status, L->stack.p + 1);
 	else
 		L->top.p = L->stack.p + 1;
 	ci->top.p = L->top.p + LUA_MINSTACK;

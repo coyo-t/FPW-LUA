@@ -135,7 +135,7 @@ static void settraps(CallInfo *ci)
 ** values (causes at most one wrong hook call). 'hookmask' is an atomic
 ** value. We assume that pointers are atomic too (e.g., gcc ensures that
 ** for all platforms where it runs). Moreover, 'hook' is always checked
-** before being called (see 'luaD_hook').
+** before being called (see 'luaD::hook').
 */
 LUA_API void lua_sethook(lua_State *L, lua_Hook func, int mask, int count)
 {
@@ -957,7 +957,7 @@ l_noret luaG_errormsg(lua_State *L)
 	if (L->errfunc != 0)
 	{
 		/* is there an error handling function? */
-		StkId errfunc = restorestack(L, L->errfunc);
+		StkId errfunc = luaD::restorestack(L, L->errfunc);
 		lua_assert(ttisfunction(s2v(errfunc)));
 		setobjs2s(L, L->top.p, L->top.p - 1); /* move argument */
 		setobjs2s(L, L->top.p - 1, errfunc); /* push function */
@@ -1024,10 +1024,10 @@ static int changedline(const Proto *p, int oldpc, int newpc)
 /*
 ** Traces Lua calls. If code is running the first instruction of a function,
 ** and function is not vararg, and it is not coming from an yield,
-** calls 'luaD_hookcall'. (Vararg functions will call 'luaD_hookcall'
+** calls 'luaD::hookcall'. (Vararg functions will call 'luaD::hookcall'
 ** after adjusting its variable arguments; otherwise, they could call
 ** a line/count hook before the call hook. Functions coming from
-** an yield already called 'luaD_hookcall' before yielding.)
+** an yield already called 'luaD::hookcall' before yielding.)
 */
 int luaG_tracecall(lua_State *L)
 {
@@ -1040,7 +1040,7 @@ int luaG_tracecall(lua_State *L)
 		if (p->is_vararg)
 			return 0; /* hooks will start at VARARGPREP instruction */
 		if (!(ci->callstatus & CIST_HOOKYIELD)) /* not yieded? */
-			luaD_hookcall(L, ci);
+			luaD::hookcall(L, ci);
 		/* check 'call' hook */
 	}
 	return 1; /* keep 'trap' on */
@@ -1087,7 +1087,7 @@ int luaG_traceexec(lua_State *L, const Instruction *pc)
 	if (!isIT(*(ci->u.l.savedpc - 1))) /* top not being used? */
 		L->top.p = ci->top.p; /* correct top */
 	if (counthook)
-		luaD_hook(L, LUA_HOOKCOUNT, -1, 0, 0); /* call count hook */
+		luaD::hook(L, LUA_HOOKCOUNT, -1, 0, 0); /* call count hook */
 	if (mask & LUA_MASKLINE)
 	{
 		/* 'L->oldpc' may be invalid; use zero in this case */
@@ -1098,7 +1098,7 @@ int luaG_traceexec(lua_State *L, const Instruction *pc)
 		{
 			/* or when enter new line */
 			int newline = luaG_getfuncline(p, npci);
-			luaD_hook(L, LUA_HOOKLINE, newline, 0, 0); /* call line hook */
+			luaD::hook(L, LUA_HOOKLINE, newline, 0, 0); /* call line hook */
 		}
 		L->oldpc = npci; /* 'pc' of last call to line hook */
 	}

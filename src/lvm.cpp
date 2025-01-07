@@ -1951,7 +1951,7 @@ returning: /* trap already set */
 					lua_assert(L->tbclist.p < base); /* no pending tbc variables */
 					lua_assert(base == ci->func.p + 1);
 				}
-				if ((n = luaD_pretailcall(L, ci, ra, b, delta)) < 0) /* Lua function? */
+				if ((n = luaD::pretailcall(L, ci, ra, b, delta)) < 0) /* Lua function? */
 					goto startfunc; /* execute the callee */
 				else
 				{
@@ -2167,7 +2167,7 @@ returning: /* trap already set */
 				if (l_unlikely(trap))
 				{
 					/* previous "Protect" updated trap */
-					luaD_hookcall(L, ci);
+					luaD::hookcall(L, ci);
 					L->oldpc = 1; /* next opcode will be seen as a "new" line */
 				}
 				updatebase(ci); /* function has new base after adjustment */

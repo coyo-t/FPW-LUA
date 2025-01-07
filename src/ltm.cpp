@@ -130,7 +130,7 @@ void luaT_callTM(lua_State *L, const TValue *f, const TValue *p1,
 void luaT_callTMres(lua_State *L, const TValue *f, const TValue *p1,
 							const TValue *p2, StkId res)
 {
-	ptrdiff_t result = savestack(L, res);
+	ptrdiff_t result = luaD::savestack(L, res);
 	StkId func = L->top.p;
 	setobj2s(L, func, f); /* push function (assume EXTRA_STACK) */
 	setobj2s(L, func + 1, p1); /* 1st argument */
@@ -141,7 +141,7 @@ void luaT_callTMres(lua_State *L, const TValue *f, const TValue *p1,
 		luaD::call(L, func, 1);
 	else
 		luaD::callnoyield(L, func, 1);
-	res = restorestack(L, result);
+	res = luaD::restorestack(L, result);
 	setobjs2s(L, res, --L->top.p); /* move result to its place */
 }
 
@@ -272,7 +272,7 @@ void luaT_adjustvarargs(lua_State *L, int nfixparams, CallInfo *ci,
 	int actual = cast_int(L->top.p - ci->func.p) - 1; /* number of arguments */
 	int nextra = actual - nfixparams; /* number of extra arguments */
 	ci->u.l.nextraargs = nextra;
-	luaD_checkstack(L, p->maxstacksize + 1);
+	luaD::checkstack(L, p->maxstacksize + 1);
 	/* copy function to the top of the stack */
 	setobjs2s(L, L->top.p++, ci->func.p);
 	/* move fixed parameters to the top of the stack */
@@ -294,7 +294,7 @@ void luaT_getvarargs(lua_State *L, CallInfo *ci, StkId where, int wanted)
 	if (wanted < 0)
 	{
 		wanted = nextra; /* get all extra arguments available */
-		checkstackGCp(L, nextra, where); /* ensure stack space */
+		luaD::checkstackGCp(L, nextra, where); /* ensure stack space */
 		L->top.p = where + nextra; /* next instruction will need top */
 	}
 	for (i = 0; i < wanted && i < nextra; i++)

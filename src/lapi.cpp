@@ -1179,14 +1179,14 @@ LUA_API int lua_pcallk(lua_State *L, int nargs, int nresults, int errfunc,
 	{
 		StkId o = index2stack(L, errfunc);
 		api_check(L, ttisfunction(s2v(o)), "error handler must be a function");
-		func = savestack(L, o);
+		func = luaD::savestack(L, o);
 	}
 	c.func = L->top.p - (nargs + 1); /* function to be called */
 	if (k == NULL || !L->yieldable())
 	{
 		/* no continuation or no yieldable? */
 		c.nresults = nresults; /* do a 'conventional' protected call */
-		status = luaD::pcall(L, f_call, &c, savestack(L, c.func), func);
+		status = luaD::pcall(L, f_call, &c, luaD::savestack(L, c.func), func);
 	}
 	else
 	{
@@ -1195,7 +1195,7 @@ LUA_API int lua_pcallk(lua_State *L, int nargs, int nresults, int errfunc,
 		ci->u.c.k = k; /* save continuation */
 		ci->u.c.ctx = ctx; /* save context */
 		/* save information for error recovery */
-		ci->u2.funcidx = cast_int(savestack(L, c.func));
+		ci->u2.funcidx = cast_int(luaD::savestack(L, c.func));
 		ci->u.c.old_errfunc = L->errfunc;
 		L->errfunc = func;
 		ci->setoah(L->allowhook); /* save value of 'allowhook' */
@@ -1219,7 +1219,7 @@ LUA_API int lua_load(lua_State *L, lua_Reader reader, void *data,
 	lua_lock(L);
 	if (!chunkname) chunkname = "?";
 	luaZ_init(L, &z, reader, data);
-	status = luaD_protectedparser(L, &z, chunkname, mode);
+	status = luaD::protectedparser(L, &z, chunkname, mode);
 	if (status == LUA_OK)
 	{
 		/* no errors? */
