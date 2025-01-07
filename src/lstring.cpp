@@ -145,7 +145,7 @@ void luaS::init(lua_State *L)
 	tablerehash(tb->hash, 0, MINSTRTABSIZE); /* clear array */
 	tb->size = MINSTRTABSIZE;
 	/* pre-create memory-error message */
-	g->memerrmsg = luaS_newliteral(L, MEMERRMSG);
+	g->memerrmsg = luaS::newliteral(L, MEMERRMSG);
 	luaC_fix(L, obj2gco(g->memerrmsg)); /* it should never be collected */
 	for (i = 0; i < STRCACHE_N; i++) /* fill cache with valid strings */
 		for (j = 0; j < STRCACHE_M; j++)

@@ -741,7 +741,7 @@ static void enterblock(FuncState *fs, BlockCnt *bl, lu_byte isloop)
 static l_noret undefgoto(LexState *ls, Labeldesc *gt)
 {
 	const char *msg;
-	if (eqstr(gt->name, luaS_newliteral(ls->L, "break")))
+	if (eqstr(gt->name, luaS::newliteral(ls->L, "break")))
 	{
 		msg = "break outside loop at line %d";
 		msg = luaO_pushfstring(ls->L, msg, gt->line);
@@ -764,7 +764,7 @@ static void leaveblock(FuncState *fs)
 	removevars(fs, bl->nactvar); /* remove block locals */
 	lua_assert(bl->nactvar == fs->nactvar); /* back to level on entry */
 	if (bl->isloop) /* has to fix pending breaks? */
-		hasclose = createlabel(ls, luaS_newliteral(ls->L, "break"), 0, 0);
+		hasclose = createlabel(ls, luaS::newliteral(ls->L, "break"), 0, 0);
 	if (!hasclose && bl->previous && bl->upval) /* still need a 'close'? */
 		luaK_codeABC(fs, OP_CLOSE, stklevel, 0, 0);
 	fs->freereg = stklevel; /* free registers */
@@ -1618,7 +1618,7 @@ static void breakstat(LexState *ls)
 {
 	int line = ls->linenumber;
 	luaX_next(ls); /* skip break */
-	newgotoentry(ls, luaS_newliteral(ls->L, "break"), line, luaK_jump(ls->fs));
+	newgotoentry(ls, luaS::newliteral(ls->L, "break"), line, luaK_jump(ls->fs));
 }
 
 
@@ -1855,7 +1855,7 @@ static void test_then_block(LexState *ls, int *escapelist)
 		luaK_goiffalse(ls->fs, &v); /* will jump if condition is true */
 		luaX_next(ls); /* skip 'break' */
 		enterblock(fs, &bl, 0); /* must enter block before 'goto' */
-		newgotoentry(ls, luaS_newliteral(ls->L, "break"), line, v.t);
+		newgotoentry(ls, luaS::newliteral(ls->L, "break"), line, v.t);
 		while (testnext(ls, ';'))
 		{
 		} /* skip semicolons */

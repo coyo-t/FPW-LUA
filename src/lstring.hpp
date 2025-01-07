@@ -8,7 +8,6 @@
 #define lstring_h
 
 #include <algorithm>
-#include <string_view>
 
 #include "lgc.hpp"
 #include "lobject.hpp"
@@ -20,9 +19,6 @@
 ** be created after memory is exhausted)
 */
 #define MEMERRMSG       "not enough memory"
-
-
-#define luaS_newliteral(L, s)	(luaS::newlstr(L, "" s, (sizeof(s)/sizeof(char))-1))
 
 
 /*
@@ -51,10 +47,11 @@ LUAI_FUNCA newlstr (lua_State *L, const char *str, size_t l) -> TString*;
 LUAI_FUNCA news (lua_State *L, const char *str) -> TString*;
 LUAI_FUNCA createlngstrobj (lua_State *L, size_t l) -> TString*;
 
+// #define luaS_newliteral(L, s)	(luaS::newlstr(L, "" s, (sizeof(s)/sizeof(char))-1))
 template<size_t N>
-LUAI_FUNCA newstrlit (lua_State* L, const char (&str)[N]) -> TString*
+LUAI_FUNCA newliteral (lua_State* L, const char (&str)[N]) -> TString*
 {
-	return (luaS::newlstr(L, str, (N/sizeof(char))-1));
+	return luaS::newlstr(L, str, (N/sizeof(char))-1);
 }
 
 }

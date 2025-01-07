@@ -132,7 +132,7 @@ void luaD::seterrorobj(lua_State *L, int errcode, StkId oldtop)
 			break;
 		}
 		case LUA_ERRERR: {
-			setsvalue2s(L, oldtop, luaS_newliteral(L, "error in error handling"));
+			setsvalue2s(L, oldtop, luaS::newliteral(L, "error in error handling"));
 			break;
 		}
 		case LUA_OK: {
