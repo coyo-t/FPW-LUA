@@ -325,6 +325,7 @@
 #define LUAI_FUNC	__attribute__((visibility("internal"))) extern
 #else				/* }{ */
 #define LUAI_FUNC	extern
+#define LUAI_FUNCA extern auto
 #endif				/* } */
 
 #define LUAI_DDEC(dec)	LUAI_FUNC dec

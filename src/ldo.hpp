@@ -14,46 +14,68 @@
 #include "lzio.hpp"
 
 namespace luaD {
-/* In general, 'pre'/'pos' are empty (nothing to save) */
-LUAI_FUNC auto checkstack (lua_State* L, int n) -> void;
-LUAI_FUNC auto savestack (lua_State* L, StkId pt) -> ptrdiff_t;
-LUAI_FUNC auto restorestack(lua_State* L, ptrdiff_t n) -> StkId;
 
+/* In general, 'pre'/'pos' are empty (nothing to save) */
+LUAI_FUNCA checkstack (lua_State* L, int n) -> void;
+LUAI_FUNCA savestack (lua_State* L, StkId pt) -> ptrdiff_t;
+LUAI_FUNCA restorestack(lua_State* L, ptrdiff_t n) -> StkId;
 
 /* macro to check stack size, preserving 'p' */
-LUAI_FUNC void checkstackp (lua_State*L, int n, StkId& p);
+LUAI_FUNCA checkstackp (lua_State*L, int n, StkId& p) -> void;
 
 /* macro to check stack size and GC, preserving 'p' */
-LUAI_FUNC void checkstackGCp (lua_State* L, int n, StkId& p);
+LUAI_FUNCA checkstackGCp (lua_State* L, int n, StkId& p) -> void;
 
 /* macro to check stack size and GC */
-LUAI_FUNC void checkstackGC (lua_State* L, int fsize);
+LUAI_FUNCA checkstackGC (lua_State* L, int fsize) -> void;
 
 /* type of protected functions, to be ran by 'runprotected' */
-typedef void (*Pfunc) (lua_State *L, void *ud);
+using Pfunc = auto (*) (lua_State *L, void *ud) -> void;
 
-LUAI_FUNC void seterrorobj (lua_State *L, int errcode, StkId oldtop);
-LUAI_FUNC int protectedparser (lua_State *L, ZIO *z, const char *name,
-                                                  const char *mode);
-LUAI_FUNC void hook (lua_State *L, int event, int line,
-                                        int fTransfer, int nTransfer);
-LUAI_FUNC void hookcall (lua_State *L, CallInfo *ci);
-LUAI_FUNC int pretailcall (lua_State *L, CallInfo *ci, StkId func,
-                                              int narg1, int delta);
-LUAI_FUNC CallInfo *precall (lua_State *L, StkId func, int nResults);
-LUAI_FUNC void call (lua_State *L, StkId func, int nResults);
-LUAI_FUNC void callnoyield (lua_State *L, StkId func, int nResults);
-LUAI_FUNC int closeprotected (lua_State *L, ptrdiff_t level, int status);
-LUAI_FUNC int pcall (lua_State *L, Pfunc func, void *u, ptrdiff_t oldtop, ptrdiff_t ef);
-LUAI_FUNC void poscall (lua_State *L, CallInfo *ci, int nres);
-LUAI_FUNC int reallocstack (lua_State *L, int newsize, int raiseerror);
-LUAI_FUNC int growstack (lua_State *L, int n, int raiseerror);
-LUAI_FUNC void shrinkstack (lua_State *L);
-LUAI_FUNC void inctop (lua_State *L);
+LUAI_FUNCA seterrorobj (lua_State *L, int errcode, StkId oldtop) -> void;
+LUAI_FUNCA protectedparser (
+	lua_State *L,
+	ZIO *z,
+	const char *name,
+	const char *mode
+) -> int;
+
+LUAI_FUNCA hook (
+	lua_State *L,
+	int event,
+	int line,
+	int fTransfer,
+	int nTransfer
+) -> void;
+
+LUAI_FUNCA hookcall (lua_State *L, CallInfo *ci) -> void;
+LUAI_FUNCA pretailcall (
+	lua_State *L,
+	CallInfo *ci,
+	StkId func,
+	int narg1,
+	int delta
+) -> int;
+LUAI_FUNCA precall (lua_State *L, StkId func, int nResults) -> CallInfo*;
+LUAI_FUNCA call (lua_State *L, StkId func, int nResults) -> void;
+LUAI_FUNCA callnoyield (lua_State *L, StkId func, int nResults) -> void;
+LUAI_FUNCA closeprotected (lua_State *L, ptrdiff_t level, int status) -> int;
+LUAI_FUNCA pcall (
+	lua_State *L,
+	Pfunc func,
+	void *u,
+	ptrdiff_t oldtop,
+	ptrdiff_t ef
+) -> int;
+LUAI_FUNCA poscall (lua_State *L, CallInfo *ci, int nres) -> void;
+LUAI_FUNCA reallocstack (lua_State *L, int newsize, int raiseerror) -> int;
+LUAI_FUNCA growstack (lua_State *L, int n, int raiseerror) -> int;
+LUAI_FUNCA shrinkstack (lua_State *L) -> void;
+LUAI_FUNCA inctop (lua_State *L) -> void;
 
 LUAI_FUNC l_noret lthrow (lua_State *L, int errcode);
 
-LUAI_FUNC int rawrunprotected (lua_State *L, Pfunc f, void *ud);
+LUAI_FUNCA rawrunprotected (lua_State *L, Pfunc f, void *ud) -> int;
 
 }
 
