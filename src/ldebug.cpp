@@ -998,7 +998,7 @@ l_noret luaG_runerror(lua_State *L, const char *fmt, ...)
 */
 static int changedline(const Proto *p, int oldpc, int newpc)
 {
-	if (p->lineinfo == NULL) /* no debug information? */
+	if (p->lineinfo == nullptr) /* no debug information? */
 		return 0;
 	if (newpc - oldpc < MAXIWTHABS / 2)
 	{

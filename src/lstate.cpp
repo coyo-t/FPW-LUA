@@ -108,9 +108,8 @@ LUA_API int lua_setcstacklimit(lua_State *L, unsigned int limit)
 
 CallInfo *luaE_extendCI(lua_State *L)
 {
-	CallInfo *ci;
 	lua_assert(L->ci->next == NULL);
-	ci = luaM::newmem<CallInfo>(L);
+	auto *ci = luaM::newmem<CallInfo>(L);
 	lua_assert(L->ci->next == NULL);
 	L->ci->next = ci;
 	ci->previous = L->ci;
