@@ -21,7 +21,7 @@
 
 #include "../lauxlib.hpp"
 #include "../lualib.hpp"
-
+#include "../luatemplate.hpp"
 
 /*
 ** Change this macro to accept other modes for 'fopen' besides
@@ -201,8 +201,8 @@ static FILE *tofile(lua_State *L)
 */
 static LStream *newprefile(lua_State *L)
 {
-	LStream *p = (LStream *) lua_newuserdatauv(L, sizeof(LStream), 0);
-	p->closef = NULL; /* mark file handle as 'closed' */
+	auto *p = lua_newuserdatauvt<LStream>(L, 0);
+	p->closef = nullptr; /* mark file handle as 'closed' */
 	luaL_setmetatable(L, LUA_FILEHANDLE);
 	return p;
 }
@@ -215,9 +215,9 @@ static LStream *newprefile(lua_State *L)
 */
 static int aux_close(lua_State *L)
 {
-	LStream *p = tolstream(L);
+	auto p = tolstream(L);
 	volatile lua_CFunction cf = p->closef;
-	p->closef = NULL; /* mark stream as closed */
+	p->closef = nullptr; /* mark stream as closed */
 	return (*cf)(L); /* close it */
 }
 
@@ -780,7 +780,7 @@ static int f_seek(lua_State *L)
 	FILE *f = tofile(L);
 	int op = luaL_checkoption(L, 2, "cur", modenames);
 	lua_Integer p3 = luaL_optinteger(L, 3, 0);
-	l_seeknum offset = (l_seeknum) p3;
+	auto offset = static_cast<long>(p3);
 	luaL_argcheck(L, (lua_Integer)offset == p3, 3,
 						"not an integer in proper range");
 	errno = 0;
@@ -901,7 +901,7 @@ static void createstdfile(lua_State *L, FILE *f, const char *k,
 	LStream *p = newprefile(L);
 	p->f = f;
 	p->closef = &io_noclose;
-	if (k != NULL)
+	if (k != nullptr)
 	{
 		lua_pushvalue(L, -1);
 		lua_setfield(L, LUA_REGISTRYINDEX, k); /* add file to registry */
@@ -917,6 +917,6 @@ LUAMOD_API int luaopen_io(lua_State *L)
 	/* create (and set) default files */
 	createstdfile(L, stdin, IO_INPUT, "stdin");
 	createstdfile(L, stdout, IO_OUTPUT, "stdout");
-	createstdfile(L, stderr, NULL, "stderr");
+	createstdfile(L, stderr, nullptr, "stderr");
 	return 1;
 }

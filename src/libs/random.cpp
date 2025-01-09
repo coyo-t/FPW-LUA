@@ -5,6 +5,7 @@
 #include <ctime>
 #include "../lua.hpp"
 #include "lauxlib.hpp"
+#include "../luatemplate.hpp"
 
 /*
 ** {==================================================================

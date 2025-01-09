@@ -67,5 +67,7 @@ add_library(LuaMod SHARED
         src/luacoyote.hpp
         src/luacoyote.cpp
         src/libs/random.cpp
+        src/libs/bufferlib.cpp
+        src/luatemplate.hpp
 
 )

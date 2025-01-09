@@ -39,6 +39,12 @@ typedef struct luaL_Reg
 {
 	const char *name;
 	lua_CFunction func;
+
+
+	static constexpr luaL_Reg end ()
+	{
+		return { nullptr, nullptr };
+	}
 } luaL_Reg;
 
 
