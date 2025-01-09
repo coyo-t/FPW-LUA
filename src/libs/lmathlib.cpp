@@ -24,6 +24,8 @@
 #undef PI
 #define PI	(l_mathop(3.141592653589793238462643383279502884))
 
+static constexpr auto TAU = PI * 2.0;
+
 static constexpr auto DEGTORAD = (l_mathop(180.0) / PI);
 static constexpr auto RADTODEG = (PI / l_mathop(180.0));
 
@@ -291,6 +293,29 @@ static int math_dtan(lua_State *L)
 	return 1;
 }
 
+
+static double cosfromsin (double sin, double angle)
+{
+	double cos = sqrt(1.0 - sin * sin);
+	double a = angle + (PI / 2.0);
+	double b = a - static_cast<int>(a / TAU) * TAU;
+	if (b < 0.0)
+		b = TAU + b;
+	if (b >= PI)
+		return -cos;
+	return cos;
+}
+
+static int math_sico (lua_State *L)
+{
+	lua_Number angle = luaL_checknumber(L, 1);
+	auto si = sin(angle);
+	auto co = cosfromsin(si, angle);
+	lua_pushnumber(L, si);
+	lua_pushnumber(L, co);
+	return 2;
+}
+
 #include "./random.cpp"
 
 
@@ -320,6 +345,7 @@ static const luaL_Reg mathlib[] = {
 	{"dsin", math_dsin},
 	{"dcos", math_dcos},
 	{"dtan", math_dtan},
+	{"sico", math_sico},
 
 	/* placeholders */
 	{"random", NULL},
