@@ -10,8 +10,8 @@
 #include "lprefix.hpp"
 
 
-#include <limits.h>
-#include <string.h>
+#include <climits>
+#include <cstring>
 
 #include "lua.hpp"
 
@@ -344,7 +344,7 @@ static void checkHeader(LoadState *S)
 /*
 ** Load precompiled chunk.
 */
-LClosure *luaU_undump(lua_State *L, ZIO *Z, const char *name)
+LClosure *luaU::undump(lua_State *L, ZIO *Z, const char *name)
 {
 	LoadState S;
 	if (*name == '@' || *name == '=')

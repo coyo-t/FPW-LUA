@@ -22,13 +22,16 @@ constexpr auto LUAC_NUM =	static_cast<lua_Number>(370.5);
 ** Encode major-minor version in one byte, one nibble for each
 */
 constexpr auto LUAC_VERSION  (((LUA_VERSION_NUM / 100) * 16) + LUA_VERSION_NUM % 100);
-
 constexpr auto LUAC_FORMAT =	0;	/* this is the official format */
 
-/* load one chunk; from lundump.c */
-LUAI_FUNC LClosure* luaU_undump (lua_State* L, ZIO* Z, const char* name);
+namespace luaU {
+/* load one chunk */
+LUAI_FUNCA undump (lua_State* L, ZIO* Z, const char* name) -> LClosure*;
 
-/* dump one chunk; from ldump.c */
-LUAI_FUNC int luaU_dump (lua_State* L, const Proto* f, lua_Writer w, void* data, int strip);
+/* dump one chunk*/
+LUAI_FUNCA dump (lua_State* L, const Proto* f, lua_Writer w, void* data, int strip) -> int;
+
+}
+
 
 #endif

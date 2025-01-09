@@ -1149,7 +1149,7 @@ static void f_parser(lua_State *L, void *ud)
 	if (c == LUA_SIGNATURE[0])
 	{
 		checkmode(L, p->mode, "binary");
-		cl = luaU_undump(L, p->z, p->name);
+		cl = luaU::undump(L, p->z, p->name);
 	}
 	else
 	{

@@ -10,8 +10,8 @@
 #include "lprefix.hpp"
 
 
-#include <limits.h>
-#include <stddef.h>
+#include <climits>
+#include <cstddef>
 
 #include "lua.hpp"
 
@@ -235,7 +235,7 @@ void DumpState::dumpFunction(const Proto *f, TString *psource)
 /*
 ** dump Lua function as precompiled chunk
 */
-int luaU_dump(lua_State *L, const Proto *f, lua_Writer w, void *data,
+int luaU::dump(lua_State *L, const Proto *f, lua_Writer w, void *data,
 					int strip)
 {
 	DumpState D {
