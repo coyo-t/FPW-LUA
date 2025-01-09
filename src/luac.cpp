@@ -23,7 +23,7 @@
 #include "lopcodes.hpp"
 #include "lopnames.hpp"
 #include "lstate.hpp"
-#include "lundump.hpp"
+#include "dump/lundump.hpp"
 
 static void PrintFunction(const Proto *f, int full);
 

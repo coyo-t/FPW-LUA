@@ -21,7 +21,7 @@ add_library(LuaMod SHARED
         src/ldebug.hpp
         src/ldo.cpp
         src/ldo.hpp
-        src/ldump.cpp
+        src/dump/ldump.cpp
         src/lfunc.cpp
         src/lfunc.hpp
         src/lgc.cpp
@@ -57,8 +57,8 @@ add_library(LuaMod SHARED
         src/ltm.hpp
         src/lua.cpp
         src/luac.cpp
-        src/lundump.cpp
-        src/lundump.hpp
+        src/dump/lundump.cpp
+        src/dump/lundump.hpp
         src/libs/lutf8lib.cpp
         src/lvm.cpp
         src/lvm.hpp

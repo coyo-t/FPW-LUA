@@ -29,7 +29,7 @@
 #include "lstring.hpp"
 #include "ltable.hpp"
 #include "ltm.hpp"
-#include "lundump.hpp"
+#include "dump/lundump.hpp"
 #include "lvm.hpp"
 #include "lzio.hpp"
 
