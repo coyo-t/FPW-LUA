@@ -220,7 +220,7 @@ LUA_API void lua_settop(lua_State *L, int idx)
 	if (diff < 0 && L->tbclist.p >= newtop)
 	{
 		lua_assert(hastocloseCfunc(ci->nresults));
-		newtop = luaF_close(L, newtop, CLOSEKTOP, 0);
+		newtop = luaF::close(L, newtop, CLOSEKTOP, 0);
 	}
 	L->top.p = newtop; /* correct top only after closing any upvalue */
 	lua_unlock(L);
@@ -234,7 +234,7 @@ LUA_API void lua_closeslot(lua_State *L, int idx)
 	level = index2stack(L, idx);
 	api_check(L, hastocloseCfunc(L->ci->nresults) && L->tbclist.p == level,
 				"no variable to close at given level");
-	level = luaF_close(L, level, CLOSEKTOP, 0);
+	level = luaF::close(L, level, CLOSEKTOP, 0);
 	setnilvalue(s2v(level));
 	lua_unlock(L);
 }
@@ -657,7 +657,7 @@ LUA_API void lua_pushcclosure(lua_State *L, lua_CFunction fn, int n)
 		CClosure *cl;
 		api_checknelems(L, n);
 		api_check(L, n <= MAXUPVAL, "upvalue index too large");
-		cl = luaF_newCclosure(L, n);
+		cl = luaF::newCclosure(L, n);
 		cl->f = fn;
 		L->top.p -= n;
 		while (n--)
@@ -1416,7 +1416,7 @@ LUA_API void lua_toclose(lua_State *L, int idx)
 	o = index2stack(L, idx);
 	nresults = L->ci->nresults;
 	api_check(L, L->tbclist.p < o, "given index below or equal a marked one");
-	luaF_newtbcupval(L, o); /* create new to-be-closed upvalue */
+	luaF::newtbcupval(L, o); /* create new to-be-closed upvalue */
 	if (!hastocloseCfunc(nresults)) /* function not marked yet? */
 		L->ci->nresults = codeNresults(nresults); /* mark it */
 	lua_assert(hastocloseCfunc(L->ci->nresults));

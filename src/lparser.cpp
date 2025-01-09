@@ -796,7 +796,7 @@ static Proto *addprototype(LexState *ls)
 		while (oldsize < f->sizep)
 			f->p[oldsize++] = NULL;
 	}
-	f->p[fs->np++] = clp = luaF_newproto(L);
+	f->p[fs->np++] = clp = luaF::newproto(L);
 	luaC_objbarrier(L, f, clp);
 	return clp;
 }
@@ -2203,13 +2203,13 @@ LClosure *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff,
 {
 	LexState lexstate;
 	FuncState funcstate;
-	LClosure *cl = luaF_newLclosure(L, 1); /* create main closure */
+	LClosure *cl = luaF::newLclosure(L, 1); /* create main closure */
 	setclLvalue2s(L, L->top.p, cl); /* anchor it (to avoid being collected) */
 	luaD::inctop(L);
 	lexstate.h = luaH_new(L); /* create table for scanner */
 	sethvalue2s(L, L->top.p, lexstate.h); /* anchor it */
 	luaD::inctop(L);
-	funcstate.f = cl->p = luaF_newproto(L);
+	funcstate.f = cl->p = luaF::newproto(L);
 	luaC_objbarrier(L, cl, cl->p);
 	funcstate.f->source = luaS::news(L, name); /* create and anchor TString */
 	luaC_objbarrier(L, funcstate.f, funcstate.f->source);

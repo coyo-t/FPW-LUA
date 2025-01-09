@@ -225,7 +225,7 @@ const char *luaG_findlocal(lua_State *L, CallInfo *ci, int n, StkId *pos)
 		if (n < 0) /* access to vararg values? */
 			return findvararg(ci, n, pos);
 		else
-			name = luaF_getlocalname(ci_func(ci)->p, n, currentpc(ci));
+			name = luaF::getlocalname(ci_func(ci)->p, n, currentpc(ci));
 	}
 	if (name == NULL)
 	{
@@ -256,7 +256,7 @@ LUA_API const char *lua_getlocal(lua_State *L, const lua_Debug *ar, int n)
 		if (!isLfunction(s2v(L->top.p - 1))) /* not a Lua function? */
 			name = NULL;
 		else /* consider live variables at function start (parameters) */
-			name = luaF_getlocalname(clLvalue(s2v(L->top.p - 1))->p, n, 0);
+			name = luaF::getlocalname(clLvalue(s2v(L->top.p - 1))->p, n, 0);
 	}
 	else
 	{
@@ -568,7 +568,7 @@ static const char *basicgetobjname(const Proto *p, int *ppc, int reg,
 												const char **name)
 {
 	int pc = *ppc;
-	*name = luaF_getlocalname(p, reg + 1, pc);
+	*name = luaF::getlocalname(p, reg + 1, pc);
 	if (*name) /* is a local? */
 		return "local";
 	/* else try symbolic execution */

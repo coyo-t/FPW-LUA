@@ -928,14 +928,14 @@ static void pushclosure(lua_State *L, Proto *p, UpVal **encup, StkId base,
 	int nup = p->sizeupvalues;
 	Upvaldesc *uv = p->upvalues;
 	int i;
-	LClosure *ncl = luaF_newLclosure(L, nup);
+	LClosure *ncl = luaF::newLclosure(L, nup);
 	ncl->p = p;
 	setclLvalue2s(L, ra, ncl); /* anchor new closure in stack */
 	for (i = 0; i < nup; i++)
 	{
 		/* fill in its upvalues */
 		if (uv[i].instack) /* upvalue refers to local variable? */
-			ncl->upvals[i] = luaF_findupval(L, base + uv[i].idx);
+			ncl->upvals[i] = luaF::findupval(L, base + uv[i].idx);
 		else /* get upvalue from enclosing function */
 			ncl->upvals[i] = encup[uv[i].idx];
 		luaC_objbarrier(L, ncl, ncl->upvals[i]);
@@ -1815,14 +1815,14 @@ returning: /* trap already set */
 		vmcase(OP_CLOSE)
 			{
 				StkId ra = RA(i);
-				Protect(luaF_close(L, ra, LUA_OK, 1));
+				Protect(luaF::close(L, ra, LUA_OK, 1));
 				vmbreak;
 			}
 		vmcase(OP_TBC)
 			{
 				StkId ra = RA(i);
 				/* create new to-be-closed upvalue */
-				halfProtect(luaF_newtbcupval(L, ra));
+				halfProtect(luaF::newtbcupval(L, ra));
 				vmbreak;
 			}
 		vmcase(OP_JMP)
@@ -1947,7 +1947,7 @@ returning: /* trap already set */
 				savepc(ci); /* several calls here can raise errors */
 				if (TESTARG_k(i))
 				{
-					luaF_closeupval(L, base); /* close upvalues from current call */
+					luaF::closeupval(L, base); /* close upvalues from current call */
 					lua_assert(L->tbclist.p < base); /* no pending tbc variables */
 					lua_assert(base == ci->func.p + 1);
 				}
@@ -1976,7 +1976,7 @@ returning: /* trap already set */
 					ci->u2.nres = n; /* save number of returns */
 					if (L->top.p < ci->top.p)
 						L->top.p = ci->top.p;
-					luaF_close(L, base, CLOSEKTOP, 1);
+					luaF::close(L, base, CLOSEKTOP, 1);
 					updatetrap(ci);
 					updatestack(ci);
 				}
@@ -2079,7 +2079,7 @@ returning: /* trap already set */
 			{
 				StkId ra = RA(i);
 				/* create to-be-closed upvalue (if needed) */
-				halfProtect(luaF_newtbcupval(L, ra + 3));
+				halfProtect(luaF::newtbcupval(L, ra + 3));
 				pc += GETARG_Bx(i);
 				i = *(pc++); /* go to next instruction */
 				lua_assert(GET_OPCODE(i) == OP_TFORCALL && ra == RA(i));

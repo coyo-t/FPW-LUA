@@ -851,7 +851,7 @@ static void clearbyvalues(global_State *g, GCObject *l, GCObject *f)
 static void freeupval(lua_State *L, UpVal *uv)
 {
 	if (upisopen(uv))
-		luaF_unlinkupval(uv);
+		luaF::unlinkupval(uv);
 	luaM::free(L, uv);
 }
 
@@ -861,7 +861,7 @@ static void freeobj(lua_State *L, GCObject *o)
 	switch (o->tt)
 	{
 		case LUA_VPROTO:
-			luaF_freeproto(L, gco2p(o));
+			luaF::freeproto(L, gco2p(o));
 			break;
 		case LUA_VUPVAL:
 			freeupval(L, gco2upv(o));

@@ -532,7 +532,7 @@ l_sinline void moveresults(lua_State *L, StkId res, int nres, int wanted)
 				/* to-be-closed variables? */
 				L->ci->callstatus |= CIST_CLSRET; /* in case of yields */
 				L->ci->u2.nres = nres;
-				res = luaF_close(L, res, CLOSEKTOP, 1);
+				res = luaF::close(L, res, CLOSEKTOP, 1);
 				L->ci->callstatus &= ~CIST_CLSRET;
 				if (L->hookmask)
 				{
@@ -766,7 +766,7 @@ void luaD::callnoyield(lua_State *L, StkId func, int nResults)
 ** methods. Similarly, if a '__close' method errs, 'precover' calls
 ** 'unroll' which calls ''finishCcall' and we are back here again, to
 ** close any pending '__close' methods.
-** Note that, up to the call to 'luaF_close', the corresponding
+** Note that, up to the call to 'luaF::close', the corresponding
 ** 'CallInfo' is not modified, so that this repeated run works like the
 ** first one (except that it has at least one less '__close' to do). In
 ** particular, field CIST_RECST preserves the error status across these
@@ -782,7 +782,7 @@ static int finishpcallk(lua_State *L, CallInfo *ci)
 		/* error */
 		StkId func = luaD::restorestack(L, ci->u2.funcidx);
 		L->allowhook = ci->getoah(); /* restore 'allowhook' */
-		func = luaF_close(L, func, status, 1); /* can yield or raise an error */
+		func = luaF::close(L, func, status, 1); /* can yield or raise an error */
 		luaD::seterrorobj(L, status, func);
 		luaD::shrinkstack(L); /* restore stack size in case of overflow */
 		ci->setcistrecst(LUA_OK); /* clear original status */
@@ -1043,7 +1043,7 @@ LUA_API int lua_yieldk(lua_State *L, int nresults, lua_KContext ctx,
 
 
 /*
-** Auxiliary structure to call 'luaF_close' in protected mode.
+** Auxiliary structure to call 'luaF::close' in protected mode.
 */
 struct CloseP
 {
@@ -1053,17 +1053,17 @@ struct CloseP
 
 
 /*
-** Auxiliary function to call 'luaF_close' in protected mode.
+** Auxiliary function to call 'luaF::close' in protected mode.
 */
 static void closepaux(lua_State *L, void *ud)
 {
 	struct CloseP *pcl = cast(struct CloseP *, ud);
-	luaF_close(L, pcl->level, pcl->status, 0);
+	luaF::close(L, pcl->level, pcl->status, 0);
 }
 
 
 /*
-** Calls 'luaF_close' in protected mode. Return the original status
+** Calls 'luaF::close' in protected mode. Return the original status
 ** or, in case of errors, the new status.
 */
 int luaD::closeprotected(lua_State *L, ptrdiff_t level, int status)
@@ -1157,7 +1157,7 @@ static void f_parser(lua_State *L, void *ud)
 		cl = luaY_parser(L, p->z, &p->buff, &p->dyd, p->name, c);
 	}
 	lua_assert(cl->nupvalues == cl->p->sizeupvalues);
-	luaF_initupvals(L, cl);
+	luaF::initupvals(L, cl);
 }
 
 

@@ -218,7 +218,7 @@ static void loadProtos(LoadState *S, Proto *f)
 		f->p[i] = NULL;
 	for (i = 0; i < n; i++)
 	{
-		f->p[i] = luaF_newproto(S->L);
+		f->p[i] = luaF::newproto(S->L);
 		luaC_objbarrier(S->L, f, f->p[i]);
 		loadFunction(S, f->p[i], f->source);
 	}
@@ -356,10 +356,10 @@ LClosure *luaU_undump(lua_State *L, ZIO *Z, const char *name)
 	S.L = L;
 	S.Z = Z;
 	checkHeader(&S);
-	LClosure *cl = luaF_newLclosure(L, loadByte(&S));
+	LClosure *cl = luaF::newLclosure(L, loadByte(&S));
 	setclLvalue2s(L, L->top.p, cl);
 	luaD::inctop(L);
-	cl->p = luaF_newproto(L);
+	cl->p = luaF::newproto(L);
 	luaC_objbarrier(L, cl, cl->p);
 	loadFunction(&S, cl->p, NULL);
 	lua_assert(cl->nupvalues == cl->p->sizeupvalues);
