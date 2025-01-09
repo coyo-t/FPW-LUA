@@ -1375,9 +1375,8 @@ LUA_API int lua_gc(lua_State *L, int what, ...)
 
 LUA_API int lua_error(lua_State *L)
 {
-	TValue *errobj;
 	lua_lock(L);
-	errobj = s2v(L->top.p - 1);
+	TValue *errobj = s2v(L->top.p - 1);
 	api_checknelems(L, 1);
 	/* error object is the memory error message? */
 	if (ttisshrstring(errobj) && eqshrstr(tsvalue(errobj), G(L)->memerrmsg))
