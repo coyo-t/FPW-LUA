@@ -24,6 +24,9 @@
 #undef PI
 #define PI	(l_mathop(3.141592653589793238462643383279502884))
 
+static constexpr auto DEGTORAD = (l_mathop(180.0) / PI);
+static constexpr auto RADTODEG = (PI / l_mathop(180.0));
+
 
 static int math_abs(lua_State *L)
 {
@@ -215,13 +218,13 @@ static int math_exp(lua_State *L)
 
 static int math_deg(lua_State *L)
 {
-	lua_pushnumber(L, luaL_checknumber(L, 1) * (l_mathop(180.0) / PI));
+	lua_pushnumber(L, luaL_checknumber(L, 1) * DEGTORAD);
 	return 1;
 }
 
 static int math_rad(lua_State *L)
 {
-	lua_pushnumber(L, luaL_checknumber(L, 1) * (PI / l_mathop(180.0)));
+	lua_pushnumber(L, luaL_checknumber(L, 1) * RADTODEG);
 	return 1;
 }
 
@@ -269,6 +272,25 @@ static int math_type(lua_State *L)
 	return 1;
 }
 
+
+static int math_dsin(lua_State *L)
+{
+	lua_pushnumber(L, l_mathop(sin)(luaL_checknumber(L, 1) * DEGTORAD));
+	return 1;
+}
+
+static int math_dcos(lua_State *L)
+{
+	lua_pushnumber(L, l_mathop(cos)(luaL_checknumber(L, 1) * DEGTORAD));
+	return 1;
+}
+
+static int math_dtan(lua_State *L)
+{
+	lua_pushnumber(L, l_mathop(tan)(luaL_checknumber(L, 1) * DEGTORAD));
+	return 1;
+}
+
 #include "./random.cpp"
 
 
@@ -294,6 +316,10 @@ static const luaL_Reg mathlib[] = {
 	{"sqrt", math_sqrt},
 	{"tan", math_tan},
 	{"type", math_type},
+
+	{"dsin", math_dsin},
+	{"dcos", math_dcos},
+	{"dtan", math_dtan},
 
 	/* placeholders */
 	{"random", NULL},
