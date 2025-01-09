@@ -294,42 +294,17 @@ static int math_dtan(lua_State *L)
 }
 
 
-static double cosfromsin (double sin, double angle)
-{
-	double cos = sqrt(1.0 - sin * sin);
-	double a = angle + (PI / 2.0);
-	double b = a - static_cast<int>(a / TAU) * TAU;
-	if (b < 0.0)
-		b = TAU + b;
-	if (b >= PI)
-		return -cos;
-	return cos;
-}
-
 static int math_sico (lua_State *L)
 {
 	lua_Number angle = luaL_checknumber(L, 1);
 
-#ifdef LUACOYOTE_USE_COSFROMSIN
-	auto si = sin(angle);
-	auto co = cosfromsin(si, angle);
-	lua_pushnumber(L, si);
-	lua_pushnumber(L, co);
-#else
 	lua_pushnumber(L, sin(angle));
 	lua_pushnumber(L, cos(angle));
-#endif
+
 
 	return 2;
 }
 
-static int math_cosfromsin (lua_State*L)
-{
-	lua_Number si = luaL_checknumber(L, 1);
-	lua_Number angle = luaL_checknumber(L, 2);
-	lua_pushnumber(L, cosfromsin(si, angle));
-	return 1;
-}
 
 #include "./random.cpp"
 
@@ -361,7 +336,6 @@ static const luaL_Reg mathlib[] = {
 	{"dcos", math_dcos},
 	{"dtan", math_dtan},
 	{"sico", math_sico},
-	{"cosfromsin", math_cosfromsin},
 
 	/* placeholders */
 	{"random", NULL},
