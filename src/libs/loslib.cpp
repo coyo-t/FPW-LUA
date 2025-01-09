@@ -7,7 +7,7 @@
 #define loslib_c
 #define LUA_LIB
 
-#include "lprefix.hpp"
+#include "../lprefix.hpp"
 
 
 #include <errno.h>
@@ -16,10 +16,10 @@
 #include <string.h>
 #include <time.h>
 
-#include "lua.hpp"
+#include "../lua.hpp"
 
-#include "lauxlib.hpp"
-#include "lualib.hpp"
+#include "../lauxlib.hpp"
+#include "../lualib.hpp"
 
 
 /*

@@ -8,8 +8,6 @@
 #ifndef lauxlib_h
 #define lauxlib_h
 
-#include <array>
-
 extern "C" {
 #include <stddef.h>
 #include <stdio.h>

@@ -9,17 +9,17 @@
 
 #include <functional>
 
-#include "lprefix.hpp"
+#include "../lprefix.hpp"
 
 
 #include <limits.h>
 #include <stddef.h>
 #include <string.h>
 
-#include "lua.hpp"
+#include "../lua.hpp"
 
-#include "lauxlib.hpp"
-#include "lualib.hpp"
+#include "../lauxlib.hpp"
+#include "../lualib.hpp"
 
 
 /*

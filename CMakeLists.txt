@@ -10,13 +10,13 @@ add_library(LuaMod SHARED
         src/lapi.cpp
         src/lapi.hpp
         src/lauxlib.cpp
-        src/lbaselib.cpp
+        src/libs/lbaselib.cpp
         src/lcode.cpp
         src/lcode.hpp
-        src/lcorolib.cpp
+        src/libs/lcorolib.cpp
         src/lctype.cpp
         src/lctype.hpp
-        src/ldblib.cpp
+        src/libs/ldblib.cpp
         src/ldebug.cpp
         src/ldebug.hpp
         src/ldo.cpp
@@ -26,22 +26,22 @@ add_library(LuaMod SHARED
         src/lfunc.hpp
         src/lgc.cpp
         src/lgc.hpp
-        src/linit.cpp
-        src/liolib.cpp
+        src/libs/linit.cpp
+        src/libs/liolib.cpp
         src/ljumptab.hpp
         src/llex.cpp
         src/llex.hpp
         src/llimits.hpp
-        src/lmathlib.cpp
+        src/libs/lmathlib.cpp
         src/lmem.cpp
         src/lmem.hpp
-        src/loadlib.cpp
+        src/libs/loadlib.cpp
         src/lobject.cpp
         src/lobject.hpp
         src/lopcodes.cpp
         src/lopcodes.hpp
         src/lopnames.hpp
-        src/loslib.cpp
+        src/libs/loslib.cpp
         src/lparser.cpp
         src/lparser.hpp
         src/lprefix.hpp
@@ -49,17 +49,17 @@ add_library(LuaMod SHARED
         src/lstate.hpp
         src/lstring.cpp
         src/lstring.hpp
-        src/lstrlib.cpp
+        src/libs/lstrlib.cpp
         src/ltable.cpp
         src/ltable.hpp
-        src/ltablib.cpp
+        src/libs/ltablib.cpp
         src/ltm.cpp
         src/ltm.hpp
         src/lua.cpp
         src/luac.cpp
         src/lundump.cpp
         src/lundump.hpp
-        src/lutf8lib.cpp
+        src/libs/lutf8lib.cpp
         src/lvm.cpp
         src/lvm.hpp
         src/lzio.cpp
