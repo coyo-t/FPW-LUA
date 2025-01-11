@@ -82,7 +82,8 @@ constexpr auto POS_sJ =		POS_A;
 #define MAXARG_Bx	MAX_INT
 #endif
 
-#define OFFSET_sBx	(MAXARG_Bx>>1)         /* 'sBx' is signed */
+/* 'sBx' is signed */
+constexpr auto OFFSET_sBx =	(MAXARG_Bx>>1);
 
 
 #if L_INTHASBITS(SIZE_Ax)
@@ -97,13 +98,13 @@ constexpr auto POS_sJ =		POS_A;
 #define MAXARG_sJ	MAX_INT
 #endif
 
-#define OFFSET_sJ	(MAXARG_sJ >> 1)
+constexpr auto OFFSET_sJ =	(MAXARG_sJ >> 1);
 
 
-#define MAXARG_A	((1<<SIZE_A)-1)
-#define MAXARG_B	((1<<SIZE_B)-1)
-#define MAXARG_C	((1<<SIZE_C)-1)
-#define OFFSET_sC	(MAXARG_C >> 1)
+constexpr auto MAXARG_A =	((1<<SIZE_A)-1);
+constexpr auto MAXARG_B =	((1<<SIZE_B)-1);
+constexpr auto MAXARG_C =	((1<<SIZE_C)-1);
+constexpr auto OFFSET_sC =	(MAXARG_C >> 1);
 
 #define int2sC(i)	((i) + OFFSET_sC)
 #define sC2int(i)	((i) - OFFSET_sC)
@@ -187,7 +188,7 @@ constexpr auto POS_sJ =		POS_A;
 /*
 ** invalid register that fits in 8 bits
 */
-#define NO_REG		MAXARG_A
+constexpr auto NO_REG =		MAXARG_A;
 
 
 /*

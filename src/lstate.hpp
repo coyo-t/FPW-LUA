@@ -143,16 +143,16 @@ typedef struct stringtable
 /*
 ** Bits in CallInfo status
 */
-constexpr auto CIST_OAH	(1<<0);	/* original value of 'allowhook' */
-constexpr auto CIST_C		(1<<1);	/* call is running a C function */
-constexpr auto CIST_FRESH	(1<<2);	/* call is on a fresh "luaV_execute" frame */
-constexpr auto CIST_HOOKED	(1<<3);	/* call is running a debug hook */
-constexpr auto CIST_YPCALL	(1<<4);	/* doing a yieldable protected call */
-constexpr auto CIST_TAIL	(1<<5);	/* call was tail called */
-constexpr auto CIST_HOOKYIELD	(1<<6);	/* last hook called yielded */
-constexpr auto CIST_FIN	(1<<7);	/* function "called" a finalizer */
-constexpr auto CIST_TRAN	(1<<8);	/* 'ci' has transfer information */
-constexpr auto CIST_CLSRET	(1<<9);  /* function is closing tbc variables */
+constexpr auto CIST_OAH =	(1<<0);	/* original value of 'allowhook' */
+constexpr auto CIST_C =		(1<<1);	/* call is running a C function */
+constexpr auto CIST_FRESH =	(1<<2);	/* call is on a fresh "luaV_execute" frame */
+constexpr auto CIST_HOOKED =	(1<<3);	/* call is running a debug hook */
+constexpr auto CIST_YPCALL =	(1<<4);	/* doing a yieldable protected call */
+constexpr auto CIST_TAIL =	(1<<5);	/* call was tail called */
+constexpr auto CIST_HOOKYIELD =	(1<<6);	/* last hook called yielded */
+constexpr auto CIST_FIN =	(1<<7);	/* function "called" a finalizer */
+constexpr auto CIST_TRAN =	(1<<8);	/* 'ci' has transfer information */
+constexpr auto CIST_CLSRET =	(1<<9);  /* function is closing tbc variables */
 
 /* Bits 10-12 are used for CIST_RECST (see below) */
 constexpr auto CIST_RECST =	10;
@@ -445,23 +445,15 @@ union GCUnion
 /* actual number of total bytes allocated */
 #define gettotalbytes(g)	cast(lu_mem, (g)->totalbytes + (g)->GCdebt)
 
-LUAI_FUNC void luaE_setdebt(global_State *g, l_mem debt);
-
-LUAI_FUNC void luaE_freethread(lua_State *L, lua_State *L1);
-
-LUAI_FUNC CallInfo *luaE_extendCI(lua_State *L);
-
-LUAI_FUNC void luaE_shrinkCI(lua_State *L);
-
-LUAI_FUNC void luaE_checkcstack(lua_State *L);
-
-LUAI_FUNC void luaE_incCstack(lua_State *L);
-
-LUAI_FUNC void luaE_warning(lua_State *L, const char *msg, int tocont);
-
-LUAI_FUNC void luaE_warnerror(lua_State *L, const char *where);
-
-LUAI_FUNC int luaE_resetthread(lua_State *L, int status);
+LUAI_FUNCA luaE_setdebt(global_State *g, l_mem debt) -> void;
+LUAI_FUNCA luaE_freethread(lua_State *L, lua_State *L1) -> void;
+LUAI_FUNCA luaE_extendCI(lua_State *L) -> CallInfo*;
+LUAI_FUNCA luaE_shrinkCI(lua_State *L) -> void;
+LUAI_FUNCA luaE_checkcstack(lua_State *L) -> void;
+LUAI_FUNCA luaE_incCstack(lua_State *L) -> void;
+LUAI_FUNCA luaE_warning(lua_State *L, const char *msg, int tocont) -> void;
+LUAI_FUNCA luaE_warnerror(lua_State *L, const char *where) -> void;
+LUAI_FUNCA luaE_resetthread(lua_State *L, int status) -> int;
 
 
 #endif
