@@ -109,15 +109,15 @@ using lua_CFunction = auto (*)(lua_State* L) -> int;
 ** Type for continuation functions
 */
 using lua_KFunction = auto (*)(lua_State *L, int status, lua_KContext ctx) -> int;
-// typedef int (*lua_KFunction)(lua_State *L, int status, lua_KContext ctx);
-
 
 /*
 ** Type for functions that read/write blocks when loading/dumping Lua chunks
 */
-typedef const char * (*lua_Reader)(lua_State *L, void *ud, size_t *sz);
+using lua_Reader = auto (*)(lua_State *L, void *ud, size_t *sz) -> const char*;
+// typedef const char * (*lua_Reader)(lua_State *L, void *ud, size_t *sz);
 
-typedef int (*lua_Writer)(lua_State *L, const void *p, size_t sz, void *ud);
+using lua_Writer = auto (*)(lua_State *L, const void *p, size_t sz, void *ud) -> int;
+// typedef int (*lua_Writer)(lua_State *L, const void *p, size_t sz, void *ud);
 
 
 /*
