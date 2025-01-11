@@ -55,12 +55,12 @@ static l_noret lexerror(LexState *ls, const char *msg, int token);
 static void save(LexState *ls, int c)
 {
 	Mbuffer *b = ls->buff;
-	if (luaZ_bufflen(b) + 1 > luaZ_sizebuffer(b))
+	if (luaZ_bufflen(b) + 1 > b->sizebuffer())
 	{
 		size_t newsize;
-		if (luaZ_sizebuffer(b) >= MAX_SIZE / 2)
+		if (b->sizebuffer() >= MAX_SIZE / 2)
 			lexerror(ls, "lexical element too long", 0);
-		newsize = luaZ_sizebuffer(b) * 2;
+		newsize = b->sizebuffer() * 2;
 		luaZ_resizebuffer(ls->L, b, newsize);
 	}
 	b->buffer[b->n++] = cast_char(c);

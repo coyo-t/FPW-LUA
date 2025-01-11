@@ -30,11 +30,13 @@ struct Mbuffer
 	auto initbuffer (lua_State* L) -> void;
 
 	auto getbuffer () -> char*;
+
+	auto sizebuffer () -> size_t;
 };
 
 // void luaZ_initbuffer (lua_State* L, Mbuffer* buff);
 // char* luaZ_buffer (Mbuffer* buff);
-size_t luaZ_sizebuffer (Mbuffer* buff);
+// size_t luaZ_sizebuffer (Mbuffer* buff);
 size_t luaZ_bufflen (Mbuffer* buff);
 
 template<typename N>

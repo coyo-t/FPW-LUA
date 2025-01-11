@@ -52,6 +52,11 @@ auto Mbuffer::getbuffer() -> char *
 	return this->buffer;
 }
 
+auto Mbuffer::sizebuffer() -> size_t
+{
+	return this->buffsize;
+}
+
 // void luaZ_initbuffer(lua_State *L, Mbuffer *buff)
 // {
 // 	buff->buffer = nullptr;
@@ -63,10 +68,10 @@ auto Mbuffer::getbuffer() -> char *
 // 	return buff->buffer;
 // }
 
-size_t luaZ_sizebuffer(Mbuffer *buff)
-{
-	return buff->buffsize;
-}
+// size_t luaZ_sizebuffer(Mbuffer *buff)
+// {
+// 	return buff->buffsize;
+// }
 
 size_t luaZ_bufflen (Mbuffer *buff)
 {
