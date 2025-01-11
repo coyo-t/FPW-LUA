@@ -10,38 +10,30 @@
 #include "lprefix.hpp"
 
 
-#include <string.h>
+#include <cstring>
 
-#include "lua.hpp"
-
-#include "llimits.hpp"
-#include "lmem.hpp"
-#include "lstate.hpp"
 #include "lzio.hpp"
 
 
 /* --------------------------------------------------------------- read --- */
-size_t luaZ_read(ZIO *z, void *b, size_t n)
+
+auto Zio::read(void *b, size_t n) -> size_t
 {
 	while (n)
 	{
-		size_t m;
-		if (z->n == 0)
+		if (this->n == 0)
 		{
 			/* no bytes in buffer? */
-			if (z->fill() == EOZ) /* try to read more */
+			if (this->fill() == EOZ) /* try to read more */
 				return n; /* no more input; return number of missing bytes */
-			else
-			{
-				z->n++; /* luaZ_fill consumed first byte; put it back */
-				z->p--;
-			}
+			this->n++; /* luaZ_fill consumed first byte; put it back */
+			this->p--;
 		}
-		m = (n <= z->n) ? n : z->n; /* min. between n and z->n */
-		memcpy(b, z->p, m);
-		z->n -= m;
-		z->p += m;
-		b = (char *) b + m;
+		size_t m = (n <= this->n) ? n : this->n; /* min. between n and z->n */
+		memcpy(b, this->p, m);
+		this->n -= m;
+		this->p += m;
+		b = static_cast<char *>(b) + m;
 		n -= m;
 	}
 	return 0;

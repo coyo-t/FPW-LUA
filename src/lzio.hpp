@@ -74,10 +74,6 @@ struct Mbuffer
 };
 
 
-/* read next n bytes */
-LUAI_FUNC size_t luaZ_read(ZIO *z, void *b, size_t n);
-
-
 /* --------- Private Part ------------------ */
 
 struct Zio
@@ -123,6 +119,9 @@ struct Zio
 		this->n = 0;
 		this->p = nullptr;
 	}
+
+	/* read next n bytes */
+	auto read (void *b, size_t n) -> size_t;
 };
 
 #endif
