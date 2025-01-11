@@ -622,7 +622,7 @@ void luaH_resize(lua_State *L, Table *t, unsigned int newasize,
 	}
 	/* allocate new array */
 	TValue *newarray = luaM::reallocvector(L, t->array, oldasize, newasize);
-	if (l_unlikely(newarray == NULL && newasize > 0))
+	if (l_unlikely(newarray == nullptr && newasize > 0))
 	{
 		/* allocation failed? */
 		freehash(L, &newt); /* release new hash part */
@@ -681,9 +681,9 @@ Table *luaH_newt(lua_State *L)
 {
 	GCObject *o = luaC_newobj(L, LUA_VTABLE, sizeof(Table));
 	Table *t = gco2t(o);
-	t->metatable = NULL;
+	t->metatable = nullptr;
 	t->flags = cast_byte(maskflags); /* table has no metamethod fields */
-	t->array = NULL;
+	t->array = nullptr;
 	t->alimit = 0;
 	setnodevector(L, t, 0);
 	return t;
@@ -748,7 +748,7 @@ static void luaH_newkey(lua_State *L, Table *t, const TValue *key,
 		/* main position is taken? */
 		Node *othern;
 		Node *f = getfreepos(t); /* get a free place */
-		if (f == NULL)
+		if (f == nullptr)
 		{
 			/* cannot find a free place? */
 			rehash(L, t, key); /* grow table */
@@ -961,8 +961,9 @@ static lua_Unsigned hash_search(Table *t, lua_Unsigned j)
 			j = LUA_MAXINTEGER;
 			if (isempty(luaH_getint(t, j))) /* t[j] not present? */
 				break; /* 'j' now is an absent index */
-			else /* weird case */
-				return j; /* well, max integer is a boundary... */
+			/* weird case */
+			/* well, max integer is a boundary... */
+			return j;
 		}
 	} while (!isempty(luaH_getint(t, j))); /* repeat until an absent t[j] */
 	/* i < j  &&  t[i] present  &&  t[j] absent */
