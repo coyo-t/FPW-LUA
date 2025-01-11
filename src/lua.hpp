@@ -17,12 +17,12 @@ extern "C" {
 #include "luaconf.hpp"
 
 
-#define LUA_VERSION_MAJOR	"5"
-#define LUA_VERSION_MINOR	"4"
-#define LUA_VERSION_RELEASE	"7"
+#define LUA_VERSION_MAJOR "5"
+#define LUA_VERSION_MINOR "4"
+#define LUA_VERSION_RELEASE "7"
 
-constexpr auto LUA_VERSION_NUM =			504;
-constexpr auto LUA_VERSION_RELEASE_NUM =		(LUA_VERSION_NUM * 100 + 7);
+constexpr auto LUA_VERSION_NUM = 504;
+constexpr auto LUA_VERSION_RELEASE_NUM = LUA_VERSION_NUM * 100 + 7;
 
 #define LUA_VERSION	"Lua " LUA_VERSION_MAJOR "." LUA_VERSION_MINOR
 #define LUA_RELEASE	LUA_VERSION "." LUA_VERSION_RELEASE
@@ -31,10 +31,10 @@ constexpr auto LUA_VERSION_RELEASE_NUM =		(LUA_VERSION_NUM * 100 + 7);
 
 
 /* mark for precompiled code ('<esc>Lua') */
-constexpr auto LUA_SIGNATURE =	"\x1bLua";
+constexpr auto LUA_SIGNATURE = "\x1bLua";
 
 /* option for multiple returns in 'lua_pcall' and 'lua_call' */
-constexpr auto LUA_MULTRET =	(-1);
+constexpr auto LUA_MULTRET = -1;
 
 
 /*
@@ -42,18 +42,18 @@ constexpr auto LUA_MULTRET =	(-1);
 ** (-LUAI_MAXSTACK is the minimum valid index; we keep some free empty
 ** space after that to help overflow detection)
 */
-constexpr auto LUA_REGISTRYINDEX =	(-LUAI_MAXSTACK - 1000);
+constexpr auto LUA_REGISTRYINDEX =	-LUAI_MAXSTACK - 1000;
 
 LUA_API int lua_upvalueindex (int i);
 LUA_API int lua_getregistryindex ();
 
 /* thread status */
-constexpr auto LUA_OK =		0;
-constexpr auto LUA_YIELD =	1;
-constexpr auto LUA_ERRRUN =	2;
-constexpr auto LUA_ERRSYNTAX =	3;
-constexpr auto LUA_ERRMEM =	4;
-constexpr auto LUA_ERRERR =	5;
+constexpr auto LUA_OK = 0;
+constexpr auto LUA_YIELD = 1;
+constexpr auto LUA_ERRRUN = 2;
+constexpr auto LUA_ERRSYNTAX = 3;
+constexpr auto LUA_ERRMEM = 4;
+constexpr auto LUA_ERRERR = 5;
 
 
 typedef struct lua_State lua_State;
@@ -62,19 +62,19 @@ typedef struct lua_State lua_State;
 /*
 ** basic types
 */
-constexpr auto LUA_TNONE =		(-1);
+constexpr auto LUA_TNONE = -1;
 
-constexpr auto LUA_TNIL =		0;
-constexpr auto LUA_TBOOLEAN =		1;
-constexpr auto LUA_TLIGHTUSERDATA =	2;
-constexpr auto LUA_TNUMBER =		3;
-constexpr auto LUA_TSTRING =		4;
-constexpr auto LUA_TTABLE =		5;
-constexpr auto LUA_TFUNCTION =		6;
-constexpr auto LUA_TUSERDATA =		7;
-constexpr auto LUA_TTHREAD =		8;
+constexpr auto LUA_TNIL = 0;
+constexpr auto LUA_TBOOLEAN = 1;
+constexpr auto LUA_TLIGHTUSERDATA = 2;
+constexpr auto LUA_TNUMBER = 3;
+constexpr auto LUA_TSTRING = 4;
+constexpr auto LUA_TTABLE = 5;
+constexpr auto LUA_TFUNCTION = 6;
+constexpr auto LUA_TUSERDATA = 7;
+constexpr auto LUA_TTHREAD = 8;
 
-constexpr auto LUA_NUMTYPES =		9;
+constexpr auto LUA_NUMTYPES = 9;
 
 
 /* minimum Lua stack available to a C function */
@@ -82,32 +82,29 @@ constexpr auto LUA_MINSTACK =	20;
 
 
 /* predefined values in the registry */
-constexpr auto LUA_RIDX_MAINTHREAD =	1;
-constexpr auto LUA_RIDX_GLOBALS =	2;
-constexpr auto LUA_RIDX_LAST =		LUA_RIDX_GLOBALS;
+constexpr auto LUA_RIDX_MAINTHREAD = 1;
+constexpr auto LUA_RIDX_GLOBALS = 2;
+constexpr auto LUA_RIDX_LAST = LUA_RIDX_GLOBALS;
 
 
 /* type of numbers in Lua */
-typedef LUA_NUMBER lua_Number;
-
+using lua_Number = LUA_NUMBER;
 
 /* type for integer functions */
 using lua_Integer = LUA_INTEGER;
-// typedef LUA_INTEGER lua_Integer;
 
 /* unsigned integer type */
 using lua_Unsigned = LUA_UNSIGNED;
-// typedef LUA_UNSIGNED lua_Unsigned;
 
 /* type for continuation-function contexts */
 using lua_KContext = LUA_KCONTEXT;
-// typedef LUA_KCONTEXT lua_KContext;
 
 
 /*
 ** Type for C functions registered with Lua
 */
-typedef int (*lua_CFunction)(lua_State *L);
+using lua_CFunction = auto (*)(lua_State* L) -> int;
+// typedef int (*lua_CFunction)(lua_State *L);
 
 /*
 ** Type for continuation functions
