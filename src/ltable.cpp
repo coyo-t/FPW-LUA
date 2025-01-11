@@ -445,14 +445,13 @@ static unsigned int computesizes(unsigned int nums[], unsigned int *pna)
 static int countint(lua_Integer key, unsigned int *nums)
 {
 	unsigned int k = arrayindex(key);
-	if (k != 0)
+	if (k == 0)
 	{
-		/* is 'key' an appropriate array index? */
-		nums[luaO_ceillog2(k)]++; /* count as such */
-		return 1;
-	}
-	else
 		return 0;
+	}
+	/* is 'key' an appropriate array index? */
+	nums[luaO_ceillog2(k)]++; /* count as such */
+	return 1;
 }
 
 
@@ -678,7 +677,7 @@ static void rehash(lua_State *L, Table *t, const TValue *ek)
 */
 
 
-Table *luaH_new(lua_State *L)
+Table *luaH_newt(lua_State *L)
 {
 	GCObject *o = luaC_newobj(L, LUA_VTABLE, sizeof(Table));
 	Table *t = gco2t(o);
@@ -710,7 +709,7 @@ static Node *getfreepos(Table *t)
 				return t->lastfree;
 		}
 	}
-	return NULL; /* could not find a free place */
+	return nullptr; /* could not find a free place */
 }
 
 
@@ -820,27 +819,24 @@ const TValue *luaH_getint(Table *t, lua_Integer key)
 	lua_Unsigned alimit = t->alimit;
 	if (l_castS2U(key) - 1u < alimit) /* 'key' in [1, t->alimit]? */
 		return &t->array[key - 1];
-	else if (!isrealasize(t) && /* key still may be in the array part? */
-				(((l_castS2U(key) - 1u) & ~(alimit - 1u)) < alimit))
+	if (!isrealasize(t) && /* key still may be in the array part? */
+		(((l_castS2U(key) - 1u) & ~(alimit - 1u)) < alimit))
 	{
 		t->alimit = cast_uint(key); /* probably '#t' is here now */
 		return &t->array[key - 1];
 	}
-	else
+	/* key is not in the array part; check the hash */
+	Node *n = hashint(t, key);
+	for (;;)
 	{
-		/* key is not in the array part; check the hash */
-		Node *n = hashint(t, key);
-		for (;;)
-		{
-			/* check whether 'key' is somewhere in the chain */
-			if (keyisinteger(n) && keyival(n) == key)
-				return gval(n); /* that's it */
-			int nx = gnext(n);
-			if (nx == 0) break;
-			n += nx;
-		}
-		return &absentkey;
+		/* check whether 'key' is somewhere in the chain */
+		if (keyisinteger(n) && keyival(n) == key)
+			return gval(n); /* that's it */
+		int nx = gnext(n);
+		if (nx == 0) break;
+		n += nx;
 	}
+	return &absentkey;
 }
 
 
