@@ -21,7 +21,7 @@ constexpr auto LUAC_NUM =	static_cast<lua_Number>(370.5);
 /*
 ** Encode major-minor version in one byte, one nibble for each
 */
-constexpr auto LUAC_VERSION  (((LUA_VERSION_NUM / 100) * 16) + LUA_VERSION_NUM % 100);
+constexpr auto LUAC_VERSION =  (((LUA_VERSION_NUM / 100) * 16) + LUA_VERSION_NUM % 100);
 constexpr auto LUAC_FORMAT =	0;	/* this is the official format */
 
 namespace luaU {
