@@ -124,7 +124,7 @@ static TString *loadStringN(LoadState *S, Proto *p)
 	size_t size = loadSize(S);
 	if (size == 0) /* no string? */
 		return NULL;
-	else if (--size <= LUAI_MAXSHORTLEN)
+	if (--size <= LUAI_MAXSHORTLEN)
 	{
 		/* short string? */
 		char buff[LUAI_MAXSHORTLEN];
@@ -215,7 +215,7 @@ static void loadProtos(LoadState *S, Proto *f)
 	f->p = luaM::newvectorchecked<Proto*>(S->L, n);
 	f->sizep = n;
 	for (i = 0; i < n; i++)
-		f->p[i] = NULL;
+		f->p[i] = nullptr;
 	for (i = 0; i < n; i++)
 	{
 		f->p[i] = luaF::newproto(S->L);
@@ -270,7 +270,7 @@ static void loadDebug(LoadState *S, Proto *f)
 	f->locvars = luaM::newvectorchecked<LocVar>(S->L, n);
 	f->sizelocvars = n;
 	for (i = 0; i < n; i++)
-		f->locvars[i].varname = NULL;
+		f->locvars[i].varname = nullptr;
 	for (i = 0; i < n; i++)
 	{
 		f->locvars[i].varname = loadStringN(S, f);

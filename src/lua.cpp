@@ -884,3 +884,8 @@ void lua_call(lua_State *L, int n, int r)
 {
 	lua_callk(L, (n), (r), 0, nullptr);
 }
+
+int lua_getregistryindex()
+{
+	return LUA_REGISTRYINDEX;
+}

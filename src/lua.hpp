@@ -44,8 +44,8 @@ constexpr auto LUA_MULTRET =	(-1);
 */
 constexpr auto LUA_REGISTRYINDEX =	(-LUAI_MAXSTACK - 1000);
 
-// #define lua_upvalueindex(i)	(LUA_REGISTRYINDEX - (i))
 LUA_API int lua_upvalueindex (int i);
+LUA_API int lua_getregistryindex ();
 
 /* thread status */
 constexpr auto LUA_OK =		0;
@@ -92,13 +92,16 @@ typedef LUA_NUMBER lua_Number;
 
 
 /* type for integer functions */
-typedef LUA_INTEGER lua_Integer;
+using lua_Integer = LUA_INTEGER;
+// typedef LUA_INTEGER lua_Integer;
 
 /* unsigned integer type */
-typedef LUA_UNSIGNED lua_Unsigned;
+using lua_Unsigned = LUA_UNSIGNED;
+// typedef LUA_UNSIGNED lua_Unsigned;
 
 /* type for continuation-function contexts */
-typedef LUA_KCONTEXT lua_KContext;
+using lua_KContext = LUA_KCONTEXT;
+// typedef LUA_KCONTEXT lua_KContext;
 
 
 /*
@@ -447,15 +450,6 @@ LUA_API void lua_replace (lua_State* L, int idx);
 
 /* }============================================================== */
 
-
-/*
-** {==============================================================
-** compatibility macros
-** ===============================================================
-*/
-#define lua_newuserdata(L,s)	lua_newuserdatauv(L,s,1)
-#define lua_getuservalue(L,idx)	lua_getiuservalue(L,idx,1)
-#define lua_setuservalue(L,idx)	lua_setiuservalue(L,idx,1)
 
 constexpr auto LUA_NUMTAGS =		LUA_NUMTYPES;
 
