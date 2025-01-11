@@ -149,13 +149,12 @@ int luaV_tointegerns(const TValue *obj, lua_Integer *p, F2Imod mode)
 {
 	if (ttisfloat(obj))
 		return luaV_flttointeger(fltvalue(obj), p, mode);
-	else if (ttisinteger(obj))
+	if (ttisinteger(obj))
 	{
 		*p = ivalue(obj);
 		return 1;
 	}
-	else
-		return 0;
+	return 0;
 }
 
 
@@ -280,14 +279,11 @@ static int forprep(lua_State *L, StkId ra)
 				? luai_numlt(limit, init)
 				: luai_numlt(init, limit))
 			return 1; /* skip the loop */
-		else
-		{
-			/* make sure internal values are all floats */
-			setfltvalue(plimit, limit);
-			setfltvalue(pstep, step);
-			setfltvalue(s2v(ra), init); /* internal index */
-			setfltvalue(s2v(ra + 3), init); /* control variable */
-		}
+		/* make sure internal values are all floats */
+		setfltvalue(plimit, limit);
+		setfltvalue(pstep, step);
+		setfltvalue(s2v(ra), init); /* internal index */
+		setfltvalue(s2v(ra + 3), init); /* control variable */
 	}
 	return 0;
 }

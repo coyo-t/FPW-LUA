@@ -397,7 +397,7 @@ int luaH_next(lua_State *L, Table *t, StkId key)
 
 static void freehash(lua_State *L, Table *t)
 {
-	if (!isdummy(t))
+	if (!t->isdummy())
 		luaM::freearray(L, t->node, cast_sizet(sizenode(t)));
 }
 
@@ -701,7 +701,7 @@ void luaH_free(lua_State *L, Table *t)
 
 static Node *getfreepos(Table *t)
 {
-	if (!isdummy(t))
+	if (!t->isdummy())
 	{
 		while (t->lastfree > t->node)
 		{
@@ -744,7 +744,7 @@ static void luaH_newkey(lua_State *L, Table *t, const TValue *key,
 	if (ttisnil(value))
 		return; /* do not insert nil values */
 	mp = mainpositionTV(t, key);
-	if (!isempty(gval(mp)) || isdummy(t))
+	if (!isempty(gval(mp)) || t->isdummy())
 	{
 		/* main position is taken? */
 		Node *othern;
@@ -757,7 +757,7 @@ static void luaH_newkey(lua_State *L, Table *t, const TValue *key,
 			luaH_set(L, t, key, value); /* insert key into grown table */
 			return;
 		}
-		lua_assert(!isdummy(t));
+		lua_assert(!(t)->isdummy());
 		othern = mainpositionfromnode(t, mp);
 		if (othern != mp)
 		{
@@ -1080,7 +1080,7 @@ lua_Unsigned luaH_getn(Table *t)
 	/* (3) 'limit' is the last element and either is zero or present in table */
 	lua_assert(limit == luaH_realasize(t) &&
 		(limit == 0 || !isempty(&t->array[limit - 1])));
-	if (isdummy(t) || isempty(luaH_getint(t, cast(lua_Integer, limit + 1))))
+	if (t->isdummy() || isempty(luaH_getint(t, cast(lua_Integer, limit + 1))))
 		return limit; /* 'limit + 1' is absent */
 	else /* 'limit + 1' is also present */
 		return hash_search(t, limit);

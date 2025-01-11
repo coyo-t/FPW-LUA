@@ -22,13 +22,8 @@
 */
 #define invalidateTMcache(t)	((t)->flags &= ~maskflags)
 
-
-/* true when 't' is using 'dummynode' as its hash part */
-#define isdummy(t)		((t)->lastfree == NULL)
-
-
 /* allocated size for hash nodes */
-#define allocsizenode(t)	(isdummy(t) ? 0 : sizenode(t))
+#define allocsizenode(t)	((t)->isdummy() ? 0 : sizenode(t))
 
 
 /* returns the Node, given the value of a table entry */

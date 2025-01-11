@@ -1001,10 +1001,9 @@ LUA_API void lua_seti(lua_State *L, int idx, lua_Integer n)
 
 static void aux_rawset(lua_State *L, int idx, TValue *key, int n)
 {
-	Table *t;
 	lua_lock(L);
 	api_checknelems(L, n);
-	t = gettable(L, idx);
+	Table *t = gettable(L, idx);
 	luaH_set(L, t, key, s2v(L->top.p - 1));
 	invalidateTMcache(t);
 	luaC_barrierback(L, obj2gco(t), s2v(L->top.p - 1));
@@ -1029,10 +1028,9 @@ LUA_API void lua_rawsetp(lua_State *L, int idx, const void *p)
 
 LUA_API void lua_rawseti(lua_State *L, int idx, lua_Integer n)
 {
-	Table *t;
 	lua_lock(L);
 	api_checknelems(L, 1);
-	t = gettable(L, idx);
+	Table *t = gettable(L, idx);
 	luaH_setint(L, t, n, s2v(L->top.p - 1));
 	luaC_barrierback(L, obj2gco(t), s2v(L->top.p - 1));
 	L->top.p--;
@@ -1042,13 +1040,12 @@ LUA_API void lua_rawseti(lua_State *L, int idx, lua_Integer n)
 
 LUA_API int lua_setmetatable(lua_State *L, int objindex)
 {
-	TValue *obj;
 	Table *mt;
 	lua_lock(L);
 	api_checknelems(L, 1);
-	obj = index2value(L, objindex);
+	TValue *obj = index2value(L, objindex);
 	if (ttisnil(s2v(L->top.p - 1)))
-		mt = NULL;
+		mt = nullptr;
 	else
 	{
 		api_check(L, ttistable(s2v(L->top.p - 1)), "table expected");

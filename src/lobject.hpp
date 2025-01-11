@@ -785,6 +785,12 @@ typedef struct Table
 	Node *lastfree; /* any free position is before this position */
 	struct Table *metatable;
 	GCObject *gclist;
+
+	/* true when 't' is using 'dummynode' as its hash part */
+	auto isdummy () const -> bool
+	{
+		return ((this)->lastfree == nullptr);
+	}
 } Table;
 
 
