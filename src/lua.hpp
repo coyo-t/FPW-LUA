@@ -342,17 +342,17 @@ LUA_API void (lua_warning)(lua_State *L, const char *msg, int tocont);
 ** garbage-collection function and options
 */
 
-constexpr auto LUA_GCSTOP =		0;
-constexpr auto LUA_GCRESTART =		1;
-constexpr auto LUA_GCCOLLECT =		2;
-constexpr auto LUA_GCCOUNT =		3;
-constexpr auto LUA_GCCOUNTB =		4;
-constexpr auto LUA_GCSTEP =		5;
-constexpr auto LUA_GCSETPAUSE =		6;
-constexpr auto LUA_GCSETSTEPMUL =	7;
-constexpr auto LUA_GCISRUNNING =		9;
-constexpr auto LUA_GCGEN =		10;
-constexpr auto LUA_GCINC =		11;
+constexpr auto LUA_GCSTOP       = 0;
+constexpr auto LUA_GCRESTART    = 1;
+constexpr auto LUA_GCCOLLECT    = 2;
+constexpr auto LUA_GCCOUNT      = 3;
+constexpr auto LUA_GCCOUNTB     = 4;
+constexpr auto LUA_GCSTEP       = 5;
+constexpr auto LUA_GCSETPAUSE   = 6;
+constexpr auto LUA_GCSETSTEPMUL = 7;
+constexpr auto LUA_GCISRUNNING  = 9;
+constexpr auto LUA_GCGEN        = 10;
+constexpr auto LUA_GCINC        = 11;
 
 LUA_API int (lua_gc)(lua_State *L, int what, ...);
 
