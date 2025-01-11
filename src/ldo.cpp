@@ -1179,7 +1179,8 @@ int luaD::protectedparser(lua_State *L, ZIO *z, const char *name,
 	p.buff.initbuffer(L);
 	// luaZ_initbuffer(L, &p.buff);
 	status = luaD::pcall(L, f_parser, &p, luaD::savestack(L, L->top.p), L->errfunc);
-	luaZ_freebuffer(L, &p.buff);
+	p.buff.freebuffer(L);
+	// luaZ_freebuffer(L, &p.buff);
 	luaM::freearray(L, p.dyd.actvar.arr, p.dyd.actvar.size);
 	luaM::freearray(L, p.dyd.gt.arr, p.dyd.gt.size);
 	luaM::freearray(L, p.dyd.label.arr, p.dyd.label.size);

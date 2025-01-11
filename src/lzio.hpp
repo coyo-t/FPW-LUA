@@ -57,23 +57,39 @@ struct Mbuffer
 	{
 		this->n = 0;
 	}
+
+	auto resizebuffer (lua_State* L, size_t size) -> void
+	{
+		this->buffer = luaM::reallocvchar(
+			L,
+			this->buffer,
+			this->buffsize,
+			size
+		);
+		this->buffsize = size;
+	}
+
+	auto freebuffer (lua_State*L) -> void
+	{
+		this->resizebuffer(L, 0);
+	}
 };
 
 
-template<typename N>
-void luaZ_resizebuffer (lua_State* L, Mbuffer* buff, N size)
-{
-	buff->buffer = luaM::reallocvchar(
-		L,
-		(buff)->buffer,
-		(buff)->buffsize,
-		size
-	);
-	(buff)->buffsize = size;
-}
+// template<typename N>
+// void luaZ_resizebuffer (lua_State* L, Mbuffer* buff, N size)
+// {
+// 	buff->buffer = luaM::reallocvchar(
+// 		L,
+// 		(buff)->buffer,
+// 		(buff)->buffsize,
+// 		size
+// 	);
+// 	(buff)->buffsize = size;
+// }
 
 
-void luaZ_freebuffer (lua_State* L, Mbuffer* buff);
+// void luaZ_freebuffer (lua_State* L, Mbuffer* buff);
 
 
 LUAI_FUNC void luaZ_init(lua_State *L, ZIO *z, lua_Reader reader,

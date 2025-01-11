@@ -61,7 +61,8 @@ static void save(LexState *ls, int c)
 		if (b->sizebuffer() >= MAX_SIZE / 2)
 			lexerror(ls, "lexical element too long", 0);
 		newsize = b->sizebuffer() * 2;
-		luaZ_resizebuffer(ls->L, b, newsize);
+		b->resizebuffer(ls->L, newsize);
+		// luaZ_resizebuffer(ls->L, b, newsize);
 	}
 	b->buffer[b->n++] = cast_char(c);
 }
@@ -191,7 +192,9 @@ void luaX_setinput(lua_State *L, LexState *ls, ZIO *z, TString *source,
 	ls->lastline = 1;
 	ls->source = source;
 	ls->envn = luaS::newliteral(L, LUA_ENV); /* get env name */
-	luaZ_resizebuffer(ls->L, ls->buff, LUA_MINBUFFER); /* initialize buffer */
+	/* initialize buffer */
+	ls->buff->resizebuffer(ls->L, LUA_MINBUFFER);
+	// luaZ_resizebuffer(ls->L, ls->buff, LUA_MINBUFFER);
 }
 
 
