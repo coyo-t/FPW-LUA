@@ -20,16 +20,6 @@
 #include "lzio.hpp"
 
 
-void luaZ_init(lua_State *L, ZIO *z, lua_Reader reader, void *data)
-{
-	z->L = L;
-	z->reader = reader;
-	z->data = data;
-	z->n = 0;
-	z->p = nullptr;
-}
-
-
 /* --------------------------------------------------------------- read --- */
 size_t luaZ_read(ZIO *z, void *b, size_t n)
 {

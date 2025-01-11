@@ -74,9 +74,6 @@ struct Mbuffer
 };
 
 
-
-LUAI_FUNC void luaZ_init(lua_State *L, ZIO *z, lua_Reader reader, void *data);
-
 /* read next n bytes */
 LUAI_FUNC size_t luaZ_read(ZIO *z, void *b, size_t n);
 
@@ -116,6 +113,15 @@ struct Zio
 	auto zgetc () -> int
 	{
 		return (this->n-- > 0) ? cast_uchar(*this->p++) : this->fill();
+	}
+
+	auto init (lua_State *L, lua_Reader reader, void *data) -> void
+	{
+		this->L = L;
+		this->reader = reader;
+		this->data = data;
+		this->n = 0;
+		this->p = nullptr;
 	}
 };
 
