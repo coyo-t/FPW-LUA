@@ -306,7 +306,7 @@ static int math_sico (lua_State *L)
 }
 
 
-#include "./random.cpp"
+#include "./random/random.cpp"
 
 
 static const luaL_Reg mathlib[] = {

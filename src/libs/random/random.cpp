@@ -3,9 +3,9 @@
 
 #include <cfloat>
 #include <ctime>
-#include "../lua.hpp"
+#include "../../lua.hpp"
 #include "lauxlib.hpp"
-#include "../luatemplate.hpp"
+#include "../../luatemplate.hpp"
 
 /*
 ** {==================================================================
@@ -266,7 +266,7 @@ static int math_randomseed(lua_State *L)
 static const luaL_Reg randfuncs[] = {
 	{"random", math_random},
 	{"randomseed", math_randomseed},
-	{NULL, NULL}
+	luaL_Reg::end(),
 };
 
 
