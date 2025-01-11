@@ -76,40 +76,49 @@ struct Mbuffer
 };
 
 
-// template<typename N>
-// void luaZ_resizebuffer (lua_State* L, Mbuffer* buff, N size)
-// {
-// 	buff->buffer = luaM::reallocvchar(
-// 		L,
-// 		(buff)->buffer,
-// 		(buff)->buffsize,
-// 		size
-// 	);
-// 	(buff)->buffsize = size;
-// }
 
+LUAI_FUNC void luaZ_init(lua_State *L, ZIO *z, lua_Reader reader, void *data);
 
-// void luaZ_freebuffer (lua_State* L, Mbuffer* buff);
-
-
-LUAI_FUNC void luaZ_init(lua_State *L, ZIO *z, lua_Reader reader,
-								void *data);
-
-LUAI_FUNC size_t luaZ_read(ZIO *z, void *b, size_t n); /* read next n bytes */
+/* read next n bytes */
+LUAI_FUNC size_t luaZ_read(ZIO *z, void *b, size_t n);
 
 
 /* --------- Private Part ------------------ */
 
 struct Zio
 {
-	size_t n; /* bytes still unread */
-	const char *p; /* current position in buffer */
-	lua_Reader reader; /* reader function */
-	void *data; /* additional data */
-	lua_State *L; /* Lua state (for reader) */
+	/* bytes still unread */
+	size_t n;
+	/* current position in buffer */
+	const char *p;
+	/* reader function */
+	lua_Reader reader;
+	/* additional data */
+	void *data;
+	/* Lua state (for reader) */
+	lua_State *L;
+
+
+	auto fill () -> int
+	{
+		size_t size;
+		lua_State *L = this->L;
+		const char *buff;
+		lua_unlock(L);
+		buff = this->reader(L, this->data, &size);
+		lua_lock(L);
+		if (buff == nullptr || size == 0)
+			return EOZ;
+		/* discount char being returned */
+		this->n = size - 1;
+		this->p = buff;
+		return cast_uchar(*(this->p++));
+	}
+
+	auto zgetc () -> int
+	{
+		return (this->n-- > 0) ? cast_uchar(*this->p++) : this->fill();
+	}
 };
-
-
-LUAI_FUNC int luaZ_fill(ZIO *z);
 
 #endif

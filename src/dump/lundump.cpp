@@ -63,7 +63,7 @@ static void loadBlock(LoadState *S, void *b, size_t size)
 
 static lu_byte loadByte(LoadState *S)
 {
-	int b = zgetc(S->Z);
+	int b = S->Z->zgetc();
 	if (b == EOZ)
 		error(S, "truncated chunk");
 	return cast_byte(b);

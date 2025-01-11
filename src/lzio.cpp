@@ -20,25 +20,9 @@
 #include "lzio.hpp"
 
 
-int luaZ_fill(ZIO *z)
-{
-	size_t size;
-	lua_State *L = z->L;
-	const char *buff;
-	lua_unlock(L);
-	buff = z->reader(L, z->data, &size);
-	lua_lock(L);
-	if (buff == NULL || size == 0)
-		return EOZ;
-	z->n = size - 1; /* discount char being returned */
-	z->p = buff;
-	return cast_uchar(*(z->p++));
-}
-
-
 int zgetc(ZIO *z)
 {
-	return (((z)->n--)>0 ?  cast_uchar(*(z)->p++) : luaZ_fill(z));
+	return (((z)->n--)>0 ?  cast_uchar(*(z)->p++) : z->fill());
 }
 
 
@@ -66,7 +50,7 @@ size_t luaZ_read(ZIO *z, void *b, size_t n)
 		if (z->n == 0)
 		{
 			/* no bytes in buffer? */
-			if (luaZ_fill(z) == EOZ) /* try to read more */
+			if (z->fill() == EOZ) /* try to read more */
 				return n; /* no more input; return number of missing bytes */
 			else
 			{

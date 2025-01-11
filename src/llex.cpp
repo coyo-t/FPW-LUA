@@ -28,12 +28,6 @@
 #include "lzio.hpp"
 
 
-#define next(ls)	(ls->current = zgetc(ls->z))
-
-
-#define currIsNewline(ls)	(ls->current == '\n' || ls->current == '\r')
-
-
 /* ORDER RESERVED */
 static const char *const luaX_tokens[] = {
 	"and", "break", "do", "else", "elseif",
@@ -46,7 +40,7 @@ static const char *const luaX_tokens[] = {
 };
 
 
-#define save_and_next(ls) (save(ls, ls->current), next(ls))
+#define save_and_next(ls) (save(ls, ls->current), ls->next())
 
 
 static l_noret lexerror(LexState *ls, const char *msg, int token);
@@ -171,9 +165,9 @@ static void inclinenumber(LexState *ls)
 {
 	int old = ls->current;
 	lua_assert(currIsNewline(ls));
-	next(ls); /* skip '\n' or '\r' */
-	if (currIsNewline(ls) && ls->current != old)
-		next(ls); /* skip '\n\r' or '\r\n' */
+	ls->next(); /* skip '\n' or '\r' */
+	if (ls->currIsNewline() && ls->current != old)
+		ls->next(); /* skip '\n\r' or '\r\n' */
 	if (++ls->linenumber >= MAX_INT)
 		lexerror(ls, "chunk has too many lines", 0);
 }
@@ -209,7 +203,7 @@ static int check_next1(LexState *ls, int c)
 {
 	if (ls->current == c)
 	{
-		next(ls);
+		ls->next();
 		return 1;
 	}
 	else return 0;
@@ -310,7 +304,7 @@ static void read_long_string(LexState *ls, SemInfo *seminfo, size_t sep)
 {
 	int line = ls->linenumber; /* initial line (for error message) */
 	save_and_next(ls); /* skip 2nd '[' */
-	if (currIsNewline(ls)) /* string starts with a newline? */
+	if (ls->currIsNewline()) /* string starts with a newline? */
 		inclinenumber(ls); /* skip it */
 	for (;;)
 	{
@@ -344,7 +338,7 @@ static void read_long_string(LexState *ls, SemInfo *seminfo, size_t sep)
 				if (seminfo)
 					save_and_next(ls);
 				else
-					next(ls);
+					ls->next();
 			}
 		}
 	}
@@ -397,7 +391,7 @@ static unsigned long readutf8esc(LexState *ls)
 		r = (r << 4) + luaO_hexavalue(ls->current);
 	}
 	esccheck(ls, ls->current == '}', "missing '}'");
-	next(ls); /* skip '}' */
+	ls->next(); /* skip '}' */
 	ls->buff->buffremove(i); /* remove saved chars from buffer */
 	return r;
 }
@@ -480,12 +474,12 @@ static void read_string(LexState *ls, int del, SemInfo *seminfo)
 					case 'z': {
 						/* zap following span of spaces */
 						ls->buff->buffremove(1); /* remove '\\' */
-						next(ls); /* skip the 'z' */
+						ls->next(); /* skip the 'z' */
 						while (lisspace(ls->current))
 						{
-							if (currIsNewline(ls)) inclinenumber(ls);
+							if (ls->currIsNewline()) inclinenumber(ls);
 							else
-								next(ls);
+								ls->next();
 						}
 						goto no_save;
 					}
@@ -496,7 +490,7 @@ static void read_string(LexState *ls, int del, SemInfo *seminfo)
 					}
 				}
 			read_save:
-				next(ls);
+				ls->next();
 				/* go through */
 			only_save:
 				ls->buff->buffremove(1); /* remove '\\' */
@@ -533,15 +527,15 @@ static int llex(LexState *ls, SemInfo *seminfo)
 			case '\t':
 			case '\v': {
 				/* spaces */
-				next(ls);
+				ls->next();
 				break;
 			}
 			case '-': {
 				/* '-' or '--' (comment) */
-				next(ls);
+				ls->next();
 				if (ls->current != '-') return '-';
 				/* else is a comment */
-				next(ls);
+				ls->next();
 				if (ls->current == '[')
 				{
 					/* long comment? */
@@ -555,8 +549,8 @@ static int llex(LexState *ls, SemInfo *seminfo)
 					}
 				}
 				/* else short comment */
-				while (!currIsNewline(ls) && ls->current != EOZ)
-					next(ls); /* skip until end of line (or end of file) */
+				while (!ls->currIsNewline() && ls->current != EOZ)
+					ls->next(); /* skip until end of line (or end of file) */
 				break;
 			}
 			case '[': {
@@ -572,34 +566,34 @@ static int llex(LexState *ls, SemInfo *seminfo)
 				return '[';
 			}
 			case '=': {
-				next(ls);
+				ls->next();
 				if (check_next1(ls, '=')) return TK_EQ; /* '==' */
 				else return '=';
 			}
 			case '<': {
-				next(ls);
+				ls->next();
 				if (check_next1(ls, '=')) return TK_LE; /* '<=' */
 				else if (check_next1(ls, '<')) return TK_SHL; /* '<<' */
 				else return '<';
 			}
 			case '>': {
-				next(ls);
+				ls->next();
 				if (check_next1(ls, '=')) return TK_GE; /* '>=' */
 				else if (check_next1(ls, '>')) return TK_SHR; /* '>>' */
 				else return '>';
 			}
 			case '/': {
-				next(ls);
+				ls->next();
 				if (check_next1(ls, '/')) return TK_IDIV; /* '//' */
 				else return '/';
 			}
 			case '~': {
-				next(ls);
+				ls->next();
 				if (check_next1(ls, '=')) return TK_NE; /* '~=' */
 				else return '~';
 			}
 			case ':': {
-				next(ls);
+				ls->next();
 				if (check_next1(ls, ':')) return TK_DBCOLON; /* '::' */
 				else return ':';
 			}
@@ -656,7 +650,7 @@ static int llex(LexState *ls, SemInfo *seminfo)
 				}
 				/* single-char tokens ('+', '*', '%', '{', '}', ...) */
 				int c = ls->current;
-				next(ls);
+				ls->next();
 				return c;
 			}
 		}

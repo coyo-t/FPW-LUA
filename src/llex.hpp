@@ -108,6 +108,17 @@ typedef struct LexState
 	struct Dyndata *dyd; /* dynamic structures used by the parser */
 	TString *source; /* current source name */
 	TString *envn; /* environment variable name */
+
+	auto next () -> void
+	{
+		this->current = this->z->zgetc();
+	}
+
+	auto currIsNewline () const -> bool
+	{
+		return current == '\n' || current == '\r';
+	}
+
 } LexState;
 
 
