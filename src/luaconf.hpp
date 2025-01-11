@@ -294,7 +294,8 @@
 
 #else				/* }{ */
 
-#define LUA_API		extern
+#define LUA_API extern
+#define LUA_APIA extern auto
 
 #endif				/* } */
 

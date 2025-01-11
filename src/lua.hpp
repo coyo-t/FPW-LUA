@@ -58,7 +58,6 @@ constexpr auto LUA_ERRERR = 5;
 
 
 using lua_State = struct lua_State;
-// typedef struct lua_State lua_State;
 
 
 /*
@@ -138,13 +137,6 @@ using lua_Debug = struct lua_Debug;
 ** Functions to be called by the debugger in specific events
 */
 using lua_Hook = auto (*)(lua_State *L, lua_Debug *ar) -> void;
-
-/*
-** generic extra include file
-*/
-#if defined(LUA_USER_H)
-#include LUA_USER_H
-#endif
 
 
 /*
@@ -233,73 +225,61 @@ LUA_API const void *(lua_topointer)(lua_State *L, int idx);
 ** Comparison and arithmetic functions
 */
 
-constexpr auto LUA_OPADD =	0;	/* ORDER TM, ORDER OP */
-constexpr auto LUA_OPSUB =	1;
-constexpr auto LUA_OPMUL =	2;
-constexpr auto LUA_OPMOD =	3;
-constexpr auto LUA_OPPOW =	4;
-constexpr auto LUA_OPDIV =	5;
-constexpr auto LUA_OPIDIV =	6;
-constexpr auto LUA_OPBAND =	7;
-constexpr auto LUA_OPBOR =	8;
-constexpr auto LUA_OPBXOR =	9;
-constexpr auto LUA_OPSHL =	10;
-constexpr auto LUA_OPSHR =	11;
-constexpr auto LUA_OPUNM =	12;
-constexpr auto LUA_OPBNOT =	13;
+constexpr auto LUA_OPADD  = 0; /* ORDER TM, ORDER OP */
+constexpr auto LUA_OPSUB  = 1;
+constexpr auto LUA_OPMUL  = 2;
+constexpr auto LUA_OPMOD  = 3;
+constexpr auto LUA_OPPOW  = 4;
+constexpr auto LUA_OPDIV  = 5;
+constexpr auto LUA_OPIDIV = 6;
+constexpr auto LUA_OPBAND = 7;
+constexpr auto LUA_OPBOR  = 8;
+constexpr auto LUA_OPBXOR = 9;
+constexpr auto LUA_OPSHL  = 10;
+constexpr auto LUA_OPSHR  = 11;
+constexpr auto LUA_OPUNM  = 12;
+constexpr auto LUA_OPBNOT = 13;
 
-LUA_API void (lua_arith)(lua_State *L, int op);
 
 constexpr auto LUA_OPEQ =	0;
 constexpr auto LUA_OPLT =	1;
 constexpr auto LUA_OPLE =	2;
 
-LUA_API int (lua_rawequal)(lua_State *L, int idx1, int idx2);
-
-LUA_API int (lua_compare)(lua_State *L, int idx1, int idx2, int op);
+LUA_APIA (lua_arith)(lua_State *L, int op) -> void;
+LUA_APIA (lua_rawequal)(lua_State *L, int idx1, int idx2) -> int;
+LUA_APIA (lua_compare)(lua_State *L, int idx1, int idx2, int op) -> int;
 
 
 /*
 ** push functions (C -> stack)
 */
-LUA_API void (lua_pushnil)(lua_State *L);
-
-LUA_API void (lua_pushnumber)(lua_State *L, lua_Number n);
-
-LUA_API void (lua_pushinteger)(lua_State *L, lua_Integer n);
-
-LUA_API const char *(lua_pushlstring)(lua_State *L, const char *s, size_t len);
-
-LUA_API const char *(lua_pushstring)(lua_State *L, const char *s);
-
-LUA_API const char *(lua_pushvfstring)(lua_State *L, const char *fmt,
-													va_list argp);
-
-LUA_API const char *(lua_pushfstring)(lua_State *L, const char *fmt, ...);
-
-LUA_API void (lua_pushcclosure)(lua_State *L, lua_CFunction fn, int n);
-
-LUA_API void (lua_pushboolean)(lua_State *L, int b);
-
-LUA_API void (lua_pushlightuserdata)(lua_State *L, void *p);
-
-LUA_API int (lua_pushthread)(lua_State *L);
+LUA_APIA lua_pushnil(lua_State *L) -> void;
+LUA_APIA lua_pushnumber(lua_State *L, lua_Number n) -> void;
+LUA_APIA lua_pushinteger(lua_State *L, lua_Integer n) -> void;
+LUA_APIA lua_pushlstring(lua_State *L, const char *s, size_t len) -> const char*;
+LUA_APIA lua_pushstring(lua_State *L, const char *s) -> const char*;
+LUA_APIA lua_pushvfstring(lua_State *L, const char *fmt, va_list argp) -> const char*;
+LUA_APIA lua_pushfstring(lua_State *L, const char *fmt, ...) -> const char *;
+LUA_APIA lua_pushcclosure(lua_State *L, lua_CFunction fn, int n) -> void;
+LUA_APIA lua_pushboolean(lua_State *L, int b) -> void;
+LUA_APIA lua_pushlightuserdata(lua_State *L, void *p) -> void;
+LUA_APIA lua_pushthread(lua_State *L) -> int;
 
 
 /*
 ** get functions (Lua -> stack)
 */
-LUA_API int (lua_getglobal)(lua_State *L, const char *name);
-LUA_API int (lua_gettable)(lua_State *L, int idx);
-LUA_API int (lua_getfield)(lua_State *L, int idx, const char *k);
-LUA_API int (lua_geti)(lua_State *L, int idx, lua_Integer n);
-LUA_API int (lua_rawget)(lua_State *L, int idx);
-LUA_API int (lua_rawgeti)(lua_State *L, int idx, lua_Integer n);
-LUA_API int (lua_rawgetp)(lua_State *L, int idx, const void *p);
-LUA_API void (lua_createtable)(lua_State *L, int narr, int nrec);
-LUA_API void *(lua_newuserdatauv)(lua_State *L, size_t sz, int nuvalue);
-LUA_API int (lua_getmetatable)(lua_State *L, int objindex);
-LUA_API int (lua_getiuservalue)(lua_State *L, int idx, int n);
+LUA_APIA lua_getglobal(lua_State *L, const char *name) -> int;
+LUA_APIA lua_gettable(lua_State *L, int idx) -> int;
+LUA_APIA lua_getfield(lua_State *L, int idx, const char *k) -> int;
+LUA_APIA lua_geti(lua_State *L, int idx, lua_Integer n) -> int;
+LUA_APIA lua_rawget(lua_State *L, int idx) -> int;
+LUA_APIA lua_rawgeti(lua_State *L, int idx, lua_Integer n) -> int;
+LUA_APIA lua_rawgetp(lua_State *L, int idx, const void *p) -> int;
+LUA_APIA lua_createtable(lua_State *L, int narr, int nrec) -> void;
+LUA_APIA lua_newuserdatauv(lua_State *L, size_t sz, int nuvalue) -> void*;
+LUA_APIA lua_getmetatable(lua_State *L, int objindex) -> int;
+LUA_APIA lua_getiuservalue(lua_State *L, int idx, int n) -> int;
 
 
 /*
@@ -443,7 +423,7 @@ LUA_API void lua_replace (lua_State* L, int idx);
 /* }============================================================== */
 
 
-constexpr auto LUA_NUMTAGS =		LUA_NUMTYPES;
+constexpr auto LUA_NUMTAGS = LUA_NUMTYPES;
 
 /* }============================================================== */
 
@@ -457,20 +437,20 @@ constexpr auto LUA_NUMTAGS =		LUA_NUMTYPES;
 /*
 ** Event codes
 */
-constexpr auto LUA_HOOKCALL =	0;
-constexpr auto LUA_HOOKRET =	1;
-constexpr auto LUA_HOOKLINE =	2;
-constexpr auto LUA_HOOKCOUNT =	3;
+constexpr auto LUA_HOOKCALL     = 0;
+constexpr auto LUA_HOOKRET      = 1;
+constexpr auto LUA_HOOKLINE     = 2;
+constexpr auto LUA_HOOKCOUNT    = 3;
 constexpr auto LUA_HOOKTAILCALL = 4;
 
 
 /*
 ** Event masks
 */
-constexpr auto LUA_MASKCALL	(1 << LUA_HOOKCALL);
-constexpr auto LUA_MASKRET	(1 << LUA_HOOKRET);
-constexpr auto LUA_MASKLINE	(1 << LUA_HOOKLINE);
-constexpr auto LUA_MASKCOUNT	(1 << LUA_HOOKCOUNT);
+constexpr auto LUA_MASKCALL  = 1 << LUA_HOOKCALL;
+constexpr auto LUA_MASKRET   = 1 << LUA_HOOKRET;
+constexpr auto LUA_MASKLINE  = 1 << LUA_HOOKLINE;
+constexpr auto LUA_MASKCOUNT = 1 << LUA_HOOKCOUNT;
 
 
 LUA_API int (lua_getstack)(lua_State *L, int level, lua_Debug *ar);
