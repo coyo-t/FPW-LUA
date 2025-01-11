@@ -9,9 +9,10 @@
 #ifndef lua_h
 #define lua_h
 
+#include <cstdarg>
+#include <cstddef>
+
 extern "C" {
-#include <stdarg.h>
-#include <stddef.h>
 
 
 #include "luaconf.hpp"
@@ -56,7 +57,8 @@ constexpr auto LUA_ERRMEM = 4;
 constexpr auto LUA_ERRERR = 5;
 
 
-typedef struct lua_State lua_State;
+using lua_State = struct lua_State;
+// typedef struct lua_State lua_State;
 
 
 /*
@@ -114,35 +116,28 @@ using lua_KFunction = auto (*)(lua_State *L, int status, lua_KContext ctx) -> in
 ** Type for functions that read/write blocks when loading/dumping Lua chunks
 */
 using lua_Reader = auto (*)(lua_State *L, void *ud, size_t *sz) -> const char*;
-// typedef const char * (*lua_Reader)(lua_State *L, void *ud, size_t *sz);
-
 using lua_Writer = auto (*)(lua_State *L, const void *p, size_t sz, void *ud) -> int;
-// typedef int (*lua_Writer)(lua_State *L, const void *p, size_t sz, void *ud);
-
 
 /*
 ** Type for memory-allocation functions
 */
-typedef void * (*lua_Alloc)(void *ud, void *ptr, size_t osize, size_t nsize);
-
+using lua_Alloc = auto (*)(void *ud, void *ptr, size_t osize, size_t nsize) -> void*;
 
 /*
 ** Type for warning functions
 */
-typedef void (*lua_WarnFunction)(void *ud, const char *msg, int tocont);
+using lua_WarnFunction = auto (*)(void *ud, const char *msg, int tocont) -> void;
 
 
 /*
 ** Type used by the debug API to collect debug information
 */
-typedef struct lua_Debug lua_Debug;
-
+using lua_Debug = struct lua_Debug;
 
 /*
 ** Functions to be called by the debugger in specific events
 */
-typedef void (*lua_Hook)(lua_State *L, lua_Debug *ar);
-
+using lua_Hook = auto (*)(lua_State *L, lua_Debug *ar) -> void;
 
 /*
 ** generic extra include file
