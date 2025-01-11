@@ -28,15 +28,15 @@
 /*
 ** Possible states of the Garbage Collector
 */
-#define GCSpropagate	0
-#define GCSenteratomic	1
-#define GCSatomic	2
-#define GCSswpallgc	3
-#define GCSswpfinobj	4
-#define GCSswptobefnz	5
-#define GCSswpend	6
-#define GCScallfin	7
-#define GCSpause	8
+constexpr auto GCSpropagate =	0;
+constexpr auto GCSenteratomic =	1;
+constexpr auto GCSatomic =	2;
+constexpr auto GCSswpallgc =	3;
+constexpr auto GCSswpfinobj =	4;
+constexpr auto GCSswptobefnz =	5;
+constexpr auto GCSswpend =	6;
+constexpr auto GCScallfin =	7;
+constexpr auto GCSpause =	8;
 
 
 #define issweepphase(g)  \
@@ -72,12 +72,12 @@
 ** used for object "age" in generational mode. Last bit is used
 ** by tests.
 */
-#define WHITE0BIT	3  /* object is white (type 0) */
-#define WHITE1BIT	4  /* object is white (type 1) */
-#define BLACKBIT	5  /* object is black */
-#define FINALIZEDBIT	6  /* object has been marked for finalization */
+constexpr auto WHITE0BIT =	3;  /* object is white (type 0) */
+constexpr auto WHITE1BIT =	4;  /* object is white (type 1) */
+constexpr auto BLACKBIT =	5;  /* object is black */
+constexpr auto FINALIZEDBIT =	6;  /* object has been marked for finalization */
 
-#define TESTBIT		7
+constexpr auto TESTBIT =		7;
 
 
 
