@@ -148,75 +148,47 @@ extern const char lua_ident[];
 /*
 ** state manipulation
 */
-LUA_API lua_State *(lua_newstate)(lua_Alloc f, void *ud);
-
-LUA_API void (lua_close)(lua_State *L);
-
-LUA_API lua_State *(lua_newthread)(lua_State *L);
-
-LUA_API int (lua_closethread)(lua_State *L, lua_State *from);
-
-LUA_API lua_CFunction (lua_atpanic)(lua_State *L, lua_CFunction panicf);
-
-
-LUA_API lua_Number (lua_version)(lua_State *L);
+LUA_APIA lua_newstate(lua_Alloc f, void *ud) -> lua_State*;
+LUA_APIA lua_close(lua_State *L) -> void;
+LUA_APIA lua_newthread(lua_State *L) -> lua_State*;
+LUA_APIA lua_closethread(lua_State *L, lua_State *from) -> int;
+LUA_APIA lua_atpanic(lua_State *L, lua_CFunction panicf) -> lua_CFunction;
+LUA_APIA lua_version(lua_State *L) -> lua_Number;
 
 
 /*
 ** basic stack manipulation
 */
-LUA_API int (lua_absindex)(lua_State *L, int idx);
-
-LUA_API int (lua_gettop)(lua_State *L);
-
-LUA_API void (lua_settop)(lua_State *L, int idx);
-
-LUA_API void (lua_pushvalue)(lua_State *L, int idx);
-
-LUA_API void (lua_rotate)(lua_State *L, int idx, int n);
-
-LUA_API void (lua_copy)(lua_State *L, int fromidx, int toidx);
-
-LUA_API int (lua_checkstack)(lua_State *L, int n);
-
-LUA_API void (lua_xmove)(lua_State *from, lua_State *to, int n);
+LUA_APIA lua_absindex(lua_State *L, int idx) -> int;
+LUA_APIA lua_gettop(lua_State *L) -> int;
+LUA_APIA lua_settop(lua_State *L, int idx) -> void;
+LUA_APIA lua_pushvalue(lua_State *L, int idx) -> void;
+LUA_APIA lua_rotate(lua_State *L, int idx, int n) -> void;
+LUA_APIA lua_copy(lua_State *L, int fromidx, int toidx) -> void;
+LUA_APIA lua_checkstack(lua_State *L, int n) -> int;
+LUA_APIA lua_xmove(lua_State *from, lua_State *to, int n) -> void;
 
 
 /*
 ** access functions (stack -> C)
 */
 
-LUA_API int (lua_isnumber)(lua_State *L, int idx);
-
-LUA_API int (lua_isstring)(lua_State *L, int idx);
-
-LUA_API int (lua_iscfunction)(lua_State *L, int idx);
-
-LUA_API int (lua_isinteger)(lua_State *L, int idx);
-
-LUA_API int (lua_isuserdata)(lua_State *L, int idx);
-
-LUA_API int (lua_type)(lua_State *L, int idx);
-
-LUA_API const char *(lua_typename)(lua_State *L, int tp);
-
-LUA_API lua_Number (lua_tonumberx)(lua_State *L, int idx, int *isnum);
-
-LUA_API lua_Integer (lua_tointegerx)(lua_State *L, int idx, int *isnum);
-
-LUA_API int (lua_toboolean)(lua_State *L, int idx);
-
-LUA_API const char *(lua_tolstring)(lua_State *L, int idx, size_t *len);
-
-LUA_API lua_Unsigned (lua_rawlen)(lua_State *L, int idx);
-
-LUA_API lua_CFunction (lua_tocfunction)(lua_State *L, int idx);
-
-LUA_API void *(lua_touserdata)(lua_State *L, int idx);
-
-LUA_API lua_State *(lua_tothread)(lua_State *L, int idx);
-
-LUA_API const void *(lua_topointer)(lua_State *L, int idx);
+LUA_APIA lua_isnumber(lua_State *L, int idx) -> int;
+LUA_APIA lua_isstring(lua_State *L, int idx) -> int;
+LUA_APIA lua_iscfunction(lua_State *L, int idx) -> int;
+LUA_APIA lua_isinteger(lua_State *L, int idx) -> int;
+LUA_APIA lua_isuserdata(lua_State *L, int idx) -> int;
+LUA_APIA lua_type(lua_State *L, int idx) -> int;
+LUA_APIA lua_typename(lua_State *L, int tp) -> const char*;
+LUA_APIA lua_tonumberx(lua_State *L, int idx, int *isnum) -> lua_Number;
+LUA_APIA lua_tointegerx(lua_State *L, int idx, int *isnum) -> lua_Integer;
+LUA_APIA lua_toboolean(lua_State *L, int idx) -> int;
+LUA_APIA lua_tolstring(lua_State *L, int idx, size_t *len) -> const char*;
+LUA_APIA lua_rawlen(lua_State *L, int idx) -> lua_Unsigned;
+LUA_APIA lua_tocfunction(lua_State *L, int idx) -> lua_CFunction;
+LUA_APIA lua_touserdata(lua_State *L, int idx) -> void*;
+LUA_APIA lua_tothread(lua_State *L, int idx) -> lua_State*;
+LUA_APIA lua_topointer(lua_State *L, int idx) -> const void*;
 
 
 /*
@@ -243,9 +215,9 @@ constexpr auto LUA_OPEQ =	0;
 constexpr auto LUA_OPLT =	1;
 constexpr auto LUA_OPLE =	2;
 
-LUA_APIA (lua_arith)(lua_State *L, int op) -> void;
-LUA_APIA (lua_rawequal)(lua_State *L, int idx1, int idx2) -> int;
-LUA_APIA (lua_compare)(lua_State *L, int idx1, int idx2, int op) -> int;
+LUA_APIA lua_arith(lua_State *L, int op) -> void;
+LUA_APIA lua_rawequal(lua_State *L, int idx1, int idx2) -> int;
+LUA_APIA lua_compare(lua_State *L, int idx1, int idx2, int op) -> int;
 
 
 /*
