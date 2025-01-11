@@ -13,18 +13,18 @@
 #include "ltm.hpp"
 
 
-#if !defined(LUA_NOCVTN2S)
-#define cvt2str(o)	ttisnumber(o)
-#else
-#define cvt2str(o)	0	/* no conversion from numbers to strings */
-#endif
+// #if !defined(LUA_NOCVTN2S)
+// #define cvt2str(o)	ttisnumber(o)
+// #else
+// #endif
+#define cvt2str(o)	false	/* no conversion from numbers to strings */
 
 
-#if !defined(LUA_NOCVTS2N)
-#define cvt2num(o)	ttisstring(o)
-#else
-#define cvt2num(o)	0	/* no conversion from strings to numbers */
-#endif
+// #if !defined(LUA_NOCVTS2N)
+// #define cvt2num(o)	ttisstring(o)
+// #else
+// #endif
+#define cvt2num(o)	false	/* no conversion from strings to numbers */
 
 
 /*
@@ -46,19 +46,6 @@ typedef enum
 	F2Ifloor, /* takes the floor of the number */
 	F2Iceil /* takes the ceil of the number */
 } F2Imod;
-
-
-/* convert an object to a float (including string coercion) */
-template<typename T>
-bool tonumber (const TValue * o, T* n)
-{
-	if (ttisfloat(o))
-	{
-		*(n) = fltvalue(o);
-		return true;
-	}
-	return luaV_tonumber_(o,n);
-}
 
 
 /* convert an object to a float (without string coercion) */
@@ -178,5 +165,17 @@ LUAI_FUNC lua_Number luaV_modf(lua_State *L, lua_Number x, lua_Number y);
 LUAI_FUNC lua_Integer luaV_shiftl(lua_Integer x, lua_Integer y);
 
 LUAI_FUNC void luaV_objlen(lua_State *L, StkId ra, const TValue *rb);
+
+/* convert an object to a float (including string coercion) */
+template<typename T>
+bool tonumber (const TValue * o, T* n)
+{
+	if (ttisfloat(o))
+	{
+		*(n) = fltvalue(o);
+		return true;
+	}
+	return luaV_tonumber_(o,n);
+}
 
 #endif
