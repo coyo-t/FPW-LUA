@@ -13,21 +13,24 @@
 #include "lmem.hpp"
 
 
-constexpr auto EOZ =	(-1);			/* end of stream */
+/* end of stream */
+constexpr auto EOZ =	-1;
 
 typedef struct Zio ZIO;
 
 
 int zgetc (ZIO* z);
 
-typedef struct Mbuffer
+struct Mbuffer
 {
 	char *buffer;
 	size_t n;
 	size_t buffsize;
-} Mbuffer;
 
-void luaZ_initbuffer (lua_State* L, Mbuffer* buff);
+	auto initbuffer (lua_State* L) -> void;
+};
+
+// void luaZ_initbuffer (lua_State* L, Mbuffer* buff);
 char* luaZ_buffer (Mbuffer* buff);
 size_t luaZ_sizebuffer (Mbuffer* buff);
 size_t luaZ_bufflen (Mbuffer* buff);

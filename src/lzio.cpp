@@ -41,11 +41,17 @@ int zgetc(ZIO *z)
 	return (((z)->n--)>0 ?  cast_uchar(*(z)->p++) : luaZ_fill(z));
 }
 
-void luaZ_initbuffer(lua_State *L, Mbuffer *buff)
+auto Mbuffer::initbuffer(lua_State *L) -> void
 {
-	buff->buffer = NULL;
-	buff->buffsize = 0;
+	this->buffer = nullptr;
+	this->buffsize = 0;
 }
+
+// void luaZ_initbuffer(lua_State *L, Mbuffer *buff)
+// {
+// 	buff->buffer = nullptr;
+// 	buff->buffsize = 0;
+// }
 
 char * luaZ_buffer(Mbuffer *buff)
 {
