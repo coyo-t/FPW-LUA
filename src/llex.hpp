@@ -76,24 +76,25 @@ enum RESERVED
 constexpr auto NUM_RESERVED = TK_WHILE-FIRST_RESERVED + 1;
 
 
-typedef union
+/* semantics information */
+union SemInfo
 {
 	lua_Number r;
 	lua_Integer i;
 	TString *ts;
-} SemInfo; /* semantics information */
+};
 
 
-typedef struct Token
+struct Token
 {
 	int token;
 	SemInfo seminfo;
-} Token;
+};
 
 
 /* state of the lexer plus state of the parser when shared by all
    functions */
-typedef struct LexState
+struct LexState
 {
 	int current; /* current character (charint) */
 	int linenumber; /* input line counter */
@@ -119,7 +120,7 @@ typedef struct LexState
 		return current == '\n' || current == '\r';
 	}
 
-} LexState;
+};
 
 
 LUAI_FUNC void luaX_init(lua_State *L);
