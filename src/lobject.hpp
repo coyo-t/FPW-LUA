@@ -9,7 +9,7 @@
 #define lobject_h
 
 
-#include <stdarg.h>
+#include <cstdarg>
 
 
 #include "llimits.hpp"
@@ -19,15 +19,18 @@
 /*
 ** Extra types for collectable non-values
 */
-#define LUA_TUPVAL	LUA_NUMTYPES  /* upvalues */
-#define LUA_TPROTO	(LUA_NUMTYPES+1)  /* function prototypes */
-#define LUA_TDEADKEY	(LUA_NUMTYPES+2)  /* removed keys in tables */
+/* upvalues */
+constexpr auto LUA_TUPVAL = LUA_NUMTYPES;
+/* function prototypes */
+constexpr auto LUA_TPROTO = LUA_NUMTYPES+1;
+/* removed keys in tables */
+constexpr auto LUA_TDEADKEY = LUA_NUMTYPES+2;
 
 
 /*
 ** number of all possible types (including LUA_TNONE but excluding DEADKEY)
 */
-#define LUA_TOTALTYPES		(LUA_TPROTO + 2)
+constexpr auto LUA_TOTALTYPES = LUA_TPROTO + 2;
 
 
 /*
@@ -45,7 +48,7 @@
 /*
 ** Union of all Lua values
 */
-typedef union Value
+union Value
 {
 	struct GCObject *gc; /* collectable objects */
 	void *p; /* light userdata */
@@ -54,7 +57,7 @@ typedef union Value
 	lua_Number n; /* float numbers */
 	/* not used, but may avoid warnings for uninitialized value */
 	lu_byte ub;
-} Value;
+};
 
 
 /*
@@ -146,7 +149,7 @@ typedef struct TValue
 ** their real delta is always the maximum value that fits in
 ** that field.
 */
-typedef union StackValue
+union StackValue
 {
 	TValue val;
 
@@ -155,11 +158,11 @@ typedef union StackValue
 		TValuefields;
 		unsigned short delta;
 	} tbclist;
-} StackValue;
+};
 
 
 /* index to stack elements */
-typedef StackValue *StkId;
+using StkId = StackValue*;
 
 
 /*
