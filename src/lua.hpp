@@ -156,8 +156,6 @@ LUA_API lua_State *(lua_newthread)(lua_State *L);
 
 LUA_API int (lua_closethread)(lua_State *L, lua_State *from);
 
-LUA_API int (lua_resetthread)(lua_State *L); /* Deprecated! */
-
 LUA_API lua_CFunction (lua_atpanic)(lua_State *L, lua_CFunction panicf);
 
 
@@ -354,30 +352,22 @@ constexpr auto LUA_GCISRUNNING  = 9;
 constexpr auto LUA_GCGEN        = 10;
 constexpr auto LUA_GCINC        = 11;
 
-LUA_API int (lua_gc)(lua_State *L, int what, ...);
+LUA_APIA lua_gc(lua_State *L, int what, ...) -> int;
 
 
 /*
 ** miscellaneous functions
 */
 
-LUA_API int (lua_error)(lua_State *L);
-
-LUA_API int (lua_next)(lua_State *L, int idx);
-
-LUA_API void (lua_concat)(lua_State *L, int n);
-
-LUA_API void (lua_len)(lua_State *L, int idx);
-
-LUA_API size_t (lua_stringtonumber)(lua_State *L, const char *s);
-
-LUA_API lua_Alloc (lua_getallocf)(lua_State *L, void **ud);
-
-LUA_API void (lua_setallocf)(lua_State *L, lua_Alloc f, void *ud);
-
-LUA_API void (lua_toclose)(lua_State *L, int idx);
-
-LUA_API void (lua_closeslot)(lua_State *L, int idx);
+LUA_APIA lua_error(lua_State *L) -> int;
+LUA_APIA lua_next(lua_State *L, int idx) -> int;
+LUA_APIA lua_concat(lua_State *L, int n) -> void;
+LUA_APIA lua_len(lua_State *L, int idx) -> void;
+LUA_APIA lua_stringtonumber(lua_State *L, const char *s) -> size_t;
+LUA_APIA lua_getallocf(lua_State *L, void **ud) -> lua_Alloc;
+LUA_APIA lua_setallocf(lua_State *L, lua_Alloc f, void *ud) -> void;
+LUA_APIA lua_toclose(lua_State *L, int idx) -> void;
+LUA_APIA lua_closeslot(lua_State *L, int idx) -> void;
 
 
 /*
