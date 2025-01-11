@@ -20,17 +20,6 @@
 #include "lzio.hpp"
 
 
-// int zgetc(ZIO *z)
-// {
-// 	return (((z)->n--)>0 ?  cast_uchar(*(z)->p++) : z->fill());
-// }
-
-
-// void luaZ_freebuffer(lua_State *L, Mbuffer *buff)
-// {
-// 	luaZ_resizebuffer(L, buff, 0);
-// }
-
 void luaZ_init(lua_State *L, ZIO *z, lua_Reader reader, void *data)
 {
 	z->L = L;

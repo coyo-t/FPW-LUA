@@ -19,8 +19,6 @@ constexpr auto EOZ =	-1;
 typedef struct Zio ZIO;
 
 
-// int zgetc (ZIO* z);
-
 struct Mbuffer
 {
 	char *buffer;
