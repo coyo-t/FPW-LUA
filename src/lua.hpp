@@ -104,12 +104,12 @@ using lua_KContext = LUA_KCONTEXT;
 ** Type for C functions registered with Lua
 */
 using lua_CFunction = auto (*)(lua_State* L) -> int;
-// typedef int (*lua_CFunction)(lua_State *L);
 
 /*
 ** Type for continuation functions
 */
-typedef int (*lua_KFunction)(lua_State *L, int status, lua_KContext ctx);
+using lua_KFunction = auto (*)(lua_State *L, int status, lua_KContext ctx) -> int;
+// typedef int (*lua_KFunction)(lua_State *L, int status, lua_KContext ctx);
 
 
 /*
