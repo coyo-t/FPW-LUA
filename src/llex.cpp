@@ -109,7 +109,7 @@ static const char *txtToken(LexState *ls, int token)
 		case TK_FLT:
 		case TK_INT:
 			save(ls, '\0');
-			return luaO_pushfstring(ls->L, "'%s'", luaZ_buffer(ls->buff));
+			return luaO_pushfstring(ls->L, "'%s'", ls->buff->getbuffer());
 		default:
 			return luaX_token2str(ls, token);
 	}
@@ -262,7 +262,7 @@ static int read_numeral(LexState *ls, SemInfo *seminfo)
 	if (lislalpha(ls->current)) /* is numeral touching a letter? */
 		save_and_next(ls); /* force an error */
 	save(ls, '\0');
-	if (luaO_str2num(luaZ_buffer(ls->buff), &obj) == 0) /* format error? */
+	if (luaO_str2num(ls->buff->getbuffer(), &obj) == 0) /* format error? */
 		lexerror(ls, "malformed number", TK_FLT);
 	if (ttisinteger(&obj))
 	{
@@ -347,7 +347,7 @@ static void read_long_string(LexState *ls, SemInfo *seminfo, size_t sep)
 	}
 endloop:
 	if (seminfo)
-		seminfo->ts = luaX_newstring(ls, luaZ_buffer(ls->buff) + sep,
+		seminfo->ts = luaX_newstring(ls, ls->buff->getbuffer() + sep,
 												luaZ_bufflen(ls->buff) - 2 * sep);
 }
 
@@ -507,7 +507,7 @@ static void read_string(LexState *ls, int del, SemInfo *seminfo)
 		}
 	}
 	save_and_next(ls); /* skip delimiter */
-	seminfo->ts = luaX_newstring(ls, luaZ_buffer(ls->buff) + 1,
+	seminfo->ts = luaX_newstring(ls, ls->buff->getbuffer() + 1,
 											luaZ_bufflen(ls->buff) - 2);
 }
 
@@ -644,7 +644,7 @@ static int llex(LexState *ls, SemInfo *seminfo)
 					{
 						save_and_next(ls);
 					} while (lislalnum(ls->current));
-					ts = luaX_newstring(ls, luaZ_buffer(ls->buff),
+					ts = luaX_newstring(ls, ls->buff->getbuffer(),
 												luaZ_bufflen(ls->buff));
 					seminfo->ts = ts;
 					if (isreserved(ts)) /* reserved word? */

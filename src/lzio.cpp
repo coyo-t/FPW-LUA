@@ -47,16 +47,21 @@ auto Mbuffer::initbuffer(lua_State *L) -> void
 	this->buffsize = 0;
 }
 
+auto Mbuffer::getbuffer() -> char *
+{
+	return this->buffer;
+}
+
 // void luaZ_initbuffer(lua_State *L, Mbuffer *buff)
 // {
 // 	buff->buffer = nullptr;
 // 	buff->buffsize = 0;
 // }
 
-char * luaZ_buffer(Mbuffer *buff)
-{
-	return buff->buffer;
-}
+// char * luaZ_buffer(Mbuffer *buff)
+// {
+// 	return buff->buffer;
+// }
 
 size_t luaZ_sizebuffer(Mbuffer *buff)
 {
@@ -84,7 +89,7 @@ void luaZ_init(lua_State *L, ZIO *z, lua_Reader reader, void *data)
 	z->reader = reader;
 	z->data = data;
 	z->n = 0;
-	z->p = NULL;
+	z->p = nullptr;
 }
 
 
