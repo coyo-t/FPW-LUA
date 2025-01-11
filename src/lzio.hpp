@@ -27,25 +27,37 @@ struct Mbuffer
 	size_t n;
 	size_t buffsize;
 
-	auto initbuffer (lua_State* L) -> void;
+	auto initbuffer ([[maybe_unused]] lua_State* L) -> void
+	{
+		this->buffer = nullptr;
+		this->buffsize = 0;
+	}
 
-	auto getbuffer () -> char*;
+	auto getbuffer () -> char*
+	{
+		return this->buffer;
+	}
 
-	auto sizebuffer () -> size_t;
+	auto sizebuffer () -> size_t
+	{
+		return this->buffsize;
+	}
+
+	auto bufflen () -> size_t
+	{
+		return this->n;
+	}
+
+	auto buffremove (size_t amount) -> void
+	{
+		this->n -= amount;
+	}
+
+	auto resetbuffer () -> void
+	{
+		this->n = 0;
+	}
 };
-
-// void luaZ_initbuffer (lua_State* L, Mbuffer* buff);
-// char* luaZ_buffer (Mbuffer* buff);
-// size_t luaZ_sizebuffer (Mbuffer* buff);
-size_t luaZ_bufflen (Mbuffer* buff);
-
-template<typename N>
-void luaZ_buffremove (Mbuffer* buff, N i)
-{
-	((buff)->n -= (i));
-}
-
-void luaZ_resetbuffer (Mbuffer* buff);
 
 
 template<typename N>
