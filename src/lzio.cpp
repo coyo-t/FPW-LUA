@@ -20,10 +20,10 @@
 #include "lzio.hpp"
 
 
-int zgetc(ZIO *z)
-{
-	return (((z)->n--)>0 ?  cast_uchar(*(z)->p++) : z->fill());
-}
+// int zgetc(ZIO *z)
+// {
+// 	return (((z)->n--)>0 ?  cast_uchar(*(z)->p++) : z->fill());
+// }
 
 
 // void luaZ_freebuffer(lua_State *L, Mbuffer *buff)
