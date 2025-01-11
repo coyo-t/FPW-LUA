@@ -386,39 +386,36 @@ LUA_API void (lua_closeslot)(lua_State *L, int idx);
 ** ===============================================================
 */
 
-LUA_API void* lua_getextraspace (lua_State* L);
+LUA_APIA lua_getextraspace (lua_State* L) -> void*;
 
-LUA_API lua_Number lua_tonumber (lua_State* L, int i);
-LUA_API lua_Integer lua_tointeger(lua_State* L, int i);
+LUA_APIA lua_tonumber (lua_State* L, int i) -> lua_Number;
+LUA_APIA lua_tointeger(lua_State* L, int i) -> lua_Integer;
 
-LUA_API void lua_pop(lua_State*L, int n);
+LUA_APIA lua_pop(lua_State*L, int n) -> void;
+LUA_APIA lua_newtable(lua_State* L) -> void;
+LUA_APIA lua_register(lua_State* L, const char* n, lua_CFunction f) -> void;
+LUA_APIA lua_pushcfunction(lua_State *L, lua_CFunction f) -> void;
 
-LUA_API void lua_newtable(lua_State* L);
-
-LUA_API void lua_register(lua_State* L, const char* n, lua_CFunction f);
-
-LUA_API void lua_pushcfunction(lua_State *L, lua_CFunction f);
-
-LUA_API bool lua_isfunction (lua_State* L, int n);
-LUA_API bool lua_istable (lua_State* L, int n);
-LUA_API bool lua_islightuserdata (lua_State* L, int n);
-LUA_API bool lua_isnil (lua_State* L, int n);
-LUA_API bool lua_isboolean (lua_State* L, int n);
-LUA_API bool lua_isthread (lua_State* L, int n);
-LUA_API bool lua_isnone (lua_State* L, int n);
-LUA_API bool lua_isnoneornil (lua_State* L, int  n);
+LUA_APIA lua_isfunction (lua_State* L, int n) -> bool;
+LUA_APIA lua_istable (lua_State* L, int n) -> bool;
+LUA_APIA lua_islightuserdata (lua_State* L, int n) -> bool;
+LUA_APIA lua_isnil (lua_State* L, int n) -> bool;
+LUA_APIA lua_isboolean (lua_State* L, int n) -> bool;
+LUA_APIA lua_isthread (lua_State* L, int n) -> bool;
+LUA_APIA lua_isnone (lua_State* L, int n) -> bool;
+LUA_APIA lua_isnoneornil (lua_State* L, int  n) -> bool;
 
 
 // kept as macro. the "" s is used so the compiler yells at you
 // if s is not a string literal
 #define lua_pushliteral(L, s)	lua_pushstring(L, "" s)
 
-LUA_API void lua_pushglobaltable(lua_State* L);
-LUA_API const char * lua_tostring(lua_State* L, int i);
+LUA_APIA lua_pushglobaltable(lua_State* L) -> void;
+LUA_APIA lua_tostring(lua_State* L, int i) -> const char*;
 
-LUA_API void lua_insert (lua_State* L, int idx);
-LUA_API void lua_remove (lua_State* L, int idx);
-LUA_API void lua_replace (lua_State* L, int idx);
+LUA_APIA lua_insert (lua_State* L, int idx) -> void;
+LUA_APIA lua_remove (lua_State* L, int idx) -> void;
+LUA_APIA lua_replace (lua_State* L, int idx) -> void;
 
 /* }============================================================== */
 
@@ -453,32 +450,19 @@ constexpr auto LUA_MASKLINE  = 1 << LUA_HOOKLINE;
 constexpr auto LUA_MASKCOUNT = 1 << LUA_HOOKCOUNT;
 
 
-LUA_API int (lua_getstack)(lua_State *L, int level, lua_Debug *ar);
-
-LUA_API int (lua_getinfo)(lua_State *L, const char *what, lua_Debug *ar);
-
-LUA_API const char *(lua_getlocal)(lua_State *L, const lua_Debug *ar, int n);
-
-LUA_API const char *(lua_setlocal)(lua_State *L, const lua_Debug *ar, int n);
-
-LUA_API const char *(lua_getupvalue)(lua_State *L, int funcindex, int n);
-
-LUA_API const char *(lua_setupvalue)(lua_State *L, int funcindex, int n);
-
-LUA_API void *(lua_upvalueid)(lua_State *L, int fidx, int n);
-
-LUA_API void (lua_upvaluejoin)(lua_State *L, int fidx1, int n1,
-										int fidx2, int n2);
-
-LUA_API void (lua_sethook)(lua_State *L, lua_Hook func, int mask, int count);
-
-LUA_API lua_Hook (lua_gethook)(lua_State *L);
-
-LUA_API int (lua_gethookmask)(lua_State *L);
-
-LUA_API int (lua_gethookcount)(lua_State *L);
-
-LUA_API int (lua_setcstacklimit)(lua_State *L, unsigned int limit);
+LUA_APIA lua_getstack(lua_State *L, int level, lua_Debug *ar) -> int;
+LUA_APIA lua_getinfo(lua_State *L, const char *what, lua_Debug *ar) -> int;
+LUA_APIA lua_getlocal(lua_State *L, const lua_Debug *ar, int n) -> const char*;
+LUA_APIA lua_setlocal(lua_State *L, const lua_Debug *ar, int n) -> const char*;
+LUA_APIA lua_getupvalue(lua_State *L, int funcindex, int n) -> const char*;
+LUA_APIA lua_setupvalue(lua_State *L, int funcindex, int n) -> const char*;
+LUA_APIA lua_upvalueid(lua_State *L, int fidx, int n) -> void*;
+LUA_APIA lua_upvaluejoin(lua_State *L, int fidx1, int n1, int fidx2, int n2) -> void;
+LUA_APIA lua_sethook(lua_State *L, lua_Hook func, int mask, int count) -> void;
+LUA_APIA lua_gethook(lua_State *L) -> lua_Hook;
+LUA_APIA lua_gethookmask(lua_State *L) -> int;
+LUA_APIA lua_gethookcount(lua_State *L) -> int;
+LUA_APIA lua_setcstacklimit(lua_State *L, unsigned int limit) -> int;
 
 struct lua_Debug
 {
