@@ -195,7 +195,8 @@ LUA_APIA lua_topointer(lua_State *L, int idx) -> const void*;
 ** Comparison and arithmetic functions
 */
 
-constexpr auto LUA_OPADD  = 0; /* ORDER TM, ORDER OP */
+/* ORDER TM, ORDER OP */
+constexpr auto LUA_OPADD  = 0;
 constexpr auto LUA_OPSUB  = 1;
 constexpr auto LUA_OPMUL  = 2;
 constexpr auto LUA_OPMOD  = 3;
@@ -210,17 +211,30 @@ constexpr auto LUA_OPSHR  = 11;
 constexpr auto LUA_OPUNM  = 12;
 constexpr auto LUA_OPBNOT = 13;
 
+// enum class LuaArithOp : int
+// {
+// 	ADD = 0,
+// 	SUB = 1,
+// 	MUL = 2,
+// 	MOD = 3,
+// 	POW = 4,
+// 	DIV = 5,
+// 	IDIV = 6,
+// 	BAND = 7,
+// 	BOR = 8,
+// 	BXOR = 9,
+// 	SHL = 10,
+// 	SHR = 11,
+// 	UNM = 12,
+// 	BNOT = 13,
+// };
 
-enum class LuaCompareOp
+enum class LuaCompareOp : int
 {
-	EQ,
-	LT,
-	LE,
+	EQ = 0,
+	LT = 1,
+	LE = 2,
 };
-
-constexpr auto LUA_OPEQ =	0;
-constexpr auto LUA_OPLT =	1;
-constexpr auto LUA_OPLE =	2;
 
 LUA_APIA lua_arith(lua_State *L, int op) -> void;
 LUA_APIA lua_rawequal(lua_State *L, int idx1, int idx2) -> int;

@@ -395,15 +395,12 @@ LUA_API int lua_compare(lua_State *L, int index1, int index2, LuaCompareOp op)
 	{
 		switch (op)
 		{
-			// case LUA_OPEQ:
 			case LuaCompareOp::EQ:
 				i = luaV_equalobj(L, o1, o2);
 				break;
-			// case LUA_OPLT:
 			case LuaCompareOp::LT:
 				i = luaV_lessthan(L, o1, o2);
 				break;
-			// case LUA_OPLE:
 			case LuaCompareOp::LE:
 				i = luaV_lessequal(L, o1, o2);
 				break;
