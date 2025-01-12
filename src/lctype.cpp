@@ -8,22 +8,22 @@
 #define LUA_CORE
 
 #include "lprefix.hpp"
-
-
 #include "lctype.hpp"
 
 #if !LUA_USE_CTYPE	/* { */
 
 #include <climits>
 
-
-#if defined (LUA_UCID)		/* accept UniCode IDentifiers? */
-/* consider all non-ascii codepoints to be alphabetic */
-#define NONA		0x01
+static constexpr auto NONA = (
+#ifdef LUA_UCID
+	/* accept UniCode IDentifiers? */
+	/* consider all non-ascii codepoints to be alphabetic */
+	0x01
 #else
-#define NONA		0x00	/* default */
+	/* default */
+	0x00
 #endif
-
+);
 
 LUAI_DDEF const lu_byte luai_ctype_[UCHAR_MAX + 2] = {
 	0x00, /* EOZ */
@@ -58,7 +58,7 @@ LUAI_DDEF const lu_byte luai_ctype_[UCHAR_MAX + 2] = {
 	NONA, NONA, NONA, NONA, NONA, NONA, NONA, NONA, /* e. */
 	NONA, NONA, NONA, NONA, NONA, NONA, NONA, NONA,
 	NONA, NONA, NONA, NONA, NONA, 0x00, 0x00, 0x00, /* f. */
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
 #endif			/* } */
