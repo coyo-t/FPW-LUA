@@ -211,13 +211,20 @@ constexpr auto LUA_OPUNM  = 12;
 constexpr auto LUA_OPBNOT = 13;
 
 
+enum class LuaCompareOp
+{
+	EQ,
+	LT,
+	LE,
+};
+
 constexpr auto LUA_OPEQ =	0;
 constexpr auto LUA_OPLT =	1;
 constexpr auto LUA_OPLE =	2;
 
 LUA_APIA lua_arith(lua_State *L, int op) -> void;
 LUA_APIA lua_rawequal(lua_State *L, int idx1, int idx2) -> int;
-LUA_APIA lua_compare(lua_State *L, int idx1, int idx2, int op) -> int;
+LUA_APIA lua_compare(lua_State *L, int idx1, int idx2, LuaCompareOp op) -> int;
 
 
 /*

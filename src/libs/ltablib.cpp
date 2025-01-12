@@ -145,7 +145,7 @@ static int tmove(lua_State *L)
 		n = e - f + 1; /* number of elements to move */
 		luaL_argcheck(L, t <= LUA_MAXINTEGER - n + 1, 4,
 							"destination wrap around");
-		if (t > e || t <= f || (tt != 1 && !lua_compare(L, 1, tt, LUA_OPEQ)))
+		if (t > e || t <= f || (tt != 1 && !lua_compare(L, 1, tt, LuaCompareOp::EQ)))
 		{
 			for (i = 0; i < n; i++)
 			{
@@ -311,7 +311,7 @@ static void set2(lua_State *L, IdxT i, IdxT j)
 static int sort_comp(lua_State *L, int a, int b)
 {
 	if (lua_isnil(L, 2)) /* no function? */
-		return lua_compare(L, a, b, LUA_OPLT); /* a < b */
+		return lua_compare(L, a, b, LuaCompareOp::LT); /* a < b */
 	else
 	{
 		/* function */

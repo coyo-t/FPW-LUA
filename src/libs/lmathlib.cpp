@@ -238,7 +238,7 @@ static int math_min(lua_State *L)
 	luaL_argcheck(L, n >= 1, 1, "value expected");
 	for (int i = 2; i <= n; i++)
 	{
-		if (lua_compare(L, i, imin, LUA_OPLT))
+		if (lua_compare(L, i, imin, LuaCompareOp::LT))
 			imin = i;
 	}
 	lua_pushvalue(L, imin);
@@ -254,7 +254,7 @@ static int math_max(lua_State *L)
 	luaL_argcheck(L, n >= 1, 1, "value expected");
 	for (i = 2; i <= n; i++)
 	{
-		if (lua_compare(L, imax, i, LUA_OPLT))
+		if (lua_compare(L, imax, i, LuaCompareOp::LT))
 			imax = i;
 	}
 	lua_pushvalue(L, imax);

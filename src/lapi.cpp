@@ -385,25 +385,31 @@ LUA_API void lua_arith(lua_State *L, int op)
 }
 
 
-LUA_API int lua_compare(lua_State *L, int index1, int index2, int op)
+LUA_API int lua_compare(lua_State *L, int index1, int index2, LuaCompareOp op)
 {
-	const TValue *o1;
-	const TValue *o2;
 	int i = 0;
 	lua_lock(L); /* may call tag method */
-	o1 = index2value(L, index1);
-	o2 = index2value(L, index2);
+	const TValue *o1 = index2value(L, index1);
+	const TValue *o2 = index2value(L, index2);
 	if (isvalid(L, o1) && isvalid(L, o2))
 	{
 		switch (op)
 		{
-			case LUA_OPEQ: i = luaV_equalobj(L, o1, o2);
+			// case LUA_OPEQ:
+			case LuaCompareOp::EQ:
+				i = luaV_equalobj(L, o1, o2);
 				break;
-			case LUA_OPLT: i = luaV_lessthan(L, o1, o2);
+			// case LUA_OPLT:
+			case LuaCompareOp::LT:
+				i = luaV_lessthan(L, o1, o2);
 				break;
-			case LUA_OPLE: i = luaV_lessequal(L, o1, o2);
+			// case LUA_OPLE:
+			case LuaCompareOp::LE:
+				i = luaV_lessequal(L, o1, o2);
 				break;
-			default: api_check(L, 0, "invalid option");
+			default:
+				api_check(L, 0, "invalid option");
+				break;
 		}
 	}
 	lua_unlock(L);
