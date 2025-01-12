@@ -22,12 +22,12 @@
 
 
 #undef PI
-#define PI	(l_mathop(3.141592653589793238462643383279502884))
+static constexpr auto PI =	3.141592653589793238462643383279502884;
 
 static constexpr auto TAU = PI * 2.0;
 
-static constexpr auto DEGTORAD = (l_mathop(180.0) / PI);
-static constexpr auto RADTODEG = (PI / l_mathop(180.0));
+static constexpr auto DEGTORAD = (180.0 / PI);
+static constexpr auto RADTODEG = (PI / 180.0);
 
 
 static int math_abs(lua_State *L)
