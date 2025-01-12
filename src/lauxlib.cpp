@@ -467,7 +467,7 @@ LUALIB_API const char *luaL_optlstring(lua_State *L, int arg,
 			*len = (def ? strlen(def) : 0);
 		return def;
 	}
-	else return luaL_checklstring(L, arg, len);
+	return luaL_checklstring(L, arg, len);
 }
 
 
@@ -808,7 +808,7 @@ typedef struct LoadF
 
 static const char *getF(lua_State *L, void *ud, size_t *size)
 {
-	LoadF *lf = (LoadF *) ud;
+	auto *lf = (LoadF *) ud;
 	(void) L; /* not used */
 	if (lf->n > 0)
 	{

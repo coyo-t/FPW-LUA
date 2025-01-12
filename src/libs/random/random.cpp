@@ -36,39 +36,6 @@
 
 using Rand64 = std::uint64_t;
 using SRand64 = std::int64_t;
-/*
-** LUA_RAND32 forces the use of 32-bit integers in the implementation
-** of the PRN generator (mainly for testing).
-*/
-// #if !defined(LUA_RAND32) && !defined(Rand64)
-//
-//
-//
-// /* try to find an integer type with at least 64 bits */
-//
-// #if ((ULONG_MAX >> 31) >> 31) >= 3
-//
-// /* 'long' has at least 64 bits */
-// #define Rand64		unsigned long
-// #define SRand64		long
-//
-// #elif !defined(LUA_USE_C89) && defined(LLONG_MAX)
-//
-// /* there is a 'long long' type (which must have at least 64 bits) */
-// #define Rand64		unsigned long long
-// #define SRand64		long long
-//
-// #elif ((LUA_MAXUNSIGNED >> 31) >> 31) >= 3
-//
-// /* 'lua_Unsigned' has at least 64 bits */
-// #define Rand64		lua_Unsigned
-// #define SRand64		lua_Integer
-//
-// #endif
-//
-// #endif
-
-
 
 /*
 ** Standard implementation, using 64-bit integers.

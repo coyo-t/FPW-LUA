@@ -21,9 +21,9 @@
 #include "../lualib.hpp"
 
 
-#define MAXUNICODE	0x10FFFFu
+constexpr auto MAXUNICODE =	0x10FFFFu;
 
-#define MAXUTF		0x7FFFFFFFu
+constexpr auto MAXUTF =		0x7FFFFFFFu;
 
 
 #define MSGInvalid	"invalid UTF-8 code"
@@ -257,23 +257,20 @@ static int iter_aux(lua_State *L, int strict)
 {
 	size_t len;
 	const char *s = luaL_checklstring(L, 1, &len);
-	lua_Unsigned n = (lua_Unsigned) lua_tointeger(L, 2);
+	auto n = (lua_Unsigned) lua_tointeger(L, 2);
 	if (n < len)
 	{
 		while (iscontp(s + n)) n++; /* go to next character */
 	}
 	if (n >= len) /* (also handles original 'n' being negative) */
 		return 0; /* no more codepoints */
-	else
-	{
-		utfint code;
-		const char *next = utf8_decode(s + n, &code, strict);
-		if (next == NULL || iscontp(next))
-			return luaL_error(L, MSGInvalid);
-		lua_pushinteger(L, n + 1);
-		lua_pushinteger(L, code);
-		return 2;
-	}
+	utfint code;
+	const char *next = utf8_decode(s + n, &code, strict);
+	if (next == NULL || iscontp(next))
+		return luaL_error(L, MSGInvalid);
+	lua_pushinteger(L, n + 1);
+	lua_pushinteger(L, code);
+	return 2;
 }
 
 
@@ -312,7 +309,7 @@ static const luaL_Reg funcs[] = {
 	{"codes", iter_codes},
 	/* placeholders */
 	{"charpattern", NULL},
-	{NULL, NULL}
+	luaL_Reg::end(),
 };
 
 
