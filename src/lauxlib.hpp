@@ -306,27 +306,6 @@ typedef struct luaL_Stream
 /* }================================================================== */
 
 
-/*
-** {============================================================
-** Compatibility with deprecated conversions
-** =============================================================
-*/
-#if defined(LUA_COMPAT_APIINTCASTS)
-
-#define luaL_checkunsigned(L,a)	((lua_Unsigned)luaL_checkinteger(L,a))
-#define luaL_optunsigned(L,a,d)	\
-	((lua_Unsigned)luaL_optinteger(L,a,(lua_Integer)(d)))
-
-#define luaL_checkint(L,n)	((int)luaL_checkinteger(L, (n)))
-#define luaL_optint(L,n,d)	((int)luaL_optinteger(L, (n), (d)))
-
-#define luaL_checklong(L,n)	((long)luaL_checkinteger(L, (n)))
-#define luaL_optlong(L,n,d)	((long)luaL_optinteger(L, (n), (d)))
-
-#endif
-/* }============================================================ */
-
-
 } // end extern c
 
 

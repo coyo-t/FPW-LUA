@@ -269,13 +269,13 @@ static int str_dump(lua_State *L)
 ** =======================================================
 */
 
-#if defined(LUA_NOCVTS2N)	/* { */
+#ifndef LUA_NOCVTS2N	/* { */
 
 /* no coercion from strings to numbers */
 
 static const luaL_Reg stringmetamethods[] = {
-  {"__index", NULL},  /* placeholder */
-  {NULL, NULL}
+	{ "__index", NULL }, /* placeholder */
+	luaL_Reg::end(),
 };
 
 #else		/* }{ */
@@ -371,7 +371,7 @@ static const luaL_Reg stringmetamethods[] = {
 	{"__idiv", arith_idiv},
 	{"__unm", arith_unm},
 	{"__index", NULL}, /* placeholder */
-	{NULL, NULL}
+	luaL_Reg::end(),
 };
 
 #endif		/* } */
