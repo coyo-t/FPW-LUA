@@ -273,7 +273,7 @@ static void preinit_thread(lua_State *L, global_State *g)
 	L->hookmask = 0;
 	L->basehookcount = 0;
 	L->allowhook = 1;
-	resethookcount(L);
+	L->resethookcount();
 	L->openupval = NULL;
 	L->status = LUA_OK;
 	L->errfunc = 0;
@@ -318,7 +318,7 @@ LUA_API lua_State *lua_newthread(lua_State *L)
 	L1->hookmask = L->hookmask;
 	L1->basehookcount = L->basehookcount;
 	L1->hook = L->hook;
-	resethookcount(L1);
+	L1->resethookcount();
 	/* initialize L1 extra space */
 	memcpy(
 		lua_getextraspace(L1),

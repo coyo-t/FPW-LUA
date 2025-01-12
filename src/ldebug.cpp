@@ -147,7 +147,7 @@ LUA_API void lua_sethook(lua_State *L, lua_Hook func, int mask, int count)
 	}
 	L->hook = func;
 	L->basehookcount = count;
-	resethookcount(L);
+	L->resethookcount();
 	L->hookmask = cast_byte(mask);
 	if (mask)
 		settraps(L->ci); /* to trace inside 'luaV_execute' */
@@ -1075,7 +1075,10 @@ int luaG_traceexec(lua_State *L, const Instruction *pc)
 	ci->u.l.savedpc = pc; /* save 'pc' */
 	counthook = (mask & LUA_MASKCOUNT) && (--L->hookcount == 0);
 	if (counthook)
-		resethookcount(L); /* reset count */
+	{
+		/* reset count */
+		L->resethookcount();
+	}
 	else if (!(mask & LUA_MASKLINE))
 		return 1; /* no line hook and count != 0; nothing to be done now */
 	if (ci->callstatus & CIST_HOOKYIELD)

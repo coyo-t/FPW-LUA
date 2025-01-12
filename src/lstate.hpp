@@ -221,12 +221,12 @@ struct CallInfo
 	** Lua can correctly resume after an yield from a __close method called
 	** because of an error.  (Three bits are enough for error status.)
 	*/
-	int getcistrecst ()
+	auto getcistrecst () -> int
 	{
 		return ((this->callstatus >> CIST_RECST) & 7);
 	}
 
-	void setcistrecst (int st)
+	auto setcistrecst (int st) -> void
 	{
 		check_exp(
 			((st) & 7) == (st),
@@ -235,25 +235,25 @@ struct CallInfo
 	}
 
 	/* active function is a Lua function */
-	bool isLua ()
+	auto isLua () const -> bool
 	{
 		return (!((this)->callstatus & CIST_C));
 	}
 	/* call is running Lua code (not a hook) */
-	bool isLuacode ()
+	auto isLuacode () const -> bool
 	{
 		return (!((this)->callstatus & (CIST_C | CIST_HOOKED)));
 	}
 
 	/* assume that CIST_OAH has offset 0 and that 'v' is strictly 0/1 */
 	template<typename T>
-	void setoah (T v)
+	auto setoah (T v) -> void
 	{
 		// #define _setoah(st,v)	((st) = ((st) & ~CIST_OAH) | (v))
 		((this)->callstatus = ((this)->callstatus & ~CIST_OAH) | (v));
 	}
 
-	bool getoah ()
+	auto getoah () const -> bool
 	{
 		// #define _getoah(st)	((st) & CIST_OAH)
 		return (this->callstatus & CIST_OAH) != 0;
@@ -347,38 +347,43 @@ struct lua_State
 	int hookcount;
 	volatile l_signalT hookmask;
 
-	int stacksize () const
+	auto stacksize () const -> int
 	{
 		return static_cast<int>(this->stack_last.p - this->stack.p);
 	}
 
 	/* true if this thread does not have non-yieldable calls in the stack */
-	bool yieldable () const
+	auto yieldable () const -> bool
 	{
 		return ((this->nCcalls & 0xffff0000) == 0);
 	}
 
 	/* real number of C calls */
-	int getCcalls () const
+	auto getCcalls () const -> int
 	{
-		return (this->nCcalls & 0xffff);
+		return this->nCcalls & 0xffff;
 	}
 
 	/* Increment the number of non-yieldable calls */
-	void incnny()
+	auto incnny () -> void
 	{
 		((this)->nCcalls += 0x10000);
 	}
 
 	/* Decrement the number of non-yieldable calls */
-	void decnny()
+	auto decnny () -> void
 	{
 		((this)->nCcalls -= 0x10000);
 	}
 
-	global_State *G () const
+	auto G () const -> global_State*
 	{
 		return this->l_G;
+	}
+
+	auto resethookcount () -> void
+	{
+		hookcount = basehookcount;
 	}
 };
 
