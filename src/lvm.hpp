@@ -8,22 +8,11 @@
 #define lvm_h
 
 
-#include "ldo.hpp"
 #include "lobject.hpp"
-#include "ltm.hpp"
 
 
-// #if !defined(LUA_NOCVTN2S)
-// #define cvt2str(o)	ttisnumber(o)
-// #else
-// #endif
+
 #define cvt2str(o)	false	/* no conversion from numbers to strings */
-
-
-// #if !defined(LUA_NOCVTS2N)
-// #define cvt2num(o)	ttisstring(o)
-// #else
-// #endif
 #define cvt2num(o)	false	/* no conversion from strings to numbers */
 
 

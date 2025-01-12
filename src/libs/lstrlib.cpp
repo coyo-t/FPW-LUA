@@ -269,112 +269,12 @@ static int str_dump(lua_State *L)
 ** =======================================================
 */
 
-#ifndef LUA_NOCVTS2N	/* { */
 
 /* no coercion from strings to numbers */
-
 static const luaL_Reg stringmetamethods[] = {
-	{ "__index", NULL }, /* placeholder */
+	{ "__index", nullptr }, /* placeholder */
 	luaL_Reg::end(),
 };
-
-#else		/* }{ */
-
-static int tonum(lua_State *L, int arg)
-{
-	if (lua_type(L, arg) == LUA_TNUMBER)
-	{
-		/* already a number? */
-		lua_pushvalue(L, arg);
-		return 1;
-	}
-	else
-	{
-		/* check whether it is a numerical string */
-		size_t len;
-		const char *s = lua_tolstring(L, arg, &len);
-		return (s != NULL && lua_stringtonumber(L, s) == len + 1);
-	}
-}
-
-
-static void trymt(lua_State *L, const char *mtname)
-{
-	lua_settop(L, 2); /* back to the original arguments */
-	if (l_unlikely(lua_type(L, 2) == LUA_TSTRING ||
-		!luaL_getmetafield(L, 2, mtname)))
-		luaL_error(L, "attempt to %s a '%s' with a '%s'", mtname + 2,
-						luaL_typename(L, -2), luaL_typename(L, -1));
-	lua_insert(L, -3); /* put metamethod before arguments */
-	lua_call(L, 2, 1); /* call metamethod */
-}
-
-
-static int arith(lua_State *L, int op, const char *mtname)
-{
-	if (tonum(L, 1) && tonum(L, 2))
-		lua_arith(L, op); /* result will be on the top */
-	else
-		trymt(L, mtname);
-	return 1;
-}
-
-
-static int arith_add(lua_State *L)
-{
-	return arith(L, LUA_OPADD, "__add");
-}
-
-static int arith_sub(lua_State *L)
-{
-	return arith(L, LUA_OPSUB, "__sub");
-}
-
-static int arith_mul(lua_State *L)
-{
-	return arith(L, LUA_OPMUL, "__mul");
-}
-
-static int arith_mod(lua_State *L)
-{
-	return arith(L, LUA_OPMOD, "__mod");
-}
-
-static int arith_pow(lua_State *L)
-{
-	return arith(L, LUA_OPPOW, "__pow");
-}
-
-static int arith_div(lua_State *L)
-{
-	return arith(L, LUA_OPDIV, "__div");
-}
-
-static int arith_idiv(lua_State *L)
-{
-	return arith(L, LUA_OPIDIV, "__idiv");
-}
-
-static int arith_unm(lua_State *L)
-{
-	return arith(L, LUA_OPUNM, "__unm");
-}
-
-
-static const luaL_Reg stringmetamethods[] = {
-	{"__add", arith_add},
-	{"__sub", arith_sub},
-	{"__mul", arith_mul},
-	{"__mod", arith_mod},
-	{"__pow", arith_pow},
-	{"__div", arith_div},
-	{"__idiv", arith_idiv},
-	{"__unm", arith_unm},
-	{"__index", NULL}, /* placeholder */
-	luaL_Reg::end(),
-};
-
-#endif		/* } */
 
 /* }====================================================== */
 
