@@ -64,17 +64,14 @@ static int getbaseline(const Proto *f, int pc, int *basepc)
 		*basepc = -1; /* start from the beginning */
 		return f->linedefined;
 	}
-	else
-	{
-		int i = cast_uint(pc) / MAXIWTHABS - 1; /* get an estimate */
-		/* estimate must be a lower bound of the correct base */
-		lua_assert(i < 0 ||
-			(i < f->sizeabslineinfo && f->abslineinfo[i].pc <= pc));
-		while (i + 1 < f->sizeabslineinfo && pc >= f->abslineinfo[i + 1].pc)
-			i++; /* low estimate; adjust it */
-		*basepc = f->abslineinfo[i].pc;
-		return f->abslineinfo[i].line;
-	}
+	int i = cast_uint(pc) / MAXIWTHABS - 1; /* get an estimate */
+	/* estimate must be a lower bound of the correct base */
+	lua_assert(i < 0 ||
+		(i < f->sizeabslineinfo && f->abslineinfo[i].pc <= pc));
+	while (i + 1 < f->sizeabslineinfo && pc >= f->abslineinfo[i + 1].pc)
+		i++; /* low estimate; adjust it */
+	*basepc = f->abslineinfo[i].pc;
+	return f->abslineinfo[i].line;
 }
 
 
@@ -85,20 +82,17 @@ static int getbaseline(const Proto *f, int pc, int *basepc)
 */
 int luaG_getfuncline(const Proto *f, int pc)
 {
-	if (f->lineinfo == NULL) /* no debug information? */
+	if (f->lineinfo == nullptr) /* no debug information? */
 		return -1;
-	else
+	int basepc;
+	int baseline = getbaseline(f, pc, &basepc);
+	while (basepc++ < pc)
 	{
-		int basepc;
-		int baseline = getbaseline(f, pc, &basepc);
-		while (basepc++ < pc)
-		{
-			/* walk until given instruction */
-			lua_assert(f->lineinfo[basepc] != ABSLINEINFO);
-			baseline += f->lineinfo[basepc]; /* correct line */
-		}
-		return baseline;
+		/* walk until given instruction */
+		lua_assert(f->lineinfo[basepc] != ABSLINEINFO);
+		baseline += f->lineinfo[basepc]; /* correct line */
 	}
+	return baseline;
 }
 
 
@@ -343,7 +337,7 @@ static void collectvalidlines(lua_State *L, Closure *f)
 		Table *t = luaH_newt(L); /* new table to store active lines */
 		sethvalue2s(L, L->top.p, t); /* push it on stack */
 		api_incr_top(L);
-		if (p->lineinfo != NULL)
+		if (p->lineinfo != nullptr)
 		{
 			/* proto with debug information? */
 			int i;
@@ -372,10 +366,10 @@ static void collectvalidlines(lua_State *L, Closure *f)
 static const char *getfuncname(lua_State *L, CallInfo *ci, const char **name)
 {
 	/* calling function is a known function? */
-	if (ci != NULL && !(ci->callstatus & CIST_TAIL))
+	if (ci != nullptr && !(ci->callstatus & CIST_TAIL))
 		return funcnamefromcall(L, ci->previous, name);
 	/* no way to find a name */
-	return NULL;
+	return nullptr;
 }
 
 
@@ -396,7 +390,7 @@ static int auxgetinfo(lua_State *L, const char *what, lua_Debug *ar,
 				break;
 			}
 			case 'u': {
-				ar->nups = (f == NULL) ? 0 : f->c.nupvalues;
+				ar->nups = (f == nullptr) ? 0 : f->c.nupvalues;
 				if (!LuaClosure(f))
 				{
 					ar->isvararg = 1;
@@ -415,15 +409,15 @@ static int auxgetinfo(lua_State *L, const char *what, lua_Debug *ar,
 			}
 			case 'n': {
 				ar->namewhat = getfuncname(L, ci, &ar->name);
-				if (ar->namewhat == NULL)
+				if (ar->namewhat == nullptr)
 				{
 					ar->namewhat = ""; /* not found */
-					ar->name = NULL;
+					ar->name = nullptr;
 				}
 				break;
 			}
 			case 'r': {
-				if (ci == NULL || !(ci->callstatus & CIST_TRAN))
+				if (ci == nullptr || !(ci->callstatus & CIST_TRAN))
 					ar->ftransfer = ar->ntransfer = 0;
 				else
 				{
@@ -451,7 +445,7 @@ LUA_API int lua_getinfo(lua_State *L, const char *what, lua_Debug *ar)
 	lua_lock(L);
 	if (*what == '>')
 	{
-		ci = NULL;
+		ci = nullptr;
 		func = s2v(L->top.p - 1);
 		api_check(L, ttisfunction(func), "function expected");
 		what++; /* skip the '>' */
@@ -694,7 +688,7 @@ static const char *getobjname(const Proto *p, int lastpc, int reg,
 static const char *funcnamefromcode(lua_State *L, const Proto *p,
 												int pc, const char **name)
 {
-	TMS tm = (TMS) 0; /* (initial value avoids warnings) */
+	auto tm = (TMS) 0; /* (initial value avoids warnings) */
 	Instruction i = p->code[pc]; /* calling instruction */
 	switch (GET_OPCODE(i))
 	{
@@ -836,8 +830,8 @@ static const char *formatvarinfo(lua_State *L, const char *kind,
 static const char *varinfo(lua_State *L, const TValue *o)
 {
 	CallInfo *ci = L->ci;
-	const char *name = NULL; /* to avoid warnings */
-	const char *kind = NULL;
+	const char *name = nullptr; /* to avoid warnings */
+	const char *kind = nullptr;
 	if (ci->isLua())
 	{
 		kind = getupvalname(ci, o, &name); /* check whether 'o' is an upvalue */
@@ -882,7 +876,7 @@ l_noret luaG_typeerror(lua_State *L, const TValue *o, const char *op)
 l_noret luaG_callerror(lua_State *L, const TValue *o)
 {
 	CallInfo *ci = L->ci;
-	const char *name = NULL; /* to avoid warnings */
+	const char *name = nullptr; /* to avoid warnings */
 	const char *kind = funcnamefromcall(L, ci, &name);
 	const char *extra = kind ? formatvarinfo(L, kind, name) : varinfo(L, o);
 	typeerror(L, o, "call", extra);

@@ -10,8 +10,8 @@
 #include "lprefix.hpp"
 
 
-#include <stddef.h>
-#include <string.h>
+#include <cstddef>
+#include <cstring>
 
 #include "lua.hpp"
 
@@ -304,13 +304,11 @@ static void close_state(lua_State *L)
 LUA_API lua_State *lua_newthread(lua_State *L)
 {
 	global_State *g = G(L);
-	GCObject *o;
-	lua_State *L1;
 	lua_lock(L);
 	luaC_checkGC(L);
 	/* create new thread */
-	o = luaC_newobjdt(L, LUA_TTHREAD, sizeof(LX), offsetof(LX, l));
-	L1 = gco2th(o);
+	GCObject *o = luaC_newobjdt(L, LUA_TTHREAD, sizeof(LX), offsetof(LX, l));
+	lua_State *L1 = gco2th(o);
 	/* anchor it on L stack */
 	setthvalue2s(L, L->top.p, L1);
 	api_incr_top(L);
@@ -320,7 +318,7 @@ LUA_API lua_State *lua_newthread(lua_State *L)
 	L1->hook = L->hook;
 	L1->resethookcount();
 	/* initialize L1 extra space */
-	memcpy(
+	std::memcpy(
 		lua_getextraspace(L1),
 		lua_getextraspace(g->mainthread),
 		LUA_EXTRASPACE

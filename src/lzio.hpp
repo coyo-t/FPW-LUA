@@ -31,17 +31,17 @@ struct Mbuffer
 		this->buffsize = 0;
 	}
 
-	auto getbuffer () -> char*
+	auto getbuffer () const -> char*
 	{
 		return this->buffer;
 	}
 
-	auto sizebuffer () -> size_t
+	auto sizebuffer () const -> size_t
 	{
 		return this->buffsize;
 	}
 
-	auto bufflen () -> size_t
+	auto bufflen () const -> size_t
 	{
 		return this->n;
 	}

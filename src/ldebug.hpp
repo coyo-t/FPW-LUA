@@ -23,7 +23,6 @@
 */
 constexpr auto ABSLINEINFO =	(-0x80);
 
-
 /*
 ** MAXimum number of successive Instructions WiTHout ABSolute line
 ** information. (A power of two allows fast divisions.)
