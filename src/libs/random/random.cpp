@@ -3,6 +3,8 @@
 
 #include <cfloat>
 #include <ctime>
+#include <cstdint>
+
 #include "../../lua.hpp"
 #include "lauxlib.hpp"
 #include "../../luatemplate.hpp"
@@ -32,35 +34,39 @@
 #endif
 
 
+using Rand64 = std::uint64_t;
+using SRand64 = std::int64_t;
 /*
 ** LUA_RAND32 forces the use of 32-bit integers in the implementation
 ** of the PRN generator (mainly for testing).
 */
-#if !defined(LUA_RAND32) && !defined(Rand64)
-
-/* try to find an integer type with at least 64 bits */
-
-#if ((ULONG_MAX >> 31) >> 31) >= 3
-
-/* 'long' has at least 64 bits */
-#define Rand64		unsigned long
-#define SRand64		long
-
-#elif !defined(LUA_USE_C89) && defined(LLONG_MAX)
-
-/* there is a 'long long' type (which must have at least 64 bits) */
-#define Rand64		unsigned long long
-#define SRand64		long long
-
-#elif ((LUA_MAXUNSIGNED >> 31) >> 31) >= 3
-
-/* 'lua_Unsigned' has at least 64 bits */
-#define Rand64		lua_Unsigned
-#define SRand64		lua_Integer
-
-#endif
-
-#endif
+// #if !defined(LUA_RAND32) && !defined(Rand64)
+//
+//
+//
+// /* try to find an integer type with at least 64 bits */
+//
+// #if ((ULONG_MAX >> 31) >> 31) >= 3
+//
+// /* 'long' has at least 64 bits */
+// #define Rand64		unsigned long
+// #define SRand64		long
+//
+// #elif !defined(LUA_USE_C89) && defined(LLONG_MAX)
+//
+// /* there is a 'long long' type (which must have at least 64 bits) */
+// #define Rand64		unsigned long long
+// #define SRand64		long long
+//
+// #elif ((LUA_MAXUNSIGNED >> 31) >> 31) >= 3
+//
+// /* 'lua_Unsigned' has at least 64 bits */
+// #define Rand64		lua_Unsigned
+// #define SRand64		lua_Integer
+//
+// #endif
+//
+// #endif
 
 
 
@@ -221,12 +227,11 @@ static int math_random(lua_State *L)
 static void setseed(lua_State *L, Rand64 *state,
 							lua_Unsigned n1, lua_Unsigned n2)
 {
-	int i;
 	state[0] = Int2I(n1);
 	state[1] = Int2I(0xff); /* avoid a zero state */
 	state[2] = Int2I(n2);
 	state[3] = Int2I(0);
-	for (i = 0; i < 16; i++)
+	for (int i = 0; i < 16; i++)
 		nextrand(state); /* discard initial values to "spread" seed */
 	lua_pushinteger(L, n1);
 	lua_pushinteger(L, n2);

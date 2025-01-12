@@ -94,9 +94,8 @@ struct Zio
 	{
 		size_t size;
 		lua_State *L = this->L;
-		const char *buff;
 		lua_unlock(L);
-		buff = this->reader(L, this->data, &size);
+		const char *buff = this->reader(L, this->data, &size);
 		lua_lock(L);
 		if (buff == nullptr || size == 0)
 			return EOZ;
