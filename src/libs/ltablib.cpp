@@ -186,7 +186,7 @@ static int tjoinbuffer (lua_State* L)
 		lua_geti(L, 1, i);
 		if (l_unlikely(!lua_isinteger(L, -1)))
 		{
-			luaL_error(L,
+			return luaL_error(L,
 					"Invalid value (%s) at index %I in table for 'joinbuffer'",
 					luaL_typename(L, -1), i
 			);
