@@ -71,11 +71,11 @@ static size_t posrelatI(lua_Integer pos, size_t len)
 {
 	if (pos > 0)
 		return (size_t) pos;
-	else if (pos == 0)
+	if (pos == 0)
 		return 1;
-	else if (pos < -(lua_Integer) len) /* inverted comparison */
+	if (pos < -(lua_Integer) len) /* inverted comparison */
 		return 1; /* clip to 1 */
-	else return len + (size_t) pos + 1;
+	return len + (size_t) pos + 1;
 }
 
 
@@ -90,11 +90,11 @@ static size_t getendpos(lua_State *L, int arg, lua_Integer def,
 	lua_Integer pos = luaL_optinteger(L, arg, def);
 	if (pos > (lua_Integer) len)
 		return len;
-	else if (pos >= 0)
+	if (pos >= 0)
 		return (size_t) pos;
-	else if (pos < -(lua_Integer) len)
+	if (pos < -(lua_Integer) len)
 		return 0;
-	else return len + (size_t) pos + 1;
+	return len + (size_t) pos + 1;
 }
 
 

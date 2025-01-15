@@ -617,28 +617,25 @@ static char *prepbuffsize(luaL_Buffer *B, size_t sz, int boxidx)
 	checkbufferlevel(B, boxidx);
 	if (B->size - B->n >= sz) /* enough space? */
 		return B->b + B->n;
+	lua_State *L = B->L;
+	char *newbuff;
+	size_t newsize = newbuffsize(B, sz);
+	/* create larger buffer */
+	if (buffonstack(B)) /* buffer already has a box? */
+		newbuff = (char *) resizebox(L, boxidx, newsize); /* resize it */
 	else
 	{
-		lua_State *L = B->L;
-		char *newbuff;
-		size_t newsize = newbuffsize(B, sz);
-		/* create larger buffer */
-		if (buffonstack(B)) /* buffer already has a box? */
-			newbuff = (char *) resizebox(L, boxidx, newsize); /* resize it */
-		else
-		{
-			/* no box yet */
-			lua_remove(L, boxidx); /* remove placeholder */
-			newbox(L); /* create a new box */
-			lua_insert(L, boxidx); /* move box to its intended position */
-			lua_toclose(L, boxidx);
-			newbuff = (char *) resizebox(L, boxidx, newsize);
-			memcpy(newbuff, B->b, B->n * sizeof(char)); /* copy original content */
-		}
-		B->b = newbuff;
-		B->size = newsize;
-		return newbuff + B->n;
+		/* no box yet */
+		lua_remove(L, boxidx); /* remove placeholder */
+		newbox(L); /* create a new box */
+		lua_insert(L, boxidx); /* move box to its intended position */
+		lua_toclose(L, boxidx);
+		newbuff = (char *) resizebox(L, boxidx, newsize);
+		memcpy(newbuff, B->b, B->n * sizeof(char)); /* copy original content */
 	}
+	B->b = newbuff;
+	B->size = newsize;
+	return newbuff + B->n;
 }
 
 /*

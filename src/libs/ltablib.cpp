@@ -181,6 +181,9 @@ static int tjoinbuffer (lua_State* L)
 	lua_Integer count = aux_getn(L, 1, TAB_R);
 	luaL_Buffer b;
 	b.initbuffer(L);
+	char *buffer = luaL_prepbuffsize(&b, count);
+	luaL_addsize(&b, count);
+	const auto tell = lua_gettop(L);
 	for (int i = 1; i <= count; i++)
 	{
 		lua_geti(L, 1, i);
@@ -192,8 +195,8 @@ static int tjoinbuffer (lua_State* L)
 			);
 		}
 
-		b.b[i-1] = static_cast<char>(lua_tointeger(L, -1) & 0xFF);
-		lua_pop(L, 1);
+		buffer[i-1] = static_cast<char>(lua_tointeger(L, -1) & 0xFF);
+		lua_settop(L, tell);
 	}
 	luaL_pushresult(&b);
 	return 1;
