@@ -377,8 +377,8 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud)
 	int i;
 	lua_State *L;
 	global_State *g;
-	LG *l = cast(LG *, (*f)(ud, NULL, LUA_TTHREAD, sizeof(LG)));
-	if (l == NULL) return NULL;
+	auto l = cast(LG *, (*f)(ud, nullptr, LUA_TTHREAD, sizeof(LG)));
+	if (l == nullptr) return nullptr;
 	L = &l->l.l;
 	g = &l->g;
 	L->tt = LUA_VTHREAD;
@@ -419,12 +419,12 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud)
 	g->gcstepsize = LUAI_GCSTEPSIZE;
 	setgcparam(g->genmajormul, LUAI_GENMAJORMUL);
 	g->genminormul = LUAI_GENMINORMUL;
-	for (i = 0; i < LUA_NUMTAGS; i++) g->mt[i] = NULL;
-	if (luaD::rawrunprotected(L, f_luaopen, NULL) != LUA_OK)
+	for (i = 0; i < LUA_NUMTAGS; i++) g->mt[i] = nullptr;
+	if (luaD::rawrunprotected(L, f_luaopen, nullptr) != LUA_OK)
 	{
 		/* memory allocation error: free partial state */
 		close_state(L);
-		L = NULL;
+		L = nullptr;
 	}
 	return L;
 }

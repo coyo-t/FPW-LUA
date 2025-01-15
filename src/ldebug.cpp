@@ -189,8 +189,8 @@ LUA_API int lua_getstack(lua_State *L, int level, lua_Debug *ar)
 static const char *upvalname(const Proto *p, int uv)
 {
 	TString *s = check_exp(uv < p->sizeupvalues, p->upvalues[uv].name);
-	if (s == NULL) return "?";
-	else return getstr(s);
+	if (s == nullptr) return "?";
+	return getstr(s);
 }
 
 
@@ -206,7 +206,7 @@ static const char *findvararg(CallInfo *ci, int n, StkId *pos)
 			return "(vararg)"; /* generic name for any vararg */
 		}
 	}
-	return NULL; /* no such vararg */
+	return nullptr; /* no such vararg */
 }
 
 
@@ -218,10 +218,9 @@ const char *luaG_findlocal(lua_State *L, CallInfo *ci, int n, StkId *pos)
 	{
 		if (n < 0) /* access to vararg values? */
 			return findvararg(ci, n, pos);
-		else
-			name = luaF::getlocalname(ci_func(ci)->p, n, currentpc(ci));
+		name = luaF::getlocalname(ci_func(ci)->p, n, currentpc(ci));
 	}
-	if (name == NULL)
+	if (name == nullptr)
 	{
 		/* no 'standard' name? */
 		StkId limit = (ci == L->ci) ? L->top.p : ci->next->func.p;
@@ -232,7 +231,7 @@ const char *luaG_findlocal(lua_State *L, CallInfo *ci, int n, StkId *pos)
 			name = ci->isLua() ? "(temporary)" : "(C temporary)";
 		}
 		else
-			return NULL; /* no name */
+			return nullptr; /* no name */
 	}
 	if (pos)
 		*pos = base + (n - 1);
@@ -244,7 +243,7 @@ LUA_API const char *lua_getlocal(lua_State *L, const lua_Debug *ar, int n)
 {
 	const char *name;
 	lua_lock(L);
-	if (ar == NULL)
+	if (ar == nullptr)
 	{
 		/* information about non-active function? */
 		if (!isLfunction(s2v(L->top.p - 1))) /* not a Lua function? */
@@ -482,7 +481,8 @@ static int filterpc(int pc, int jmptarget)
 {
 	if (pc < jmptarget) /* is code conditional (inside a jump)? */
 		return -1; /* cannot know who sets that register */
-	else return pc; /* current position sets that register */
+	/* current position sets that register */
+	return pc;
 }
 
 
@@ -554,7 +554,7 @@ static const char *kname(const Proto *p, int index, const char **name)
 		return "constant";
 	}
 	*name = "?";
-	return NULL;
+	return nullptr;
 }
 
 

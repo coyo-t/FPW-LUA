@@ -124,7 +124,7 @@ LUALIB_API int (luaL_loadbufferx)(lua_State *L, const char *buff, size_t sz,
 
 LUALIB_API int (luaL_loadstring)(lua_State *L, const char *s);
 
-LUALIB_API lua_State *(luaL_newstate)(void);
+LUALIB_API auto (luaL_newstate)(void) -> lua_State*;
 
 LUALIB_API lua_Integer (luaL_len)(lua_State *L, int idx);
 
@@ -217,11 +217,21 @@ struct luaL_Buffer
 	size_t n; /* number of characters in buffer */
 	lua_State *L;
 
+
 	union
 	{
 		LUAI_MAXALIGN; /* ensure maximum alignment for buffer */
 		char b[LUAL_BUFFERSIZE]; /* initial buffer */
 	} init;
+
+	auto initbuffer (lua_State* L) -> void
+	{
+		this->L = L;
+		this->b = this->init.b;
+		this->n = 0;
+		this->size = LUAL_BUFFERSIZE;
+		lua_pushlightuserdata(L, (void *)this); /* push placeholder */
+	}
 };
 
 

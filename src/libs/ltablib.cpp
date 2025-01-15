@@ -176,15 +176,37 @@ static void addfield(lua_State *L, luaL_Buffer *b, lua_Integer i)
 	luaL_addvalue(b);
 }
 
+static int tjoinbuffer (lua_State* L)
+{
+	lua_Integer count = aux_getn(L, 1, TAB_R);
+	luaL_Buffer b;
+	b.initbuffer(L);
+	for (int i = 1; i <= count; i++)
+	{
+		lua_geti(L, 1, i);
+		if (l_unlikely(!lua_isinteger(L, -1)))
+		{
+			luaL_error(L,
+					"Invalid value (%s) at index %I in table for 'joinbuffer'",
+					luaL_typename(L, -1), i
+			);
+		}
+
+		b.b[i-1] = static_cast<char>(lua_tointeger(L, -1) & 0xFF);
+		lua_pop(L, 1);
+	}
+	luaL_pushresult(&b);
+	return 1;
+}
 
 static int tconcat(lua_State *L)
 {
-	luaL_Buffer b;
 	lua_Integer last = aux_getn(L, 1, TAB_R);
 	size_t lsep;
 	const char *sep = luaL_optlstring(L, 2, "", &lsep);
 	lua_Integer i = luaL_optinteger(L, 3, 1);
 	last = luaL_optinteger(L, 4, last);
+	luaL_Buffer b;
 	luaL_buffinit(L, &b);
 	for (; i < last; i++)
 	{
@@ -475,7 +497,8 @@ static const luaL_Reg tab_funcs[] = {
 	{"remove", tremove},
 	{"move", tmove},
 	{"sort", sort},
-	{NULL, NULL}
+	{"joinbuffer", tjoinbuffer},
+	luaL_Reg::end(),
 };
 
 
