@@ -304,7 +304,9 @@
 ** More often than not the libs go together with the core.
 */
 #define LUALIB_API	LUA_API
+#define LUALIB_APIA	LUA_API auto
 #define LUAMOD_API	LUA_API
+#define LUAMOD_APIA	LUA_API auto
 
 
 /*

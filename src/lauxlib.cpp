@@ -27,6 +27,9 @@
 
 #include "lauxlib.hpp"
 
+#include "lobject.hpp"
+#include "ltm.hpp"
+
 
 #if !defined(MAX_SIZET)
 /* maximum value for size_t */
@@ -1285,4 +1288,13 @@ bool luaL_dostring(lua_State *L, const char *s)
 int luaL_getmetatable(lua_State *L, const char* n)
 {
 	return (lua_getfield(L, LUA_REGISTRYINDEX, (n)));
+}
+
+auto luaL_gettypenametable (size_t *out_tablesize) -> const char *const*
+{
+	if (out_tablesize != nullptr)
+	{
+		*out_tablesize = LUA_TOTALTYPES;
+	}
+	return &(luaT_typenames_[0]);
 }

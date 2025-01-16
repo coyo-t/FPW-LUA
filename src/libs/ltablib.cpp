@@ -16,6 +16,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "ldebug.hpp"
 #include "../lua.hpp"
 
 #include "../lauxlib.hpp"
@@ -199,6 +200,66 @@ static int tjoinbuffer (lua_State* L)
 		lua_settop(L, tell);
 	}
 	luaL_pushresult(&b);
+	return 1;
+}
+
+static int tcreatearray (lua_State*L)
+{
+	lua_Integer count = luaL_checkinteger(L, 1);
+	if (count <= 0)
+	{
+		if (count == 0)
+		{
+			lua_newtable(L);
+			return 1;
+		}
+		return luaL_error(L, "Negative element count (%I) given to table.array", count);
+	}
+	if (l_unlikely(lua_gettop(L) <= 1 || lua_isnoneornil(L, 2)))
+	{
+		// dummy value so the indicies arent nil
+		lua_pushboolean(L, false);
+	}
+	lua_createtable(L, count, 0);
+	for (int i = 1; i <= count; i++)
+	{
+		lua_pushvalue(L, 2);
+		lua_rawseti(L, -2, i);
+	}
+	return 1;
+}
+
+static int tcreatearray_ext (lua_State*L)
+{
+	lua_Integer count = luaL_checkinteger(L, 1);
+	if (count <= 0)
+	{
+		if (count == 0)
+		{
+			lua_newtable(L);
+			return 1;
+		}
+		return luaL_error(L, "Negative element count (%I) given to table.array", count);
+	}
+	if (l_unlikely(lua_gettop(L) <= 1 || !lua_isfunction(L, 2)))
+	{
+		// prevent access violation?
+		if (lua_gettop(L) <= 1)
+			lua_pushnil(L);
+		return luaL_error(L, "argument 2 expecting a function, got %s", lua_typename(L, 2));
+	}
+	lua_createtable(L, count, 0);
+	for (int i = 1; i <= count; i++)
+	{
+		lua_pushvalue(L, 2);
+		lua_pushinteger(L, i);
+		if (lua_pcall(L, 1, 1, 0) != LUA_OK)
+		{
+			luaG_errormsg(L);
+			return -1;
+		}
+		lua_rawseti(L, -2, i);
+	}
 	return 1;
 }
 
@@ -501,6 +562,8 @@ static const luaL_Reg tab_funcs[] = {
 	{"move", tmove},
 	{"sort", sort},
 	{"joinbuffer", tjoinbuffer},
+	{"array", tcreatearray},
+	{"arrayext", tcreatearray_ext},
 	luaL_Reg::end(),
 };
 

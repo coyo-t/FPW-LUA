@@ -150,6 +150,7 @@ LUALIB_API void (luaL_requiref)(lua_State *L, const char *modname,
 ** ===============================================================
 */
 
+LUALIB_APIA luaL_gettypenametable (size_t* out_tablesize) -> const char* const*;
 
 #define luaL_newlibtable(L,l)	lua_createtable(L, 0, sizeof(l)/sizeof((l)[0]) - 1)
 
