@@ -748,10 +748,6 @@ static stbi__pngchunk stbi__get_chunk_header(stbi__context *s)
 }
 
 
-
-
-
-
 enum
 {
 	STBI__F_none = 0,
