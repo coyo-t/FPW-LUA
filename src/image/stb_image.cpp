@@ -1759,7 +1759,8 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 						return stbi__err("outofmem", "Out of memory");
 					z->idata = p;
 				}
-				if (!stbi__getn(s, z->idata + ioff, c.length)) return stbi__err("outofdata", "Corrupt PNG");
+				if (!stbi__getn(s, z->idata + ioff, c.length))
+					return stbi__err("outofdata", "Corrupt PNG");
 				ioff += c.length;
 				break;
 			}
@@ -1862,7 +1863,7 @@ static void *stbi__png_load(stbi__context *s, int *x, int *y, int *comp, int req
 		else
 			return stbi__errpuc("bad bits_per_channel", "PNG not supported: unsupported color depth");
 		result = p.out;
-		p.out = NULL;
+		p.out = nullptr;
 		if (req_comp && req_comp != p.s->img_out_n)
 		{
 			if (ri->bits_per_channel == 8)
@@ -1870,7 +1871,7 @@ static void *stbi__png_load(stbi__context *s, int *x, int *y, int *comp, int req
 			else
 				result = stbi__convert_format16((std::uint16_t*) result, p.s->img_out_n, req_comp, p.s->img_x, p.s->img_y);
 			p.s->img_out_n = req_comp;
-			if (result == NULL) return result;
+			if (result == nullptr) return result;
 		}
 		*x = p.s->img_x;
 		*y = p.s->img_y;
