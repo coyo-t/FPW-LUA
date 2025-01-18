@@ -15,43 +15,6 @@
 
 
 
-#if defined(STBI_ONLY_JPEG) || defined(STBI_ONLY_PNG) || defined(STBI_ONLY_BMP) \
-  || defined(STBI_ONLY_TGA) || defined(STBI_ONLY_GIF) || defined(STBI_ONLY_PSD) \
-  || defined(STBI_ONLY_HDR) || defined(STBI_ONLY_PIC) || defined(STBI_ONLY_PNM) \
-  || defined(STBI_ONLY_ZLIB)
-#ifndef STBI_ONLY_JPEG
-#define STBI_NO_JPEG
-#endif
-#ifndef STBI_ONLY_PNG
-   #define STBI_NO_PNG
-#endif
-#ifndef STBI_ONLY_BMP
-#define STBI_NO_BMP
-#endif
-#ifndef STBI_ONLY_PSD
-#define STBI_NO_PSD
-#endif
-#ifndef STBI_ONLY_TGA
-#define STBI_NO_TGA
-#endif
-#ifndef STBI_ONLY_GIF
-#define STBI_NO_GIF
-#endif
-#ifndef STBI_ONLY_HDR
-#define STBI_NO_HDR
-#endif
-#ifndef STBI_ONLY_PIC
-#define STBI_NO_PIC
-#endif
-#ifndef STBI_ONLY_PNM
-#define STBI_NO_PNM
-#endif
-#endif
-
-#if defined(STBI_NO_PNG) && !defined(STBI_SUPPORT_ZLIB) && !defined(STBI_NO_ZLIB)
-#define STBI_NO_ZLIB
-#endif
-
 
 #include <stdarg.h>
 #include <stddef.h> // ptrdiff_t on osx
@@ -316,44 +279,6 @@ static void stbi__start_callbacks(stbi__context *s, stbi_io_callbacks *c, void *
 }
 
 
-#ifndef STBI_NO_STDIO
-
-static int stbi__stdio_read(void *user, char *data, int size)
-{
-	return (int) fread(data, 1, size, (FILE *) user);
-}
-
-static void stbi__stdio_skip(void *user, int n)
-{
-	int ch;
-	fseek((FILE *) user, n, SEEK_CUR);
-	ch = fgetc((FILE *) user); /* have to read a byte to reset feof()'s flag */
-	if (ch != EOF)
-	{
-		ungetc(ch, (FILE *) user); /* push byte back onto stream if valid. */
-	}
-}
-
-static int stbi__stdio_eof(void *user)
-{
-	return feof((FILE *) user) || ferror((FILE *) user);
-}
-
-static stbi_io_callbacks stbi__stdio_callbacks =
-{
-	stbi__stdio_read,
-	stbi__stdio_skip,
-	stbi__stdio_eof,
-};
-
-static void stbi__start_file(stbi__context *s, FILE *f)
-{
-	stbi__start_callbacks(s, &stbi__stdio_callbacks, (void *) f);
-}
-
-//static void stop_file(stbi__context *s) { }
-
-#endif // !STBI_NO_STDIO
 
 static void stbi__rewind(stbi__context *s)
 {
@@ -594,99 +519,6 @@ static void stbi__float_postprocess(float *result, int *x, int *y, int *comp, in
 }
 #endif
 
-#ifndef STBI_NO_STDIO
-
-#if defined(_WIN32) && defined(STBI_WINDOWS_UTF8)
-STBI_EXTERN __declspec(dllimport) int __stdcall MultiByteToWideChar(unsigned int cp, unsigned long flags, const char *str, int cbmb, wchar_t *widestr, int cchwide);
-STBI_EXTERN __declspec(dllimport) int __stdcall WideCharToMultiByte(unsigned int cp, unsigned long flags, const wchar_t *widestr, int cchwide, char *str, int cbmb, const char *defchar, int *used_default);
-#endif
-
-#if defined(_WIN32) && defined(STBI_WINDOWS_UTF8)
-STBIDEF int stbi_convert_wchar_to_utf8(char *buffer, size_t bufferlen, const wchar_t* input)
-{
-	return WideCharToMultiByte(65001 /* UTF8 */, 0, input, -1, buffer, (int) bufferlen, NULL, NULL);
-}
-#endif
-
-static FILE *stbi__fopen(char const *filename, char const *mode)
-{
-	FILE *f;
-#if defined(_WIN32) && defined(STBI_WINDOWS_UTF8)
-   wchar_t wMode[64];
-   wchar_t wFilename[1024];
-	if (0 == MultiByteToWideChar(65001 /* UTF8 */, 0, filename, -1, wFilename, sizeof(wFilename)/sizeof(*wFilename)))
-      return 0;
-
-	if (0 == MultiByteToWideChar(65001 /* UTF8 */, 0, mode, -1, wMode, sizeof(wMode)/sizeof(*wMode)))
-      return 0;
-
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-	if (0 != _wfopen_s(&f, wFilename, wMode))
-		f = 0;
-#else
-   f = _wfopen(wFilename, wMode);
-#endif
-
-#elif defined(_MSC_VER) && _MSC_VER >= 1400
-   if (0 != fopen_s(&f, filename, mode))
-      f=0;
-#else
-	f = fopen(filename, mode);
-#endif
-	return f;
-}
-
-
-STBIDEF stbi_uc *stbi_load(char const *filename, int *x, int *y, int *comp, int req_comp)
-{
-	FILE *f = stbi__fopen(filename, "rb");
-	unsigned char *result;
-	if (!f) return stbi__errpuc("can't fopen", "Unable to open file");
-	result = stbi_load_from_file(f, x, y, comp, req_comp);
-	fclose(f);
-	return result;
-}
-
-STBIDEF stbi_uc *stbi_load_from_file(FILE *f, int *x, int *y, int *comp, int req_comp)
-{
-	unsigned char *result;
-	stbi__context s;
-	stbi__start_file(&s, f);
-	result = stbi__load_and_postprocess_8bit(&s, x, y, comp, req_comp);
-	if (result)
-	{
-		// need to 'unget' all the characters in the IO buffer
-		fseek(f, -(int) (s.img_buffer_end - s.img_buffer), SEEK_CUR);
-	}
-	return result;
-}
-
-STBIDEF stbi__uint16 *stbi_load_from_file_16(FILE *f, int *x, int *y, int *comp, int req_comp)
-{
-	stbi__uint16 *result;
-	stbi__context s;
-	stbi__start_file(&s, f);
-	result = stbi__load_and_postprocess_16bit(&s, x, y, comp, req_comp);
-	if (result)
-	{
-		// need to 'unget' all the characters in the IO buffer
-		fseek(f, -(int) (s.img_buffer_end - s.img_buffer), SEEK_CUR);
-	}
-	return result;
-}
-
-STBIDEF stbi_us *stbi_load_16(char const *filename, int *x, int *y, int *comp, int req_comp)
-{
-	FILE *f = stbi__fopen(filename, "rb");
-	stbi__uint16 *result;
-	if (!f) return (stbi_us *) stbi__errpuc("can't fopen", "Unable to open file");
-	result = stbi_load_from_file_16(f, x, y, comp, req_comp);
-	fclose(f);
-	return result;
-}
-
-
-#endif //!STBI_NO_STDIO
 
 STBIDEF stbi_us *stbi_load_16_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *channels_in_file,
                                           int desired_channels)
@@ -2140,48 +1972,5 @@ STBIDEF int stbi_is_16_bit_from_callbacks(stbi_io_callbacks const *c, void *user
 	return stbi__is_16_main(&s);
 }
 
-
-
-STBIDEF int stbi_info(char const *filename, int *x, int *y, int *comp)
-{
-	FILE *f = stbi__fopen(filename, "rb");
-	int result;
-	if (!f) return stbi__err("can't fopen", "Unable to open file");
-	result = stbi_info_from_file(f, x, y, comp);
-	fclose(f);
-	return result;
-}
-
-STBIDEF int stbi_info_from_file(FILE *f, int *x, int *y, int *comp)
-{
-	int r;
-	stbi__context s;
-	long pos = ftell(f);
-	stbi__start_file(&s, f);
-	r = stbi__info_main(&s, x, y, comp);
-	fseek(f, pos,SEEK_SET);
-	return r;
-}
-
-STBIDEF int stbi_is_16_bit(char const *filename)
-{
-	FILE *f = stbi__fopen(filename, "rb");
-	int result;
-	if (!f) return stbi__err("can't fopen", "Unable to open file");
-	result = stbi_is_16_bit_from_file(f);
-	fclose(f);
-	return result;
-}
-
-STBIDEF int stbi_is_16_bit_from_file(FILE *f)
-{
-	int r;
-	stbi__context s;
-	long pos = ftell(f);
-	stbi__start_file(&s, f);
-	r = stbi__is_16_main(&s);
-	fseek(f, pos,SEEK_SET);
-	return r;
-}
 
 
