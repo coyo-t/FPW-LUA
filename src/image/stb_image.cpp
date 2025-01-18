@@ -483,10 +483,9 @@ struct Huffman {
 	auto stbi__zbuild_huffman(const std::uint8_t *sizelist, int num) -> int
 	{
 		int i, k = 0;
-		int code, next_code[16], sizes[17];
+		int next_code[16];
+		int sizes[17] = {};
 
-		// DEFLATE spec for generating codes
-		memset(sizes, 0, sizeof(sizes));
 		memset(this->fast, 0, sizeof(this->fast));
 		for (i = 0; i < num; ++i)
 			++sizes[sizelist[i]];
@@ -494,15 +493,16 @@ struct Huffman {
 		for (i = 1; i < 16; ++i)
 			if (sizes[i] > (1 << i))
 				return stbi__err("bad sizes", "Corrupt PNG");
-		code = 0;
+		int code = 0;
 		for (i = 1; i < 16; ++i)
 		{
 			next_code[i] = code;
-			this->firstcode[i] = (std::uint16_t) code;
-			this->firstsymbol[i] = (std::uint16_t) k;
+			this->firstcode[i] = static_cast<std::uint16_t>(code);
+			this->firstsymbol[i] = static_cast<std::uint16_t>(k);
 			code = (code + sizes[i]);
 			if (sizes[i])
-				if (code - 1 >= (1 << i)) return stbi__err("bad codelengths", "Corrupt PNG");
+				if (code - 1 >= (1 << i))
+					return stbi__err("bad codelengths", "Corrupt PNG");
 			this->maxcode[i] = code << (16 - i); // preshift for inner loop
 			code <<= 1;
 			k += sizes[i];
@@ -643,19 +643,21 @@ struct Buffer {
 	auto zexpand(std::uint8_t* zout, int n) -> int
 	{
 		std::uint8_t *q;
-		unsigned int cur, limit, old_limit;
 		this->zout = zout;
 		if (!this->z_expandable) return stbi__err("output buffer limit", "Corrupt PNG");
-		cur = (unsigned int) (this->zout - this->zout_start);
-		limit = old_limit = (unsigned) (this->zout_end - this->zout_start);
-		if (UINT_MAX - cur < (unsigned) n) return stbi__err("outofmem", "Out of memory");
+		auto cur = static_cast<unsigned int>(this->zout - this->zout_start);
+		auto limit = static_cast<unsigned>(this->zout_end - this->zout_start);
+		if (UINT_MAX - cur < static_cast<unsigned>(n))
+			return stbi__err("outofmem", "Out of memory");
 		while (cur + n > limit)
 		{
-			if (limit > UINT_MAX / 2) return stbi__err("outofmem", "Out of memory");
+			if (limit > UINT_MAX / 2)
+				return stbi__err("outofmem", "Out of memory");
 			limit *= 2;
 		}
-		q = (std::uint8_t*) STBI_REALLOC_SIZED(this->zout_start, old_limit, limit);
-		if (q == NULL) return stbi__err("outofmem", "Out of memory");
+		q = static_cast<std::uint8_t *>(STBI_REALLOC_SIZED(this->zout_start, old_limit, limit));
+		if (q == nullptr)
+			return stbi__err("outofmem", "Out of memory");
 		this->zout_start = q;
 		this->zout = q + cur;
 		this->zout_end = q + limit;
@@ -705,7 +707,8 @@ struct Buffer {
 				if (zout - this->zout_start < dist) return stbi__err("bad dist", "Corrupt PNG");
 				if (len > this->zout_end - zout)
 				{
-					if (!this->zexpand(zout, len)) return 0;
+					if (!this->zexpand(zout, len))
+						return 0;
 					zout = this->zout;
 				}
 				std::uint8_t *p = zout - dist;
