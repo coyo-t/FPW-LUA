@@ -313,20 +313,6 @@ static T* stbi__malloc_fma3(int a, int b, int c, int add)
 
 
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// Common code used by all image loaders
-//
-
-
-// public domain zlib decode    v0.2  Sean Barrett 2006-11-18
-//    simple implementation
-//      - all input must be provided in an upfront buffer
-//      - all output is written to a single output buffer (can malloc/realloc)
-//    performance
-//      - fast huffman
-
-
 // fast-way is faster to check than jpeg huffman, but slow way is slower
 // accelerate all cases in default tables
 static constexpr auto FAST_BITS =  9;
@@ -1304,7 +1290,7 @@ static int stbi__create_png_image_raw(stbi__png *a, std::uint8_t *raw, std::uint
 		else if (depth == 16)
 		{
 			// convert the image data from big-endian to platform-native
-			std::uint16_t *dest16 = (std::uint16_t *) dest;
+			auto *dest16 = reinterpret_cast<std::uint16_t *>(dest);
 			std::uint32_t nsmp = x * img_n;
 
 			if (img_n == out_n)
