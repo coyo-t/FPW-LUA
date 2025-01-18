@@ -1,9 +1,7 @@
 #ifndef STBI_INCLUDE_STB_IMAGE_H
 #define STBI_INCLUDE_STB_IMAGE_H
 
-#ifndef STBI_NO_STDIO
-#include <stdio.h>
-#endif // STBI_NO_STDIO
+#include <cstdint>
 
 #define STBI_VERSION 1
 
@@ -16,10 +14,6 @@ enum
 	STBI_rgb = 3,
 	STBI_rgb_alpha = 4
 };
-
-#include <stdlib.h>
-typedef unsigned char stbi_uc;
-typedef unsigned short stbi_us;
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,10 +52,10 @@ struct stbi_io_callbacks
 // 8-bits-per-channel interface
 //
 
-STBIDEF stbi_uc *stbi_load_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *channels_in_file,
+STBIDEF std::uint8_t *stbi_load_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *channels_in_file,
                                        int desired_channels);
 
-STBIDEF stbi_uc *stbi_load_from_callbacks(stbi_io_callbacks const *clbk, void *user, int *x, int *y,
+STBIDEF std::uint8_t *stbi_load_from_callbacks(stbi_io_callbacks const *clbk, void *user, int *x, int *y,
                                           int *channels_in_file, int desired_channels);
 
 
@@ -70,10 +64,10 @@ STBIDEF stbi_uc *stbi_load_from_callbacks(stbi_io_callbacks const *clbk, void *u
 // 16-bits-per-channel interface
 //
 
-STBIDEF stbi_us *stbi_load_16_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *channels_in_file,
+STBIDEF std::uint16_t *stbi_load_16_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *channels_in_file,
                                           int desired_channels);
 
-STBIDEF stbi_us *stbi_load_16_from_callbacks(stbi_io_callbacks const *clbk, void *user, int *x, int *y,
+STBIDEF std::uint16_t *stbi_load_16_from_callbacks(stbi_io_callbacks const *clbk, void *user, int *x, int *y,
                                              int *channels_in_file, int desired_channels);
 
 
@@ -82,7 +76,7 @@ STBIDEF stbi_us *stbi_load_16_from_callbacks(stbi_io_callbacks const *clbk, void
 // float-per-channel interface
 //
 #ifndef STBI_NO_LINEAR
-STBIDEF float *stbi_loadf_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *channels_in_file,
+STBIDEF float *stbi_loadf_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *channels_in_file,
                                       int desired_channels);
 
 STBIDEF float *stbi_loadf_from_callbacks(stbi_io_callbacks const *clbk, void *user, int *x, int *y,
@@ -111,11 +105,11 @@ STBIDEF const char *stbi_failure_reason(void);
 STBIDEF void stbi_image_free(void *retval_from_stbi_load);
 
 // get image dimensions & components without fully decoding
-STBIDEF int stbi_info_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *comp);
+STBIDEF int stbi_info_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *comp);
 
 STBIDEF int stbi_info_from_callbacks(stbi_io_callbacks const *clbk, void *user, int *x, int *y, int *comp);
 
-STBIDEF int stbi_is_16_bit_from_memory(stbi_uc const *buffer, int len);
+STBIDEF int stbi_is_16_bit_from_memory(std::uint8_t const *buffer, int len);
 
 STBIDEF int stbi_is_16_bit_from_callbacks(stbi_io_callbacks const *clbk, void *user);
 
