@@ -119,10 +119,6 @@ struct stbi__context
 	std::uint32_t img_x, img_y;
 	int img_n, img_out_n;
 
-	stbi_io_callbacks io;
-	void *io_user_data;
-
-	int read_from_callbacks;
 	int buflen;
 	std::uint8_t buffer_start[128];
 	int callback_already_read;
@@ -130,30 +126,9 @@ struct stbi__context
 	std::uint8_t *img_buffer, *img_buffer_end;
 	std::uint8_t *img_buffer_original, *img_buffer_original_end;
 
-	auto stbi__refill_buffer() -> void
-	{
-		int n = (io.read)(io_user_data, (char *)buffer_start, buflen);
-		callback_already_read += (int) (img_buffer - img_buffer_original);
-		if (n == 0)
-		{
-			// at end of file, treat same as if from memory, but need to handle case
-			// where s->img_buffer isn't pointing to safe memory, e.g. 0-byte file
-			read_from_callbacks = 0;
-			img_buffer = buffer_start;
-			img_buffer_end = buffer_start + 1;
-			*img_buffer = 0;
-		}
-		else
-		{
-			img_buffer = buffer_start;
-			img_buffer_end = buffer_start + n;
-		}
-	}
 	// initialize a memory-decode context
 	auto stbi__start_mem(std::uint8_t const *buffer, int len) -> void
 	{
-		io.read = nullptr;
-		read_from_callbacks = 0;
 		callback_already_read = 0;
 		img_buffer = img_buffer_original = (std::uint8_t *) buffer;
 		img_buffer_end = img_buffer_original_end = (std::uint8_t *) buffer + len;
@@ -170,11 +145,6 @@ struct stbi__context
 	{
 		if (this->img_buffer < this->img_buffer_end)
 			return *this->img_buffer++;
-		if (this->read_from_callbacks)
-		{
-			this->stbi__refill_buffer();
-			return *this->img_buffer++;
-		}
 		return 0;
 	}
 	auto stbi__get16be () -> int
@@ -877,38 +847,12 @@ static void stbi__skip(stbi__context *s, int n)
 		s->img_buffer = s->img_buffer_end;
 		return;
 	}
-	if (s->io.read)
-	{
-		int blen = (int) (s->img_buffer_end - s->img_buffer);
-		if (blen < n)
-		{
-			s->img_buffer = s->img_buffer_end;
-			(s->io.skip)(s->io_user_data, n - blen);
-			return;
-		}
-	}
 	s->img_buffer += n;
 }
 
 
 static int stbi__getn(stbi__context *s, std::uint8_t *buffer, int n)
 {
-	if (s->io.read)
-	{
-		int blen = (int) (s->img_buffer_end - s->img_buffer);
-		if (blen < n)
-		{
-			int res, count;
-
-			memcpy(buffer, s->img_buffer, blen);
-
-			count = (s->io.read)(s->io_user_data, (char *) buffer + blen, n - blen);
-			res = (count == (n - blen));
-			s->img_buffer = s->img_buffer_end;
-			return res;
-		}
-	}
-
 	if (s->img_buffer + n <= s->img_buffer_end)
 	{
 		memcpy(buffer, s->img_buffer, n);
