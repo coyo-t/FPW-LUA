@@ -13,6 +13,7 @@ include_directories(src)
 add_library(
 	LuaMod
 	SHARED
+		  src/image/stb_image.hpp
 	src/lapi.cpp
 	src/lapi.hpp
 	src/lauxlib.cpp

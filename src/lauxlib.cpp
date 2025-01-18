@@ -1290,11 +1290,31 @@ int luaL_getmetatable(lua_State *L, const char* n)
 	return (lua_getfield(L, LUA_REGISTRYINDEX, (n)));
 }
 
-auto luaL_gettypenametable (size_t *out_tablesize) -> const char *const*
+static constexpr auto typenametable_longest () -> size_t
 {
+	size_t longest = 0;
+	for (auto luaT_typename : luaT_typenames_)
+	{
+		auto sz = strlen(luaT_typename);
+		if (sz > longest)
+			longest = sz;
+	}
+	return longest;
+}
+
+auto luaL_gettypenametable (size_t *out_tablesize, size_t* longestName) -> const char *const*
+{
+	static auto longest = typenametable_longest();
+
 	if (out_tablesize != nullptr)
 	{
 		*out_tablesize = LUA_TOTALTYPES;
 	}
+
+	if (longestName != nullptr)
+	{
+		*longestName = longest;
+	}
+
 	return &(luaT_typenames_[0]);
 }
