@@ -77,4 +77,6 @@ add_library(
 	src/libs/bufferlib.cpp
 	src/luatemplate.hpp
 		  src/image/stb_image.cpp
+		  src/image/stb_zlib.hpp
+		  src/image/stb_zlib.cpp
 )
