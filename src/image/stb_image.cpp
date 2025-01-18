@@ -187,7 +187,17 @@ struct stbi__context
 		this->img_buffer = this->img_buffer_original;
 		this->img_buffer_end = this->img_buffer_original_end;
 	}
-
+	auto stbi__get8() -> std::uint8_t
+	{
+		if (this->img_buffer < this->img_buffer_end)
+			return *this->img_buffer++;
+		if (this->read_from_callbacks)
+		{
+			this->stbi__refill_buffer();
+			return *this->img_buffer++;
+		}
+		return 0;
+	}
 };
 
 
@@ -481,19 +491,6 @@ enum
 };
 
 
-stbi_inline static std::uint8_t stbi__get8(stbi__context *s)
-{
-	if (s->img_buffer < s->img_buffer_end)
-		return *s->img_buffer++;
-	if (s->read_from_callbacks)
-	{
-		s->stbi__refill_buffer();
-		return *s->img_buffer++;
-	}
-	return 0;
-}
-
-
 #if defined(STBI_NO_JPEG) && defined(STBI_NO_PNG) && defined(STBI_NO_BMP) && defined(STBI_NO_PSD) && defined(STBI_NO_TGA) && defined(STBI_NO_GIF) && defined(STBI_NO_PIC)
 // nothing
 #else
@@ -555,8 +552,8 @@ static int stbi__getn(stbi__context *s, std::uint8_t *buffer, int n)
 #else
 static int stbi__get16be(stbi__context *s)
 {
-	int z = stbi__get8(s);
-	return (z << 8) + stbi__get8(s);
+	int z = s->stbi__get8();
+	return (z << 8) + s->stbi__get8();
 }
 #endif
 
@@ -607,7 +604,7 @@ static unsigned char *stbi__convert_format(unsigned char *data, int img_n, int r
 	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
 
 	good = static_cast<unsigned char *>(stbi__malloc_mad3(req_comp, x, y, 0));
-	if (good == NULL)
+	if (good == nullptr)
 	{
 		STBI_FREE(data);
 		return stbi__errpuc("outofmem", "Out of memory");
@@ -818,7 +815,12 @@ static int stbi__check_png_header(stbi__context *s)
 {
 	static const std::uint8_t png_sig[8] = {137, 80, 78, 71, 13, 10, 26, 10};
 	for (const auto i : png_sig)
-		if (stbi__get8(s) != i) return stbi__err("bad png sig", "Not a PNG");
+	{
+		if (s->stbi__get8() != i)
+		{
+			return stbi__err("bad png sig", "Not a PNG");
+		}
+	}
 	return 1;
 }
 
@@ -863,7 +865,11 @@ static int stbi__paeth(int a, int b, int c)
 	return t1;
 }
 
-static const std::uint8_t stbi__depth_scale_table[9] = {0, 0xff, 0x55, 0, 0x11, 0, 0, 0, 0x01};
+static const std::uint8_t stbi__depth_scale_table[9] = {
+	0, 0xff, 0x55,
+	0, 0x11, 0,
+	0, 0,    0x01
+};
 
 // adds an extra all-255 alpha channel
 // dest == src is legal
@@ -900,8 +906,6 @@ static int stbi__create_png_image_raw(stbi__png *a, std::uint8_t *raw, std::uint
 	int bytes = (depth == 16 ? 2 : 1);
 	stbi__context *s = a->s;
 	std::uint32_t i, j, stride = x * out_n * bytes;
-	std::uint32_t img_len, img_width_bytes;
-	std::uint8_t *filter_buf;
 	int all_ok = 1;
 	int k;
 	int img_n = s->img_n; // copy it into a local for later
@@ -912,23 +916,28 @@ static int stbi__create_png_image_raw(stbi__png *a, std::uint8_t *raw, std::uint
 
 	STBI_ASSERT(out_n == s->img_n || out_n == s->img_n+1);
 	a->out = (std::uint8_t *) stbi__malloc_mad3(x, y, output_bytes, 0); // extra bytes to write off the end into
-	if (!a->out) return stbi__err("outofmem", "Out of memory");
+	if (a->out == nullptr)
+		return stbi__err("outofmem", "Out of memory");
 
 	// note: error exits here don't need to clean up a->out individually,
 	// stbi__do_png always does on error.
-	if (!stbi__mad3sizes_valid(img_n, x, depth, 7)) return stbi__err("too large", "Corrupt PNG");
-	img_width_bytes = (((img_n * x * depth) + 7) >> 3);
-	if (!stbi__mad2sizes_valid(img_width_bytes, y, img_width_bytes)) return stbi__err("too large", "Corrupt PNG");
-	img_len = (img_width_bytes + 1) * y;
+	if (!stbi__mad3sizes_valid(img_n, x, depth, 7))
+		return stbi__err("too large", "Corrupt PNG");
+	std::uint32_t img_width_bytes = (((img_n * x * depth) + 7) >> 3);
+	if (!stbi__mad2sizes_valid(img_width_bytes, y, img_width_bytes))
+		return stbi__err("too large", "Corrupt PNG");
+	std::uint32_t img_len = (img_width_bytes + 1) * y;
 
 	// we used to check for exact match between raw_len and img_len on non-interlaced PNGs,
 	// but issue #276 reported a PNG in the wild that had extra data at the end (all zeros),
 	// so just check for raw_len < img_len always.
-	if (raw_len < img_len) return stbi__err("not enough pixels", "Corrupt PNG");
+	if (raw_len < img_len)
+		return stbi__err("not enough pixels", "Corrupt PNG");
 
 	// Allocate two scan lines worth of filter workspace buffer.
-	filter_buf = (std::uint8_t *) stbi__malloc_mad2(img_width_bytes, 2, 0);
-	if (!filter_buf) return stbi__err("outofmem", "Out of memory");
+	std::uint8_t *filter_buf = (std::uint8_t *) stbi__malloc_mad2(img_width_bytes, 2, 0);
+	if (!filter_buf)
+		return stbi__err("outofmem", "Out of memory");
 
 	// Filtering for low-bit-depth images
 	if (depth < 8)
@@ -1272,7 +1281,6 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 		switch (c.type)
 		{
 			case STBI__PNG_TYPE('I', 'H', 'D', 'R'): {
-				int comp, filter;
 				if (!first)
 					return stbi__err("multiple IHDR", "Corrupt PNG");
 				first = 0;
@@ -1284,10 +1292,10 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					return stbi__err("too large", "Very large image (corrupt?)");
 				if (s->img_x > STBI_MAX_DIMENSIONS)
 					return stbi__err("too large", "Very large image (corrupt?)");
-				z->depth = stbi__get8(s);
+				z->depth = s->stbi__get8();
 				if (z->depth != 1 && z->depth != 2 && z->depth != 4 && z->depth != 8 && z->depth != 16)
 					return stbi__err("1/2/4/8/16-bit only", "PNG not supported: 1/2/4/8/16-bit only");
-				color = stbi__get8(s);
+				color = s->stbi__get8();
 				if (color > 6)
 					return stbi__err("bad ctype", "Corrupt PNG");
 				if (color == 3 && z->depth == 16)
@@ -1296,13 +1304,13 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					pal_img_n = 3;
 				else if (color & 1)
 					return stbi__err("bad ctype", "Corrupt PNG");
-				comp = stbi__get8(s);
+				int comp = s->stbi__get8();
 				if (comp)
 					return stbi__err("bad comp method", "Corrupt PNG");
-				filter = stbi__get8(s);
+				int filter = s->stbi__get8();
 				if (filter)
 					return stbi__err("bad filter method", "Corrupt PNG");
-				interlace = stbi__get8(s);
+				interlace = s->stbi__get8();
 				if (interlace > 1)
 					return stbi__err("bad interlace method", "Corrupt PNG");
 				if (!s->img_x || !s->img_y)
@@ -1332,9 +1340,9 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				if (pal_len * 3 != c.length) return stbi__err("invalid PLTE", "Corrupt PNG");
 				for (i = 0; i < pal_len; ++i)
 				{
-					palette[i * 4 + 0] = stbi__get8(s);
-					palette[i * 4 + 1] = stbi__get8(s);
-					palette[i * 4 + 2] = stbi__get8(s);
+					palette[i * 4 + 0] = s->stbi__get8();
+					palette[i * 4 + 1] = s->stbi__get8();
+					palette[i * 4 + 2] = s->stbi__get8();
 					palette[i * 4 + 3] = 255;
 				}
 				break;
@@ -1354,7 +1362,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					if (c.length > pal_len) return stbi__err("bad tRNS len", "Corrupt PNG");
 					pal_img_n = 4;
 					for (i = 0; i < c.length; ++i)
-						palette[i * 4 + 3] = stbi__get8(s);
+						palette[i * 4 + 3] = s->stbi__get8();
 				}
 				else
 				{
