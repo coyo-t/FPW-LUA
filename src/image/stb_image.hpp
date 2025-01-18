@@ -1,61 +1,6 @@
 #ifndef STBI_INCLUDE_STB_IMAGE_H
 #define STBI_INCLUDE_STB_IMAGE_H
 
-// DOCUMENTATION
-//
-// Basic usage (see HDR discussion below for HDR usage):
-//    int x,y,n;
-//    unsigned char *data = stbi_load(filename, &x, &y, &n, 0);
-//    // ... process data if not NULL ...
-//    // ... x = width, y = height, n = # 8-bit components per pixel ...
-//    // ... replace '0' with '1'..'4' to force that many components per pixel
-//    // ... but 'n' will always be the number that it would have been if you said 0
-//    stbi_image_free(data);
-//
-// Standard parameters:
-//    int *x                 -- outputs image width in pixels
-//    int *y                 -- outputs image height in pixels
-//    int *channels_in_file  -- outputs # of image components in image file
-//    int desired_channels   -- if non-zero, # of image components requested in result
-//
-// The return value from an image loader is an 'unsigned char *' which points
-// to the pixel data, or NULL on an allocation failure or if the image is
-// corrupt or invalid. The pixel data consists of *y scanlines of *x pixels,
-// with each pixel consisting of N interleaved 8-bit components; the first
-// pixel pointed to is top-left-most in the image. There is no padding between
-// image scanlines or between pixels, regardless of format. The number of
-// components N is 'desired_channels' if desired_channels is non-zero, or
-// *channels_in_file otherwise. If desired_channels is non-zero,
-// *channels_in_file has the number of components that _would_ have been
-// output otherwise. E.g. if you set desired_channels to 4, you will always
-// get RGBA output, but you can check *channels_in_file to see if it's trivially
-// opaque because e.g. there were only 3 channels in the source image.
-//
-// An output image with N components has the following components interleaved
-// in this order in each pixel:
-//
-//     N=#comp     components
-//       1           grey
-//       2           grey, alpha
-//       3           red, green, blue
-//       4           red, green, blue, alpha
-//
-// If image loading fails for any reason, the return value will be NULL,
-// and *x, *y, *channels_in_file will be unchanged. The function
-// stbi_failure_reason() can be queried for an extremely brief, end-user
-// unfriendly explanation of why the load failed. Define STBI_NO_FAILURE_STRINGS
-// to avoid compiling these strings at all, and STBI_FAILURE_USERMSG to get slightly
-// more user-friendly ones.
-//
-// To query the width, height and component count of an image without having to
-// decode the full file, you can use the stbi_info family of functions:
-//
-//   int x,y,n,ok;
-//   ok = stbi_info(filename, &x, &y, &n);
-//   // returns ok=1 and sets x, y, n if image is a supported format,
-//   // 0 otherwise.
-// ===========================================================================
-
 #ifndef STBI_NO_STDIO
 #include <stdio.h>
 #endif // STBI_NO_STDIO
@@ -125,14 +70,6 @@ STBIDEF stbi_uc *stbi_load_from_file(FILE *f, int *x, int *y, int *channels_in_f
 // for stbi_load_from_file, file pointer is left pointing immediately after image
 #endif
 
-#ifndef STBI_NO_GIF
-STBIDEF stbi_uc *stbi_load_gif_from_memory(stbi_uc const *buffer, int len, int **delays, int *x, int *y, int *z,
-                                           int *comp, int req_comp);
-#endif
-
-#ifdef STBI_WINDOWS_UTF8
-STBIDEF int stbi_convert_wchar_to_utf8(char *buffer, size_t bufferlen, const wchar_t* input);
-#endif
 
 ////////////////////////////////////
 //
@@ -169,11 +106,6 @@ STBIDEF float *stbi_loadf_from_file(FILE *f, int *x, int *y, int *channels_in_fi
 #endif
 #endif
 
-#ifndef STBI_NO_HDR
-STBIDEF void stbi_hdr_to_ldr_gamma(float gamma);
-
-STBIDEF void stbi_hdr_to_ldr_scale(float scale);
-#endif // STBI_NO_HDR
 
 #ifndef STBI_NO_LINEAR
 STBIDEF void stbi_ldr_to_hdr_gamma(float gamma);
@@ -181,14 +113,8 @@ STBIDEF void stbi_ldr_to_hdr_gamma(float gamma);
 STBIDEF void stbi_ldr_to_hdr_scale(float scale);
 #endif // STBI_NO_LINEAR
 
-// stbi_is_hdr is always defined, but always returns false if STBI_NO_HDR
-STBIDEF int stbi_is_hdr_from_callbacks(stbi_io_callbacks const *clbk, void *user);
-
-STBIDEF int stbi_is_hdr_from_memory(stbi_uc const *buffer, int len);
 #ifndef STBI_NO_STDIO
-STBIDEF int stbi_is_hdr(char const *filename);
 
-STBIDEF int stbi_is_hdr_from_file(FILE *f);
 #endif // STBI_NO_STDIO
 
 
@@ -260,14 +186,11 @@ STBIDEF int stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const char
 }
 #endif
 
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_PNG
 //
 //
 ////   end header file   /////////////////////////////////////////////////////
 #endif // STBI_INCLUDE_STB_IMAGE_H
 
-#ifdef STB_IMAGE_IMPLEMENTATION
 
 #if defined(STBI_ONLY_JPEG) || defined(STBI_ONLY_PNG) || defined(STBI_ONLY_BMP) \
   || defined(STBI_ONLY_TGA) || defined(STBI_ONLY_GIF) || defined(STBI_ONLY_PSD) \
@@ -1086,35 +1009,11 @@ STBIDEF stbi_uc *stbi_load_from_callbacks(stbi_io_callbacks const *clbk, void *u
 	return stbi__load_and_postprocess_8bit(&s, x, y, comp, req_comp);
 }
 
-#ifndef STBI_NO_GIF
-STBIDEF stbi_uc *stbi_load_gif_from_memory(stbi_uc const *buffer, int len, int **delays, int *x, int *y, int *z, int *comp, int req_comp)
-{
-   unsigned char *result;
-   stbi__context s;
-   stbi__start_mem(&s,buffer,len);
-
-   result = (unsigned char*) stbi__load_gif_main(&s, delays, x, y, z, comp, req_comp);
-   if (stbi__vertically_flip_on_load) {
-      stbi__vertical_flip_slices( result, *x, *y, *z, *comp );
-   }
-
-   return result;
-}
-#endif
-
 #ifndef STBI_NO_LINEAR
 static float *stbi__loadf_main(stbi__context *s, int *x, int *y, int *comp, int req_comp)
 {
 	unsigned char *data;
-#ifndef STBI_NO_HDR
-   if (stbi__hdr_test(s)) {
-      stbi__result_info ri;
-      float *hdr_data = stbi__hdr_load(s,x,y,comp,req_comp, &ri);
-      if (hdr_data)
-         stbi__float_postprocess(hdr_data,x,y,comp,req_comp);
-      return hdr_data;
-   }
-#endif
+
 	data = stbi__load_and_postprocess_8bit(s, x, y, comp, req_comp);
 	if (data)
 		return stbi__ldr_to_hdr(data, *x, *y, req_comp ? req_comp : *comp);
@@ -1157,65 +1056,7 @@ STBIDEF float *stbi_loadf_from_file(FILE *f, int *x, int *y, int *comp, int req_
 
 #endif // !STBI_NO_LINEAR
 
-// these is-hdr-or-not is defined independent of whether STBI_NO_LINEAR is
-// defined, for API simplicity; if STBI_NO_LINEAR is defined, it always
-// reports false!
 
-STBIDEF int stbi_is_hdr_from_memory(stbi_uc const *buffer, int len)
-{
-#ifndef STBI_NO_HDR
-   stbi__context s;
-   stbi__start_mem(&s,buffer,len);
-   return stbi__hdr_test(&s);
-#else
-	STBI_NOTUSED(buffer);
-	STBI_NOTUSED(len);
-	return 0;
-#endif
-}
-
-#ifndef STBI_NO_STDIO
-STBIDEF int stbi_is_hdr(char const *filename)
-{
-	FILE *f = stbi__fopen(filename, "rb");
-	int result = 0;
-	if (f)
-	{
-		result = stbi_is_hdr_from_file(f);
-		fclose(f);
-	}
-	return result;
-}
-
-STBIDEF int stbi_is_hdr_from_file(FILE *f)
-{
-#ifndef STBI_NO_HDR
-   long pos = ftell(f);
-   int res;
-   stbi__context s;
-   stbi__start_file(&s,f);
-   res = stbi__hdr_test(&s);
-   fseek(f, pos, SEEK_SET);
-   return res;
-#else
-	STBI_NOTUSED(f);
-	return 0;
-#endif
-}
-#endif // !STBI_NO_STDIO
-
-STBIDEF int stbi_is_hdr_from_callbacks(stbi_io_callbacks const *clbk, void *user)
-{
-#ifndef STBI_NO_HDR
-   stbi__context s;
-   stbi__start_callbacks(&s, (stbi_io_callbacks *) clbk, user);
-   return stbi__hdr_test(&s);
-#else
-	STBI_NOTUSED(clbk);
-	STBI_NOTUSED(user);
-	return 0;
-#endif
-}
 
 #ifndef STBI_NO_LINEAR
 static float stbi__l2h_gamma = 2.2f, stbi__l2h_scale = 1.0f;
@@ -1274,21 +1115,6 @@ stbi_inline static stbi_uc stbi__get8(stbi__context *s)
 	return 0;
 }
 
-#if defined(STBI_NO_JPEG) && defined(STBI_NO_HDR) && defined(STBI_NO_PIC) && defined(STBI_NO_PNM)
-// nothing
-#else
-stbi_inline static int stbi__at_eof(stbi__context *s)
-{
-   if (s->io.read) {
-      if (!(s->io.eof)(s->io_user_data)) return 0;
-      // if feof() is true, check if buffer = end
-      // special case: we've only got the special 0 character at the end
-      if (s->read_from_callbacks == 0) return 1;
-   }
-
-   return s->img_buffer >= s->img_buffer_end;
-}
-#endif
 
 #if defined(STBI_NO_JPEG) && defined(STBI_NO_PNG) && defined(STBI_NO_BMP) && defined(STBI_NO_PSD) && defined(STBI_NO_TGA) && defined(STBI_NO_GIF) && defined(STBI_NO_PIC)
 // nothing
@@ -3165,4 +2991,3 @@ STBIDEF int stbi_is_16_bit_from_callbacks(stbi_io_callbacks const *c, void *user
 	return stbi__is_16_main(&s);
 }
 
-#endif // STB_IMAGE_IMPLEMENTATION
