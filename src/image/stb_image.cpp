@@ -15,10 +15,6 @@
 #include <cstring>
 #include <climits>
 
-// #if !defined(STBI_NO_LINEAR) || !defined(STBI_NO_HDR)
-// #include <cmath>  // ldexp, pow
-// #endif
-
 #ifndef STBI_ASSERT
 #include <cassert>
 #define STBI_ASSERT(x) assert(x)
@@ -317,35 +313,6 @@ static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, 
 	return (unsigned char *) result;
 }
 
-static std::uint16_t *stbi__load_and_postprocess_16bit(stbi__context *s, int *x, int *y, int *comp, int req_comp)
-{
-	stbi__result_info ri;
-	void *result = stbi__load_main(s, x, y, comp, req_comp, &ri, 16);
-
-	if (result == NULL)
-		return NULL;
-
-	// it is the responsibility of the loaders to make sure we get either 8 or 16 bit.
-	STBI_ASSERT(ri.bits_per_channel == 8 || ri.bits_per_channel == 16);
-
-	if (ri.bits_per_channel != 16)
-	{
-		result = stbi__convert_8_to_16((std::uint8_t *) result, *x, *y, req_comp == 0 ? *comp : req_comp);
-		ri.bits_per_channel = 16;
-	}
-
-	return (std::uint16_t *) result;
-}
-
-
-STBIDEF std::uint16_t *stbi_load_16_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *channels_in_file,
-                                          int desired_channels)
-{
-	stbi__context s;
-	s.stbi__start_mem(buffer, len);
-	return stbi__load_and_postprocess_16bit(&s, x, y, channels_in_file, desired_channels);
-}
-
 
 STBIDEF std::uint8_t *stbi_load_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *comp, int req_comp)
 {
@@ -487,20 +454,17 @@ static constexpr std::uint8_t DEFAULT_DISTANCE[32] =
 	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
 };
 
-static int bitreverse16(int n)
+
+static int bit_reverse(const int v, const int bits)
 {
+	// to bit reverse n bits, reverse 16 and shift
+	// e.g. 11 bits, bit reverse and shift away 5
+	int n = v;
 	n = ((n & 0xAAAA) >> 1) | ((n & 0x5555) << 1);
 	n = ((n & 0xCCCC) >> 2) | ((n & 0x3333) << 2);
 	n = ((n & 0xF0F0) >> 4) | ((n & 0x0F0F) << 4);
 	n = ((n & 0xFF00) >> 8) | ((n & 0x00FF) << 8);
-	return n;
-}
-
-static int bit_reverse(int v, int bits)
-{
-	// to bit reverse n bits, reverse 16 and shift
-	// e.g. 11 bits, bit reverse and shift away 5
-	return bitreverse16(v) >> (16 - bits);
+	return n >> (16 - bits);
 }
 
 
@@ -1767,8 +1731,10 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 			}
 
 			case STBI__PNG_TYPE('I', 'D', 'A', 'T'): {
-				if (first) return stbi__err("first not IHDR", "Corrupt PNG");
-				if (pal_img_n && !pal_len) return stbi__err("no PLTE", "Corrupt PNG");
+				if (first)
+					return stbi__err("first not IHDR", "Corrupt PNG");
+				if (pal_img_n && !pal_len)
+					return stbi__err("no PLTE", "Corrupt PNG");
 				if (scan == STBI__SCAN_header)
 				{
 					// header scan definitely stops at first IDAT
@@ -1776,7 +1742,8 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 						s->img_n = pal_img_n;
 					return 1;
 				}
-				if (c.length > (1u << 30)) return stbi__err("IDAT size limit", "IDAT section larger than 2^30 bytes");
+				if (c.length > (1u << 30))
+					return stbi__err("IDAT size limit", "IDAT section larger than 2^30 bytes");
 				if ((int) (ioff + c.length) < (int) ioff) return 0;
 				if (ioff + c.length > idata_limit)
 				{
@@ -1785,7 +1752,8 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					while (ioff + c.length > idata_limit)
 						idata_limit *= 2;
 					p = (std::uint8_t *) STBI_REALLOC_SIZED(z->idata, idata_limit_old, idata_limit);
-					if (p == NULL) return stbi__err("outofmem", "Out of memory");
+					if (p == nullptr)
+						return stbi__err("outofmem", "Out of memory");
 					z->idata = p;
 				}
 				if (!stbi__getn(s, z->idata + ioff, c.length)) return stbi__err("outofdata", "Corrupt PNG");
@@ -1795,9 +1763,12 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 
 			case STBI__PNG_TYPE('I', 'E', 'N', 'D'): {
 				std::uint32_t raw_len, bpl;
-				if (first) return stbi__err("first not IHDR", "Corrupt PNG");
-				if (scan != STBI__SCAN_load) return 1;
-				if (z->idata == NULL) return stbi__err("no IDAT", "Corrupt PNG");
+				if (first)
+					return stbi__err("first not IHDR", "Corrupt PNG");
+				if (scan != STBI__SCAN_load)
+					return 1;
+				if (z->idata == NULL)
+					return stbi__err("no IDAT", "Corrupt PNG");
 				// initial guess for decoded data size to avoid unnecessary reallocs
 				bpl = (s->img_x * z->depth + 7) / 8; // bytes per line, per component
 				raw_len = bpl * s->img_y * s->img_n /* pixels */ + s->img_y /* filter mode per row */;
@@ -1946,21 +1917,4 @@ STBIDEF int stbi_info_from_memory(std::uint8_t const *buffer, int len, int *x, i
 	}
 	return stbi__err("unknown image type", "Image not of any known type, or corrupt");
 }
-
-STBIDEF int stbi_is_16_bit_from_memory(std::uint8_t const *buffer, int len)
-{
-	stbi__context s;
-	s.stbi__start_mem(buffer, len);
-	stbi__png p;
-	p.s = &s;
-	if (!stbi__png_info_raw(&p, nullptr, nullptr, nullptr))
-		return 0;
-	if (p.depth != 16)
-	{
-		p.s->stbi__rewind();
-		return 0;
-	}
-	return 1;
-}
-
 
