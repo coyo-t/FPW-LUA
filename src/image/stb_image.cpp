@@ -132,15 +132,34 @@ struct stbi__context
 
 	stbi_uc *img_buffer, *img_buffer_end;
 	stbi_uc *img_buffer_original, *img_buffer_original_end;
+
+	auto stbi__refill_buffer() -> void
+	{
+		int n = (io.read)(io_user_data, (char *)buffer_start, buflen);
+		callback_already_read += (int) (img_buffer - img_buffer_original);
+		if (n == 0)
+		{
+			// at end of file, treat same as if from memory, but need to handle case
+			// where s->img_buffer isn't pointing to safe memory, e.g. 0-byte file
+			read_from_callbacks = 0;
+			img_buffer = buffer_start;
+			img_buffer_end = buffer_start + 1;
+			*img_buffer = 0;
+		}
+		else
+		{
+			img_buffer = buffer_start;
+			img_buffer_end = buffer_start + n;
+		}
+	}
 };
 
 
-static void stbi__refill_buffer(stbi__context *s);
 
 // initialize a memory-decode context
 static void stbi__start_mem(stbi__context *s, stbi_uc const *buffer, int len)
 {
-	s->io.read = NULL;
+	s->io.read = nullptr;
 	s->read_from_callbacks = 0;
 	s->callback_already_read = 0;
 	s->img_buffer = s->img_buffer_original = (stbi_uc *) buffer;
@@ -156,7 +175,7 @@ static void stbi__start_callbacks(stbi__context *s, stbi_io_callbacks *c, void *
 	s->read_from_callbacks = 1;
 	s->callback_already_read = 0;
 	s->img_buffer = s->img_buffer_original = s->buffer_start;
-	stbi__refill_buffer(s);
+	s->stbi__refill_buffer();
 	s->img_buffer_original_end = s->img_buffer_end;
 }
 
@@ -566,25 +585,6 @@ enum
 	STBI__SCAN_header
 };
 
-static void stbi__refill_buffer(stbi__context *s)
-{
-	int n = (s->io.read)(s->io_user_data, (char *) s->buffer_start, s->buflen);
-	s->callback_already_read += (int) (s->img_buffer - s->img_buffer_original);
-	if (n == 0)
-	{
-		// at end of file, treat same as if from memory, but need to handle case
-		// where s->img_buffer isn't pointing to safe memory, e.g. 0-byte file
-		s->read_from_callbacks = 0;
-		s->img_buffer = s->buffer_start;
-		s->img_buffer_end = s->buffer_start + 1;
-		*s->img_buffer = 0;
-	}
-	else
-	{
-		s->img_buffer = s->buffer_start;
-		s->img_buffer_end = s->buffer_start + n;
-	}
-}
 
 stbi_inline static stbi_uc stbi__get8(stbi__context *s)
 {
@@ -592,7 +592,7 @@ stbi_inline static stbi_uc stbi__get8(stbi__context *s)
 		return *s->img_buffer++;
 	if (s->read_from_callbacks)
 	{
-		stbi__refill_buffer(s);
+		s->stbi__refill_buffer();
 		return *s->img_buffer++;
 	}
 	return 0;
