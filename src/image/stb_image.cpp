@@ -1335,20 +1335,19 @@ static int stbi__create_png_image(stbi__png *a, std::uint8_t *image_data, std::u
 {
 	int bytes = (depth == 16 ? 2 : 1);
 	int out_bytes = out_n * bytes;
-	std::uint8_t *final;
 	int p;
 	if (!interlaced)
 		return stbi__create_png_image_raw(a, image_data, image_data_len, out_n, a->s->img_x, a->s->img_y, depth, color);
 
 	// de-interlacing
-	final = stbi__malloc_fma3<std::uint8_t>(a->s->img_x, a->s->img_y, out_bytes, 0);
+	std::uint8_t *final = stbi__malloc_fma3<std::uint8_t>(a->s->img_x, a->s->img_y, out_bytes, 0);
 	if (!final) return stbi__err("outofmem", "Out of memory");
 	for (p = 0; p < 7; ++p)
 	{
-		int xorig[] = {0, 4, 0, 2, 0, 1, 0};
-		int yorig[] = {0, 0, 4, 0, 2, 0, 1};
-		int xspc[] = {8, 8, 4, 4, 2, 2, 1};
-		int yspc[] = {8, 8, 8, 4, 4, 2, 2};
+		const int xorig[] = {0, 4, 0, 2, 0, 1, 0};
+		const int yorig[] = {0, 0, 4, 0, 2, 0, 1};
+		const int xspc[] = {8, 8, 4, 4, 2, 2, 1};
+		const int yspc[] = {8, 8, 8, 4, 4, 2, 2};
 		int i, j, x, y;
 		// pass1_x[4] = 0, pass1_x[5] = 1, pass1_x[12] = 1
 		x = (a->s->img_x - xorig[p] + xspc[p] - 1) / xspc[p];
