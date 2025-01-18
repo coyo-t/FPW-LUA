@@ -76,4 +76,5 @@ add_library(
 		  src/libs/random/random.cpp
 	src/libs/bufferlib.cpp
 	src/luatemplate.hpp
+		  src/image/stb_image.cpp
 )
