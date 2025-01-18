@@ -71,11 +71,6 @@ STBI_THREAD_LOCAL
 #endif
 const char *stbi__g_failure_reason;
 
-STBIDEF const char *stbi_failure_reason(void)
-{
-	return stbi__g_failure_reason;
-}
-
 #ifndef STBI_NO_FAILURE_STRINGS
 static int stbi__err(const char *str)
 {
@@ -87,12 +82,10 @@ static int stbi__err(const char *str)
 
 
 // stbi__err - error
-// stbi__errpf - error returning pointer to float
 // stbi__errpuc - error returning pointer to unsigned char
 
 
 #define stbi__err(x,y)  stbi__err(x)
-#define stbi__errpf(x,y)   ((float *)(size_t) (stbi__err(x,y)?NULL:NULL))
 #define stbi__errpuc(x,y)  ((unsigned char *)(size_t) (stbi__err(x,y)?NULL:NULL))
 
 
@@ -164,18 +157,6 @@ struct stbi__context
 		callback_already_read = 0;
 		img_buffer = img_buffer_original = (std::uint8_t *) buffer;
 		img_buffer_end = img_buffer_original_end = (std::uint8_t *) buffer + len;
-	}
-	// initialize a callback-based context
-	auto stbi__start_callbacks(stbi_io_callbacks *c, void *user) -> void
-	{
-		this->io = *c;
-		this->io_user_data = user;
-		this->buflen = sizeof(this->buffer_start);
-		this->read_from_callbacks = 1;
-		this->callback_already_read = 0;
-		this->img_buffer = this->img_buffer_original = this->buffer_start;
-		this->stbi__refill_buffer();
-		this->img_buffer_original_end = this->img_buffer_end;
 	}
 	auto stbi__rewind() -> void
 	{
@@ -297,15 +278,6 @@ static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, 
 }
 
 
-STBIDEF std::uint8_t *stbi_load_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *comp, int req_comp)
-{
-	stbi__context s;
-	s.stbi__start_mem(buffer, len);
-	return stbi__load_and_postprocess_8bit(&s, x, y, comp, req_comp);
-}
-
-
-
 // stb_image uses ints pervasively, including for offset calculations.
 // therefore the largest decoded image size we can support with the
 // current code, even on 64-bit targets, is INT_MAX. this is not a
@@ -318,9 +290,9 @@ STBIDEF std::uint8_t *stbi_load_from_memory(std::uint8_t const *buffer, int len,
 
 // return 1 if the sum is valid, 0 on overflow.
 // negative terms are considered invalid.
-static int stbi__addsizes_valid(int a, int b)
+static bool stbi__addsizes_valid(int a, int b)
 {
-	if (b < 0) return 0;
+	if (b < 0) return false;
 	// now 0 <= b <= INT_MAX, hence also
 	// 0 <= INT_MAX - b <= INTMAX.
 	// And "a + b <= INT_MAX" (which might overflow) is the
@@ -330,38 +302,43 @@ static int stbi__addsizes_valid(int a, int b)
 
 // returns 1 if the product is valid, 0 on overflow.
 // negative factors are considered invalid.
-static int stbi__mul2sizes_valid(int a, int b)
+static bool stbi__mul2sizes_valid(int a, int b)
 {
-	if (a < 0 || b < 0) return 0;
-	if (b == 0) return 1; // mul-by-0 is always safe
+	if (a < 0 || b < 0) return false;
+	if (b == 0) return true; // mul-by-0 is always safe
 	// portable way to check for no overflows in a*b
 	return a <= INT_MAX / b;
 }
 
 // returns 1 if "a*b + add" has no negative terms/factors and doesn't overflow
-static int stbi__mad2sizes_valid(int a, int b, int add)
+static bool stbi__mad2sizes_valid(int a, int b, int add)
 {
 	return stbi__mul2sizes_valid(a, b) && stbi__addsizes_valid(a * b, add);
 }
 
 // returns 1 if "a*b*c + add" has no negative terms/factors and doesn't overflow
-static int stbi__mad3sizes_valid(int a, int b, int c, int add)
+static bool stbi__mad3sizes_valid(int a, int b, int c, int add)
 {
-	return stbi__mul2sizes_valid(a, b) && stbi__mul2sizes_valid(a * b, c) &&
-			 stbi__addsizes_valid(a * b * c, add);
+	return stbi__mul2sizes_valid(a, b) &&
+		stbi__mul2sizes_valid(a * b, c) &&
+		stbi__addsizes_valid(a * b * c, add);
 }
 
 // mallocs with size overflow checking
-static void *stbi__malloc_mad2(int a, int b, int add)
+template<typename T>
+static T*stbi__malloc_fma2(int a, int b, int add)
 {
-	if (!stbi__mad2sizes_valid(a, b, add)) return nullptr;
-	return stbi__malloc(a * b + add);
+	if (!stbi__mad2sizes_valid(a, b, add))
+		return nullptr;
+	return static_cast<T*>(stbi__malloc(a * b + add));
 }
 
-static void *stbi__malloc_mad3(int a, int b, int c, int add)
+template<typename T>
+static T* stbi__malloc_fma3(int a, int b, int c, int add)
 {
-	if (!stbi__mad3sizes_valid(a, b, c, add)) return nullptr;
-	return stbi__malloc(a * b * c + add);
+	if (!stbi__mad3sizes_valid(a, b, c, add))
+		return nullptr;
+	return static_cast<T*>(stbi__malloc(a * b * c + add));
 }
 
 
@@ -973,7 +950,7 @@ static unsigned char *stbi__convert_format(unsigned char *data, int img_n, int r
 	if (req_comp == img_n) return data;
 	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
 
-	good = static_cast<unsigned char *>(stbi__malloc_mad3(req_comp, x, y, 0));
+	good = stbi__malloc_fma3<unsigned char>(req_comp, x, y, 0);
 	if (good == nullptr)
 	{
 		STBI_FREE(data);
@@ -1081,7 +1058,7 @@ static std::uint16_t *stbi__convert_format16(std::uint16_t *data, int img_n, int
 		return (std::uint16_t *) stbi__errpuc("outofmem", "Out of memory");
 	}
 
-	for (j = 0; j < (int) y; ++j)
+	for (j = 0; j < static_cast<int>(y); ++j)
 	{
 		std::uint16_t *src = data + j * x * img_n;
 		std::uint16_t *dest = good + j * x * req_comp;
@@ -1243,7 +1220,8 @@ static int stbi__create_png_image_raw(stbi__png *a, std::uint8_t *raw, std::uint
 	int width = x;
 
 	STBI_ASSERT(out_n == s->img_n || out_n == s->img_n+1);
-	a->out = (std::uint8_t *) stbi__malloc_mad3(x, y, output_bytes, 0); // extra bytes to write off the end into
+	// extra bytes to write off the end into
+	a->out = stbi__malloc_fma3<std::uint8_t>(x, y, output_bytes, 0);
 	if (a->out == nullptr)
 		return stbi__err("outofmem", "Out of memory");
 
@@ -1263,7 +1241,7 @@ static int stbi__create_png_image_raw(stbi__png *a, std::uint8_t *raw, std::uint
 		return stbi__err("not enough pixels", "Corrupt PNG");
 
 	// Allocate two scan lines worth of filter workspace buffer.
-	std::uint8_t *filter_buf = (std::uint8_t *) stbi__malloc_mad2(img_width_bytes, 2, 0);
+	auto *filter_buf = stbi__malloc_fma2<std::uint8_t>(img_width_bytes, 2, 0);
 	if (!filter_buf)
 		return stbi__err("outofmem", "Out of memory");
 
@@ -1433,7 +1411,7 @@ static int stbi__create_png_image(stbi__png *a, std::uint8_t *image_data, std::u
 		return stbi__create_png_image_raw(a, image_data, image_data_len, out_n, a->s->img_x, a->s->img_y, depth, color);
 
 	// de-interlacing
-	final = (std::uint8_t *) stbi__malloc_mad3(a->s->img_x, a->s->img_y, out_bytes, 0);
+	final = stbi__malloc_fma3<std::uint8_t>(a->s->img_x, a->s->img_y, out_bytes, 0);
 	if (!final) return stbi__err("outofmem", "Out of memory");
 	for (p = 0; p < 7; ++p)
 	{
@@ -1543,7 +1521,7 @@ static int stbi__expand_png_palette(stbi__png *a, std::uint8_t *palette, int len
 	std::uint32_t i, pixel_count = a->s->img_x * a->s->img_y;
 	std::uint8_t *orig = a->out;
 
-	auto *p = static_cast<std::uint8_t *>(stbi__malloc_mad2(pixel_count, pal_img_n, 0));
+	auto *p = stbi__malloc_fma2<std::uint8_t>(pixel_count, pal_img_n, 0);
 	if (p == nullptr)
 		return stbi__err("outofmem", "Out of memory");
 
@@ -1737,7 +1715,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					if (idata_limit == 0) idata_limit = c.length > 4096 ? c.length : 4096;
 					while (ioff + c.length > idata_limit)
 						idata_limit *= 2;
-					p = (std::uint8_t *) STBI_REALLOC_SIZED(z->idata, idata_limit_old, idata_limit);
+					p = static_cast<std::uint8_t *>(STBI_REALLOC_SIZED(z->idata, idata_limit_old, idata_limit));
 					if (p == nullptr)
 						return stbi__err("outofmem", "Out of memory");
 					z->idata = p;
@@ -1896,3 +1874,15 @@ STBIDEF int stbi_info_from_memory(std::uint8_t const *buffer, int len, int *x, i
 	return true;
 }
 
+
+STBIDEF std::uint8_t *stbi_load_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *comp, int req_comp)
+{
+	stbi__context s;
+	s.stbi__start_mem(buffer, len);
+	return stbi__load_and_postprocess_8bit(&s, x, y, comp, req_comp);
+}
+
+STBIDEF const char *stbi_failure_reason(void)
+{
+	return stbi__g_failure_reason;
+}
