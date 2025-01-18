@@ -124,32 +124,31 @@ struct stbi__zbuf {
 	{
 		return eof() ? 0 : *this->zbuffer++;
 	}
-};
 
-
-static void stbi__fill_bits(stbi__zbuf *z)
-{
-	do
+	auto fill_bits () -> void
 	{
-		if (z->code_buffer >= (1U << z->num_bits))
+		do
 		{
-			z->zbuffer = z->zbuffer_end; /* treat this as EOF so we fail. */
-			return;
-		}
-		z->code_buffer |= (unsigned int) z->get8() << z->num_bits;
-		z->num_bits += 8;
-	} while (z->num_bits <= 24);
-}
+			if (code_buffer >= (1U << num_bits))
+			{
+				zbuffer = zbuffer_end; /* treat this as EOF so we fail. */
+				return;
+			}
+			code_buffer |= static_cast<unsigned int>(get8()) << num_bits;
+			num_bits += 8;
+		} while (num_bits <= 24);
 
-stbi_inline static unsigned int stbi__zreceive(stbi__zbuf *z, int n)
-{
-	unsigned int k;
-	if (z->num_bits < n) stbi__fill_bits(z);
-	k = z->code_buffer & ((1 << n) - 1);
-	z->code_buffer >>= n;
-	z->num_bits -= n;
-	return k;
-}
+	}
+
+	auto recieve (int n) -> unsigned int
+	{
+		if (num_bits < n) fill_bits();
+		unsigned int k = code_buffer & ((1 << n) - 1);
+		code_buffer >>= n;
+		num_bits -= n;
+		return k;
+	}
+};
 
 static int stbi__zhuffman_decode_slowpath(stbi__zbuf *a, stbi__zhuffman *z)
 {
@@ -194,7 +193,7 @@ stbi_inline static int stbi__zhuffman_decode(stbi__zbuf *a, stbi__zhuffman *z)
 		}
 		else
 		{
-			stbi__fill_bits(a);
+			a->fill_bits();
 		}
 	}
 	b = z->fast[a->code_buffer & STBI__ZFAST_MASK];
@@ -285,12 +284,12 @@ static int stbi__parse_huffman_block(stbi__zbuf *a)
 			// per DEFLATE, length codes 286 and 287 must not appear in compressed data
 			z -= 257;
 			len = stbi__zlength_base[z];
-			if (stbi__zlength_extra[z]) len += stbi__zreceive(a, stbi__zlength_extra[z]);
+			if (stbi__zlength_extra[z]) len += a->recieve(stbi__zlength_extra[z]);
 			z = stbi__zhuffman_decode(a, &a->z_distance);
 			if (z < 0 || z >= 30) return stbi__err("bad huffman code", "Corrupt PNG");
 			// per DEFLATE, distance codes 30 and 31 must not appear in compressed data
 			dist = stbi__zdist_base[z];
-			if (stbi__zdist_extra[z]) dist += stbi__zreceive(a, stbi__zdist_extra[z]);
+			if (stbi__zdist_extra[z]) dist += a->recieve(stbi__zdist_extra[z]);
 			if (zout - a->zout_start < dist) return stbi__err("bad dist", "Corrupt PNG");
 			if (len > a->zout_end - zout)
 			{
@@ -320,15 +319,15 @@ static int stbi__compute_huffman_codes(stbi__zbuf *a)
 	stbi_uc codelength_sizes[19];
 	int i, n;
 
-	int hlit = stbi__zreceive(a, 5) + 257;
-	int hdist = stbi__zreceive(a, 5) + 1;
-	int hclen = stbi__zreceive(a, 4) + 4;
+	int hlit = a->recieve(5) + 257;
+	int hdist = a->recieve(5) + 1;
+	int hclen = a->recieve(4) + 4;
 	int ntot = hlit + hdist;
 
 	memset(codelength_sizes, 0, sizeof(codelength_sizes));
 	for (i = 0; i < hclen; ++i)
 	{
-		int s = stbi__zreceive(a, 3);
+		int s = a->recieve(3);
 		codelength_sizes[length_dezigzag[i]] = (stbi_uc) s;
 	}
 	if (!stbi__zbuild_huffman(&z_codelength, codelength_sizes, 19)) return 0;
@@ -345,17 +344,17 @@ static int stbi__compute_huffman_codes(stbi__zbuf *a)
 			stbi_uc fill = 0;
 			if (c == 16)
 			{
-				c = stbi__zreceive(a, 2) + 3;
+				c = a->recieve(2) + 3;
 				if (n == 0) return stbi__err("bad codelengths", "Corrupt PNG");
 				fill = lencodes[n - 1];
 			}
 			else if (c == 17)
 			{
-				c = stbi__zreceive(a, 3) + 3;
+				c = a->recieve(3) + 3;
 			}
 			else if (c == 18)
 			{
-				c = stbi__zreceive(a, 7) + 11;
+				c = a->recieve(7) + 11;
 			}
 			else
 			{
@@ -377,7 +376,7 @@ static int stbi__parse_uncompressed_block(stbi__zbuf *a)
 	stbi_uc header[4];
 	int len, nlen, k;
 	if (a->num_bits & 7)
-		stbi__zreceive(a, a->num_bits & 7); // discard
+		a->recieve(a->num_bits & 7); // discard
 	// drain the bit-packed data into header
 	k = 0;
 	while (a->num_bits > 0)
@@ -456,8 +455,8 @@ static int stbi__parse_zlib(stbi__zbuf *a, int parse_header)
 	a->hit_zeof_once = 0;
 	do
 	{
-		final = stbi__zreceive(a, 1);
-		type = stbi__zreceive(a, 2);
+		final = a->recieve(1);
+		type = a->recieve(2);
 		if (type == 0)
 		{
 			if (!stbi__parse_uncompressed_block(a)) return 0;
