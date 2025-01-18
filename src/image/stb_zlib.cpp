@@ -10,23 +10,24 @@
 
 
 // fast-way is faster to check than jpeg huffman, but slow way is slower
-#define STBI__ZFAST_BITS  9 // accelerate all cases in default tables
-#define STBI__ZFAST_MASK  ((1 << STBI__ZFAST_BITS) - 1)
-#define STBI__ZNSYMS 288 // number of symbols in literal/length alphabet
+// accelerate all cases in default tables
+constexpr auto STBI__ZFAST_BITS =  9;
+constexpr auto STBI__ZFAST_MASK =  ((1 << STBI__ZFAST_BITS) - 1);
+// number of symbols in literal/length alphabet
+constexpr auto STBI__ZNSYMS = 288;
 
 // zlib-style huffman encoding
 // (jpegs packs from left, zlib from right, so can't share code)
-typedef struct
-{
+struct stbi__zhuffman {
 	stbi__uint16 fast[1 << STBI__ZFAST_BITS];
 	stbi__uint16 firstcode[16];
 	int maxcode[17];
 	stbi__uint16 firstsymbol[16];
 	stbi_uc size[STBI__ZNSYMS];
 	stbi__uint16 value[STBI__ZNSYMS];
-} stbi__zhuffman;
+};
 
-stbi_inline static int stbi__bitreverse16(int n)
+static int stbi__bitreverse16(int n)
 {
 	n = ((n & 0xAAAA) >> 1) | ((n & 0x5555) << 1);
 	n = ((n & 0xCCCC) >> 2) | ((n & 0x3333) << 2);
@@ -35,9 +36,9 @@ stbi_inline static int stbi__bitreverse16(int n)
 	return n;
 }
 
-stbi_inline static int stbi__bit_reverse(int v, int bits)
+static int stbi__bit_reverse(int v, int bits)
 {
-	STBI_ASSERT(bits <= 16);
+	static_assert(bits <= 16);
 	// to bit reverse n bits, reverse 16 and shift
 	// e.g. 11 bits, bit reverse and shift away 5
 	return stbi__bitreverse16(v) >> (16 - bits);
@@ -77,7 +78,7 @@ static int stbi__zbuild_huffman(stbi__zhuffman *z, const stbi_uc *sizelist, int 
 		if (s)
 		{
 			int c = next_code[s] - z->firstcode[s] + z->firstsymbol[s];
-			stbi__uint16 fastv = (stbi__uint16) ((s << 9) | i);
+			auto fastv = (stbi__uint16) ((s << 9) | i);
 			z->size[c] = (stbi_uc) s;
 			z->value[c] = (stbi__uint16) i;
 			if (s <= STBI__ZFAST_BITS)
@@ -101,8 +102,7 @@ static int stbi__zbuild_huffman(stbi__zhuffman *z, const stbi_uc *sizelist, int 
 //    we require PNG read all the IDATs and combine them into a single
 //    memory buffer
 
-typedef struct
-{
+struct stbi__zbuf {
 	stbi_uc *zbuffer, *zbuffer_end;
 	int num_bits;
 	int hit_zeof_once;
@@ -114,17 +114,18 @@ typedef struct
 	int z_expandable;
 
 	stbi__zhuffman z_length, z_distance;
-} stbi__zbuf;
 
-stbi_inline static int stbi__zeof(stbi__zbuf *z)
-{
-	return (z->zbuffer >= z->zbuffer_end);
-}
+	auto eof () const -> bool
+	{
+		return this->zbuffer >= this->zbuffer_end;
+	}
 
-stbi_inline static stbi_uc stbi__zget8(stbi__zbuf *z)
-{
-	return stbi__zeof(z) ? 0 : *z->zbuffer++;
-}
+	auto get8 () -> stbi_uc
+	{
+		return eof() ? 0 : *this->zbuffer++;
+	}
+};
+
 
 static void stbi__fill_bits(stbi__zbuf *z)
 {
@@ -135,7 +136,7 @@ static void stbi__fill_bits(stbi__zbuf *z)
 			z->zbuffer = z->zbuffer_end; /* treat this as EOF so we fail. */
 			return;
 		}
-		z->code_buffer |= (unsigned int) stbi__zget8(z) << z->num_bits;
+		z->code_buffer |= (unsigned int) z->get8() << z->num_bits;
 		z->num_bits += 8;
 	} while (z->num_bits <= 24);
 }
@@ -174,7 +175,7 @@ stbi_inline static int stbi__zhuffman_decode(stbi__zbuf *a, stbi__zhuffman *z)
 	int b, s;
 	if (a->num_bits < 16)
 	{
-		if (stbi__zeof(a))
+		if (a->eof())
 		{
 			if (!a->hit_zeof_once)
 			{
@@ -388,7 +389,7 @@ static int stbi__parse_uncompressed_block(stbi__zbuf *a)
 	if (a->num_bits < 0) return stbi__err("zlib corrupt", "Corrupt PNG");
 	// now fill header the normal way
 	while (k < 4)
-		header[k++] = stbi__zget8(a);
+		header[k++] = a->get8();
 	len = header[1] * 256 + header[0];
 	nlen = header[3] * 256 + header[2];
 	if (nlen != (len ^ 0xffff)) return stbi__err("zlib corrupt", "Corrupt PNG");
@@ -403,11 +404,11 @@ static int stbi__parse_uncompressed_block(stbi__zbuf *a)
 
 static int stbi__parse_zlib_header(stbi__zbuf *a)
 {
-	int cmf = stbi__zget8(a);
+	int cmf = a->get8();
 	int cm = cmf & 15;
 	/* int cinfo = cmf >> 4; */
-	int flg = stbi__zget8(a);
-	if (stbi__zeof(a)) return stbi__err("bad zlib header", "Corrupt PNG"); // zlib spec
+	int flg = a->get8();
+	if (a->eof()) return stbi__err("bad zlib header", "Corrupt PNG"); // zlib spec
 	if ((cmf * 256 + flg) % 31 != 0) return stbi__err("bad zlib header", "Corrupt PNG"); // zlib spec
 	if (flg & 32) return stbi__err("no preset dict", "Corrupt PNG"); // preset dictionary not allowed in png
 	if (cm != 8) return stbi__err("bad compression", "Corrupt PNG"); // DEFLATE required for png
