@@ -281,8 +281,8 @@ static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, 
 	stbi__result_info ri;
 	void *result = stbi__load_main(s, x, y, comp, req_comp, &ri, 8);
 
-	if (result == NULL)
-		return NULL;
+	if (result == nullptr)
+		return nullptr;
 
 	// it is the responsibility of the loaders to make sure we get either 8 or 16 bit.
 	STBI_ASSERT(ri.bits_per_channel == 8 || ri.bits_per_channel == 16);
@@ -293,7 +293,7 @@ static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, 
 		ri.bits_per_channel = 8;
 	}
 
-	return (unsigned char *) result;
+	return static_cast<unsigned char *>(result);
 }
 
 
