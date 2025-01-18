@@ -1,7 +1,8 @@
 
 #include "stb_zlib.hpp"
+#include "stb_image.hpp"
 
-#include<cstdint>
+#include <cstdint>
 
 // public domain zlib decode    v0.2  Sean Barrett 2006-11-18
 //    simple implementation
@@ -89,15 +90,15 @@ static int bit_reverse(int v, int bits)
 
 // zlib-style huffman encoding
 // (jpegs packs from left, zlib from right, so can't share code)
-struct stbi__zhuffman {
+struct Huffman {
 	std::uint16_t fast[1 << FAST_BITS];
 	std::uint16_t firstcode[16];
 	int maxcode[17];
 	std::uint16_t firstsymbol[16];
-	stbi_uc size[NSYMS];
+	std::uint8_t size[NSYMS];
 	std::uint16_t value[NSYMS];
 
-	auto stbi__zbuild_huffman(const stbi_uc *sizelist, int num) -> int
+	auto stbi__zbuild_huffman(const std::uint8_t *sizelist, int num) -> int
 	{
 		int i, k = 0;
 		int code, next_code[16], sizes[17];
@@ -115,8 +116,8 @@ struct stbi__zhuffman {
 		for (i = 1; i < 16; ++i)
 		{
 			next_code[i] = code;
-			this->firstcode[i] = (stbi__uint16) code;
-			this->firstsymbol[i] = (stbi__uint16) k;
+			this->firstcode[i] = (std::uint16_t) code;
+			this->firstsymbol[i] = (std::uint16_t) k;
 			code = (code + sizes[i]);
 			if (sizes[i])
 				if (code - 1 >= (1 << i)) return stbi__err("bad codelengths", "Corrupt PNG");
@@ -131,9 +132,9 @@ struct stbi__zhuffman {
 			if (s)
 			{
 				int c = next_code[s] - this->firstcode[s] + this->firstsymbol[s];
-				auto fastv = (stbi__uint16) ((s << 9) | i);
-				this->size[c] = (stbi_uc) s;
-				this->value[c] = (stbi__uint16) i;
+				auto fastv = (std::uint16_t) ((s << 9) | i);
+				this->size[c] = (std::uint8_t) s;
+				this->value[c] = (std::uint16_t) i;
 				if (s <= FAST_BITS)
 				{
 					int j = bit_reverse(next_code[s], s);
@@ -158,8 +159,8 @@ struct stbi__zhuffman {
 //    we require PNG read all the IDATs and combine them into a single
 //    memory buffer
 
-struct stbi__zbuf {
-	stbi_uc *zbuffer, *zbuffer_end;
+struct Buffer {
+	std::uint8_t *zbuffer, *zbuffer_end;
 	int num_bits;
 	int hit_zeof_once;
 	std::uint32_t code_buffer;
@@ -169,13 +170,13 @@ struct stbi__zbuf {
 	char *zout_end;
 	int z_expandable;
 
-	stbi__zhuffman z_length, z_distance;
+	Huffman z_length, z_distance;
 
 	auto eof () const -> bool
 	{
 		return this->zbuffer >= this->zbuffer_end;
 	}
-	auto get8 () -> stbi_uc
+	auto get8 () -> std::uint8_t
 	{
 		return eof() ? 0 : *this->zbuffer++;
 	}
@@ -201,7 +202,7 @@ struct stbi__zbuf {
 		num_bits -= n;
 		return k;
 	}
-	auto zhuffman_decode_slowpath (stbi__zhuffman* z) -> int
+	auto zhuffman_decode_slowpath (Huffman* z) -> int
 	{
 		int b, s, k;
 		// not resolved by fast table, so compute it the slow way
@@ -219,7 +220,7 @@ struct stbi__zbuf {
 		num_bits -= s;
 		return z->value[b];
 	}
-	auto zhuffman_decode(stbi__zhuffman *z) -> int
+	auto zhuffman_decode(Huffman *z) -> int
 	{
 		int b, s;
 		if (num_bits < 16)
@@ -297,7 +298,7 @@ struct stbi__zbuf {
 			}
 			else
 			{
-				stbi_uc *p;
+				std::uint8_t *p;
 				if (z == 256)
 				{
 					this->zout = zout;
@@ -327,11 +328,11 @@ struct stbi__zbuf {
 					if (!this->zexpand(zout, len)) return 0;
 					zout = this->zout;
 				}
-				p = (stbi_uc *) (zout - dist);
+				p = (std::uint8_t *) (zout - dist);
 				if (dist == 1)
 				{
 					// run of one byte; common in images.
-					stbi_uc v = *p;
+					std::uint8_t v = *p;
 					if (len) { do *zout++ = v; while (--len); }
 				}
 				else
@@ -343,10 +344,10 @@ struct stbi__zbuf {
 	}
 	auto compute_huffman_codes() -> int
 	{
-		static const stbi_uc length_dezigzag[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
-		stbi__zhuffman z_codelength;
-		stbi_uc lencodes[286 + 32 + 137]; //padding for maximum single op
-		stbi_uc codelength_sizes[19];
+		static const std::uint8_t length_dezigzag[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
+		Huffman z_codelength;
+		std::uint8_t lencodes[286 + 32 + 137]; //padding for maximum single op
+		std::uint8_t codelength_sizes[19];
 		int i, n;
 
 		int hlit = this->recieve(5) + 257;
@@ -358,7 +359,7 @@ struct stbi__zbuf {
 		for (i = 0; i < hclen; ++i)
 		{
 			int s = this->recieve(3);
-			codelength_sizes[length_dezigzag[i]] = (stbi_uc) s;
+			codelength_sizes[length_dezigzag[i]] = (std::uint8_t) s;
 		}
 		if (!z_codelength.stbi__zbuild_huffman(codelength_sizes, 19)) return 0;
 
@@ -368,10 +369,10 @@ struct stbi__zbuf {
 			int c = this->zhuffman_decode(&z_codelength);
 			if (c < 0 || c >= 19) return stbi__err("bad codelengths", "Corrupt PNG");
 			if (c < 16)
-				lencodes[n++] = (stbi_uc) c;
+				lencodes[n++] = (std::uint8_t) c;
 			else
 			{
-				stbi_uc fill = 0;
+				std::uint8_t fill = 0;
 				if (c == 16)
 				{
 					c = this->recieve(2) + 3;
@@ -402,7 +403,7 @@ struct stbi__zbuf {
 	}
 	auto parse_uncompressed_block() -> int
 	{
-		stbi_uc header[4];
+		std::uint8_t header[4];
 		int len, nlen, k;
 		if (this->num_bits & 7)
 			this->recieve(this->num_bits & 7); // discard
@@ -410,7 +411,7 @@ struct stbi__zbuf {
 		k = 0;
 		while (this->num_bits > 0)
 		{
-			header[k++] = (stbi_uc) (this->code_buffer & 255); // suppress MSVC run-time check
+			header[k++] = (std::uint8_t) (this->code_buffer & 255); // suppress MSVC run-time check
 			this->code_buffer >>= 8;
 			this->num_bits -= 8;
 		}
@@ -501,35 +502,35 @@ struct stbi__zbuf {
 
 
 
-STBIDEF char *stbi_zlib_decode_malloc_guesssize(const char *buffer, int len, int initial_size, int *outlen)
-{
-	stbi__zbuf a;
-	char *p = (char *) stbi__malloc(initial_size);
-	if (p == NULL) return NULL;
-	a.zbuffer = (stbi_uc *) buffer;
-	a.zbuffer_end = (stbi_uc *) buffer + len;
-	if (a.do_zlib(p, initial_size, 1, 1))
-	{
-		if (outlen) *outlen = (int) (a.zout - a.zout_start);
-		return a.zout_start;
-	}
-	STBI_FREE(a.zout_start);
-	return NULL;
-}
+// STBIDEF char *stbi_zlib_decode_malloc_guesssize(const char *buffer, int len, int initial_size, int *outlen)
+// {
+// 	Buffer a;
+// 	char *p = (char *) stbi__malloc(initial_size);
+// 	if (p == NULL) return NULL;
+// 	a.zbuffer = (std::uint8_t *) buffer;
+// 	a.zbuffer_end = (std::uint8_t *) buffer + len;
+// 	if (a.do_zlib(p, initial_size, 1, 1))
+// 	{
+// 		if (outlen) *outlen = (int) (a.zout - a.zout_start);
+// 		return a.zout_start;
+// 	}
+// 	STBI_FREE(a.zout_start);
+// 	return NULL;
+// }
 
-STBIDEF char *stbi_zlib_decode_malloc(char const *buffer, int len, int *outlen)
-{
-	return stbi_zlib_decode_malloc_guesssize(buffer, len, 16384, outlen);
-}
+// STBIDEF char *stbi_zlib_decode_malloc(char const *buffer, int len, int *outlen)
+// {
+// 	return stbi_zlib_decode_malloc_guesssize(buffer, len, 16384, outlen);
+// }
 
 STBIDEF char *stbi_zlib_decode_malloc_guesssize_headerflag(const char *buffer, int len, int initial_size, int *outlen,
                                                            int parse_header)
 {
-	stbi__zbuf a;
+	Buffer a;
 	auto p = (char *) stbi__malloc(initial_size);
 	if (p == nullptr) return nullptr;
-	a.zbuffer = (stbi_uc *) buffer;
-	a.zbuffer_end = (stbi_uc *) buffer + len;
+	a.zbuffer = (std::uint8_t *) buffer;
+	a.zbuffer_end = (std::uint8_t *) buffer + len;
 	if (a.do_zlib(p, initial_size, 1, parse_header))
 	{
 		if (outlen) *outlen = (int) (a.zout - a.zout_start);
@@ -539,39 +540,39 @@ STBIDEF char *stbi_zlib_decode_malloc_guesssize_headerflag(const char *buffer, i
 	return NULL;
 }
 
-STBIDEF int stbi_zlib_decode_buffer(char *obuffer, int olen, char const *ibuffer, int ilen)
-{
-	stbi__zbuf a;
-	a.zbuffer = (stbi_uc *) ibuffer;
-	a.zbuffer_end = (stbi_uc *) ibuffer + ilen;
-	if (a.do_zlib(obuffer, olen, 0, 1))
-		return (int) (a.zout - a.zout_start);
-	return -1;
-}
-
-STBIDEF char *stbi_zlib_decode_noheader_malloc(char const *buffer, int len, int *outlen)
-{
-	stbi__zbuf a;
-	char *p = (char *) stbi__malloc(16384);
-	if (p == NULL) return NULL;
-	a.zbuffer = (stbi_uc *) buffer;
-	a.zbuffer_end = (stbi_uc *) buffer + len;
-	if (a.do_zlib(p, 16384, 1, 0))
-	{
-		if (outlen) *outlen = (int) (a.zout - a.zout_start);
-		return a.zout_start;
-	}
-	STBI_FREE(a.zout_start);
-	return NULL;
-}
-
-
-STBIDEF int stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const char *ibuffer, int ilen)
-{
-	stbi__zbuf a;
-	a.zbuffer = (stbi_uc *) ibuffer;
-	a.zbuffer_end = (stbi_uc *) ibuffer + ilen;
-	if (a.do_zlib(obuffer, olen, 0, 0))
-		return (int) (a.zout - a.zout_start);
-	return -1;
-}
+// STBIDEF int stbi_zlib_decode_buffer(char *obuffer, int olen, char const *ibuffer, int ilen)
+// {
+// 	Buffer a;
+// 	a.zbuffer = (std::uint8_t *) ibuffer;
+// 	a.zbuffer_end = (std::uint8_t *) ibuffer + ilen;
+// 	if (a.do_zlib(obuffer, olen, 0, 1))
+// 		return (int) (a.zout - a.zout_start);
+// 	return -1;
+// }
+//
+// STBIDEF char *stbi_zlib_decode_noheader_malloc(char const *buffer, int len, int *outlen)
+// {
+// 	Buffer a;
+// 	auto p = (char *) stbi__malloc(16384);
+// 	if (p == NULL) return NULL;
+// 	a.zbuffer = (std::uint8_t *) buffer;
+// 	a.zbuffer_end = (std::uint8_t *) buffer + len;
+// 	if (a.do_zlib(p, 16384, 1, 0))
+// 	{
+// 		if (outlen) *outlen = (int) (a.zout - a.zout_start);
+// 		return a.zout_start;
+// 	}
+// 	STBI_FREE(a.zout_start);
+// 	return NULL;
+// }
+//
+//
+// STBIDEF int stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const char *ibuffer, int ilen)
+// {
+// 	Buffer a;
+// 	a.zbuffer = (std::uint8_t *) ibuffer;
+// 	a.zbuffer_end = (std::uint8_t *) ibuffer + ilen;
+// 	if (a.do_zlib(obuffer, olen, 0, 0))
+// 		return (int) (a.zout - a.zout_start);
+// 	return -1;
+// }

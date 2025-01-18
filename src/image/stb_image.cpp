@@ -11,7 +11,7 @@
 //    performance
 //      - uses stb_zlib, a PD zlib implementation with fast huffman decoding
 
-
+#include "stb_zlib.hpp"
 
 typedef struct
 {
