@@ -110,6 +110,12 @@ static_assert(sizeof(std::uint32_t) == 4);
 #define STBI_MAX_DIMENSIONS (1 << 24)
 #endif
 
+struct stbi__result_info
+{
+	int bits_per_channel;
+	int num_channels;
+	int channel_order;
+};
 
 ///////////////////////////////////////////////
 //
@@ -185,20 +191,6 @@ struct stbi__context
 };
 
 
-
-
-
-
-
-
-struct stbi__result_info
-{
-	int bits_per_channel;
-	int num_channels;
-	int channel_order;
-};
-
-
 static int stbi__png_test(stbi__context *s);
 
 static void *stbi__png_load(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri);
@@ -262,7 +254,10 @@ static void *stbi__load_main(stbi__context *s, int *x, int *y, int *comp, int re
 
 	// test the formats with a very explicit header first (at least a FOURCC
 	// or distinctive magic number first)
-	if (stbi__png_test(s)) return stbi__png_load(s, x, y, comp, req_comp, ri);
+	if (stbi__png_test(s))
+	{
+		return stbi__png_load(s, x, y, comp, req_comp, ri);
+	}
 
 	return stbi__errpuc("unknown image type", "Image not of any known type, or corrupt");
 }
@@ -1149,7 +1144,6 @@ static int stbi__compute_transparency(stbi__png *z, std::uint8_t tc[3], int out_
 
 	// compute color-based transparency, assuming we've
 	// already got 255 as the alpha value in the output
-	STBI_ASSERT(out_n == 2 || out_n == 4);
 
 	if (out_n == 2)
 	{
@@ -1159,7 +1153,7 @@ static int stbi__compute_transparency(stbi__png *z, std::uint8_t tc[3], int out_
 			p += 2;
 		}
 	}
-	else
+	else if (out_n == 4)
 	{
 		for (i = 0; i < pixel_count; ++i)
 		{
@@ -1167,6 +1161,10 @@ static int stbi__compute_transparency(stbi__png *z, std::uint8_t tc[3], int out_
 				p[3] = 0;
 			p += 4;
 		}
+	}
+	else
+	{
+		return 0;
 	}
 	return 1;
 }
@@ -1175,12 +1173,10 @@ static int stbi__compute_transparency16(stbi__png *z, std::uint16_t tc[3], int o
 {
 	stbi__context *s = z->s;
 	std::uint32_t i, pixel_count = s->img_x * s->img_y;
-	std::uint16_t *p = (std::uint16_t *) z->out;
+	auto *p = reinterpret_cast<std::uint16_t *>(z->out);
 
 	// compute color-based transparency, assuming we've
 	// already got 65535 as the alpha value in the output
-	STBI_ASSERT(out_n == 2 || out_n == 4);
-
 	if (out_n == 2)
 	{
 		for (i = 0; i < pixel_count; ++i)
@@ -1189,7 +1185,7 @@ static int stbi__compute_transparency16(stbi__png *z, std::uint16_t tc[3], int o
 			p += 2;
 		}
 	}
-	else
+	else if (out_n == 4)
 	{
 		for (i = 0; i < pixel_count; ++i)
 		{
@@ -1198,19 +1194,23 @@ static int stbi__compute_transparency16(stbi__png *z, std::uint16_t tc[3], int o
 			p += 4;
 		}
 	}
+	else
+	{
+		return 0;
+	}
 	return 1;
 }
 
 static int stbi__expand_png_palette(stbi__png *a, std::uint8_t *palette, int len, int pal_img_n)
 {
 	std::uint32_t i, pixel_count = a->s->img_x * a->s->img_y;
-	std::uint8_t *p, *temp_out, *orig = a->out;
+	std::uint8_t *orig = a->out;
 
-	p = (std::uint8_t *) stbi__malloc_mad2(pixel_count, pal_img_n, 0);
-	if (p == NULL) return stbi__err("outofmem", "Out of memory");
+	std::uint8_t *p = static_cast<std::uint8_t *>(stbi__malloc_mad2(pixel_count, pal_img_n, 0));
+	if (p == nullptr) return stbi__err("outofmem", "Out of memory");
 
 	// between here and free(out) below, exitting would leak
-	temp_out = p;
+	std::uint8_t *temp_out = p;
 
 	if (pal_img_n == 3)
 	{
@@ -1243,101 +1243,7 @@ static int stbi__expand_png_palette(stbi__png *a, std::uint8_t *palette, int len
 	return 1;
 }
 
-static int stbi__unpremultiply_on_load_global = 0;
-static int stbi__de_iphone_flag_global = 0;
 
-STBIDEF void stbi_set_unpremultiply_on_load(int flag_true_if_should_unpremultiply)
-{
-	stbi__unpremultiply_on_load_global = flag_true_if_should_unpremultiply;
-}
-
-STBIDEF void stbi_convert_iphone_png_to_rgb(int flag_true_if_should_convert)
-{
-	stbi__de_iphone_flag_global = flag_true_if_should_convert;
-}
-
-#ifndef STBI_THREAD_LOCAL
-#define stbi__unpremultiply_on_load  stbi__unpremultiply_on_load_global
-#define stbi__de_iphone_flag  stbi__de_iphone_flag_global
-#else
-static STBI_THREAD_LOCAL int stbi__unpremultiply_on_load_local, stbi__unpremultiply_on_load_set;
-static STBI_THREAD_LOCAL int stbi__de_iphone_flag_local, stbi__de_iphone_flag_set;
-
-STBIDEF void stbi_set_unpremultiply_on_load_thread(int flag_true_if_should_unpremultiply)
-{
-	stbi__unpremultiply_on_load_local = flag_true_if_should_unpremultiply;
-	stbi__unpremultiply_on_load_set = 1;
-}
-
-STBIDEF void stbi_convert_iphone_png_to_rgb_thread(int flag_true_if_should_convert)
-{
-	stbi__de_iphone_flag_local = flag_true_if_should_convert;
-	stbi__de_iphone_flag_set = 1;
-}
-
-#define stbi__unpremultiply_on_load  (stbi__unpremultiply_on_load_set           \
-                                       ? stbi__unpremultiply_on_load_local      \
-                                       : stbi__unpremultiply_on_load_global)
-#define stbi__de_iphone_flag  (stbi__de_iphone_flag_set                         \
-                                ? stbi__de_iphone_flag_local                    \
-                                : stbi__de_iphone_flag_global)
-#endif // STBI_THREAD_LOCAL
-
-static void stbi__de_iphone(stbi__png *z)
-{
-	stbi__context *s = z->s;
-	std::uint32_t i, pixel_count = s->img_x * s->img_y;
-	std::uint8_t *p = z->out;
-
-	if (s->img_out_n == 3)
-	{
-		// convert bgr to rgb
-		for (i = 0; i < pixel_count; ++i)
-		{
-			std::uint8_t t = p[0];
-			p[0] = p[2];
-			p[2] = t;
-			p += 3;
-		}
-	}
-	else
-	{
-		STBI_ASSERT(s->img_out_n == 4);
-		if (stbi__unpremultiply_on_load)
-		{
-			// convert bgr to rgb and unpremultiply
-			for (i = 0; i < pixel_count; ++i)
-			{
-				std::uint8_t a = p[3];
-				std::uint8_t t = p[0];
-				if (a)
-				{
-					std::uint8_t half = a / 2;
-					p[0] = (p[2] * 255 + half) / a;
-					p[1] = (p[1] * 255 + half) / a;
-					p[2] = (t * 255 + half) / a;
-				}
-				else
-				{
-					p[0] = p[2];
-					p[2] = t;
-				}
-				p += 4;
-			}
-		}
-		else
-		{
-			// convert bgr to rgb
-			for (i = 0; i < pixel_count; ++i)
-			{
-				std::uint8_t t = p[0];
-				p[0] = p[2];
-				p[2] = t;
-				p += 4;
-			}
-		}
-	}
-}
 
 #define STBI__PNG_TYPE(a,b,c,d)  (((unsigned) (a) << 24) + ((unsigned) (b) << 16) + ((unsigned) (c) << 8) + (unsigned) (d))
 
@@ -1350,59 +1256,70 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 	int first = 1, k, interlace = 0, color = 0, is_iphone = 0;
 	stbi__context *s = z->s;
 
-	z->expanded = NULL;
-	z->idata = NULL;
-	z->out = NULL;
+	z->expanded = nullptr;
+	z->idata = nullptr;
+	z->out = nullptr;
 
-	if (!stbi__check_png_header(s)) return 0;
+	if (!stbi__check_png_header(s))
+		return 0;
 
-	if (scan == STBI__SCAN_type) return 1;
+	if (scan == STBI__SCAN_type)
+		return 1;
 
 	for (;;)
 	{
 		stbi__pngchunk c = stbi__get_chunk_header(s);
 		switch (c.type)
 		{
-			case STBI__PNG_TYPE('C', 'g', 'B', 'I'):
-				is_iphone = 1;
-				stbi__skip(s, c.length);
-				break;
 			case STBI__PNG_TYPE('I', 'H', 'D', 'R'): {
 				int comp, filter;
-				if (!first) return stbi__err("multiple IHDR", "Corrupt PNG");
+				if (!first)
+					return stbi__err("multiple IHDR", "Corrupt PNG");
 				first = 0;
-				if (c.length != 13) return stbi__err("bad IHDR len", "Corrupt PNG");
+				if (c.length != 13)
+					return stbi__err("bad IHDR len", "Corrupt PNG");
 				s->img_x = stbi__get32be(s);
 				s->img_y = stbi__get32be(s);
-				if (s->img_y > STBI_MAX_DIMENSIONS) return stbi__err("too large", "Very large image (corrupt?)");
-				if (s->img_x > STBI_MAX_DIMENSIONS) return stbi__err("too large", "Very large image (corrupt?)");
+				if (s->img_y > STBI_MAX_DIMENSIONS)
+					return stbi__err("too large", "Very large image (corrupt?)");
+				if (s->img_x > STBI_MAX_DIMENSIONS)
+					return stbi__err("too large", "Very large image (corrupt?)");
 				z->depth = stbi__get8(s);
-				if (z->depth != 1 && z->depth != 2 && z->depth != 4 && z->depth != 8 && z->depth != 16) return stbi__err(
-					"1/2/4/8/16-bit only", "PNG not supported: 1/2/4/8/16-bit only");
+				if (z->depth != 1 && z->depth != 2 && z->depth != 4 && z->depth != 8 && z->depth != 16)
+					return stbi__err("1/2/4/8/16-bit only", "PNG not supported: 1/2/4/8/16-bit only");
 				color = stbi__get8(s);
-				if (color > 6) return stbi__err("bad ctype", "Corrupt PNG");
-				if (color == 3 && z->depth == 16) return stbi__err("bad ctype", "Corrupt PNG");
-				if (color == 3) pal_img_n = 3;
-				else if (color & 1) return stbi__err("bad ctype", "Corrupt PNG");
+				if (color > 6)
+					return stbi__err("bad ctype", "Corrupt PNG");
+				if (color == 3 && z->depth == 16)
+					return stbi__err("bad ctype", "Corrupt PNG");
+				if (color == 3)
+					pal_img_n = 3;
+				else if (color & 1)
+					return stbi__err("bad ctype", "Corrupt PNG");
 				comp = stbi__get8(s);
-				if (comp) return stbi__err("bad comp method", "Corrupt PNG");
+				if (comp)
+					return stbi__err("bad comp method", "Corrupt PNG");
 				filter = stbi__get8(s);
-				if (filter) return stbi__err("bad filter method", "Corrupt PNG");
+				if (filter)
+					return stbi__err("bad filter method", "Corrupt PNG");
 				interlace = stbi__get8(s);
-				if (interlace > 1) return stbi__err("bad interlace method", "Corrupt PNG");
-				if (!s->img_x || !s->img_y) return stbi__err("0-pixel image", "Corrupt PNG");
+				if (interlace > 1)
+					return stbi__err("bad interlace method", "Corrupt PNG");
+				if (!s->img_x || !s->img_y)
+					return stbi__err("0-pixel image", "Corrupt PNG");
 				if (!pal_img_n)
 				{
 					s->img_n = (color & 2 ? 3 : 1) + (color & 4 ? 1 : 0);
-					if ((1 << 30) / s->img_x / s->img_n < s->img_y) return stbi__err(
-						"too large", "Image too large to decode");
+					if ((1 << 30) / s->img_x / s->img_n < s->img_y)
+						return stbi__err("too large", "Image too large to decode");
 				}
 				else
 				{
 					// if paletted, then pal_n is our final components, and
 					// img_n is # components to decompress/filter.
 					s->img_n = 1;
-					if ((1 << 30) / s->img_x / 4 < s->img_y) return stbi__err("too large", "Corrupt PNG");
+					if ((1 << 30) / s->img_x / 4 < s->img_y)
+						return stbi__err("too large", "Corrupt PNG");
 				}
 				// even with SCAN_header, have to scan to see if we have a tRNS
 				break;
@@ -1528,8 +1445,6 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 						if (!stbi__compute_transparency(z, tc, s->img_out_n)) return 0;
 					}
 				}
-				if (is_iphone && stbi__de_iphone_flag && s->img_out_n > 2)
-					stbi__de_iphone(z);
 				if (pal_img_n)
 				{
 					// pal_img_n == 3 or 4
@@ -1592,11 +1507,9 @@ static void *stbi__do_png(stbi__png *p, int *x, int *y, int *n, int req_comp, st
 		if (req_comp && req_comp != p->s->img_out_n)
 		{
 			if (ri->bits_per_channel == 8)
-				result = stbi__convert_format((unsigned char *) result, p->s->img_out_n, req_comp, p->s->img_x,
-				                              p->s->img_y);
+				result = stbi__convert_format((std::uint8_t*) result, p->s->img_out_n, req_comp, p->s->img_x, p->s->img_y);
 			else
-				result = stbi__convert_format16((std::uint16_t *) result, p->s->img_out_n, req_comp, p->s->img_x,
-				                                p->s->img_y);
+				result = stbi__convert_format16((std::uint16_t*) result, p->s->img_out_n, req_comp, p->s->img_x, p->s->img_y);
 			p->s->img_out_n = req_comp;
 			if (result == NULL) return result;
 		}

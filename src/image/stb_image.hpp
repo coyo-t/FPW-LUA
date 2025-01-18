@@ -121,17 +121,10 @@ STBIDEF int stbi_is_16_bit_from_callbacks(stbi_io_callbacks const *clbk, void *u
 // unpremultiplication. results are undefined if the unpremultiply overflow.
 STBIDEF void stbi_set_unpremultiply_on_load(int flag_true_if_should_unpremultiply);
 
-// indicate whether we should process iphone images back to canonical format,
-// or just pass them through "as-is"
-STBIDEF void stbi_convert_iphone_png_to_rgb(int flag_true_if_should_convert);
-
-
 // as above, but only applies to images loaded on the thread that calls the function
 // this function is only available if your compiler supports thread-local variables;
 // calling it will fail to link if your compiler doesn't
 STBIDEF void stbi_set_unpremultiply_on_load_thread(int flag_true_if_should_unpremultiply);
-
-STBIDEF void stbi_convert_iphone_png_to_rgb_thread(int flag_true_if_should_convert);
 
 
 #ifdef __cplusplus
