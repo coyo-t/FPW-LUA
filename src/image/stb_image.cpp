@@ -161,36 +161,35 @@ struct stbi__context
 		img_buffer = img_buffer_original = (std::uint8_t *) buffer;
 		img_buffer_end = img_buffer_original_end = (std::uint8_t *) buffer + len;
 	}
+	// initialize a callback-based context
+	auto stbi__start_callbacks(stbi_io_callbacks *c, void *user) -> void
+	{
+		this->io = *c;
+		this->io_user_data = user;
+		this->buflen = sizeof(this->buffer_start);
+		this->read_from_callbacks = 1;
+		this->callback_already_read = 0;
+		this->img_buffer = this->img_buffer_original = this->buffer_start;
+		this->stbi__refill_buffer();
+		this->img_buffer_original_end = this->img_buffer_end;
+	}
+	auto stbi__rewind() -> void
+	{
+		// conceptually rewind SHOULD rewind to the beginning of the stream,
+		// but we just rewind to the beginning of the initial buffer, because
+		// we only use it after doing 'test', which only ever looks at at most 92 bytes
+		this->img_buffer = this->img_buffer_original;
+		this->img_buffer_end = this->img_buffer_original_end;
+	}
 
-	
 };
 
 
 
 
-// initialize a callback-based context
-static void stbi__start_callbacks(stbi__context *s, stbi_io_callbacks *c, void *user)
-{
-	s->io = *c;
-	s->io_user_data = user;
-	s->buflen = sizeof(s->buffer_start);
-	s->read_from_callbacks = 1;
-	s->callback_already_read = 0;
-	s->img_buffer = s->img_buffer_original = s->buffer_start;
-	s->stbi__refill_buffer();
-	s->img_buffer_original_end = s->img_buffer_end;
-}
 
 
 
-static void stbi__rewind(stbi__context *s)
-{
-	// conceptually rewind SHOULD rewind to the beginning of the stream,
-	// but we just rewind to the beginning of the initial buffer, because
-	// we only use it after doing 'test', which only ever looks at at most 92 bytes
-	s->img_buffer = s->img_buffer_original;
-	s->img_buffer_end = s->img_buffer_original_end;
-}
 
 struct stbi__result_info
 {
@@ -254,34 +253,6 @@ STBIDEF void stbi_image_free(void *retval_from_stbi_load)
 {
 	STBI_FREE(retval_from_stbi_load);
 }
-
-#ifndef STBI_NO_LINEAR
-static float *stbi__ldr_to_hdr(std::uint8_t *data, int x, int y, int comp);
-#endif
-
-
-static int stbi__vertically_flip_on_load_global = 0;
-
-STBIDEF void stbi_set_flip_vertically_on_load(int flag_true_if_should_flip)
-{
-	stbi__vertically_flip_on_load_global = flag_true_if_should_flip;
-}
-
-#ifndef STBI_THREAD_LOCAL
-#define stbi__vertically_flip_on_load  stbi__vertically_flip_on_load_global
-#else
-static STBI_THREAD_LOCAL int stbi__vertically_flip_on_load_local, stbi__vertically_flip_on_load_set;
-
-STBIDEF void stbi_set_flip_vertically_on_load_thread(int flag_true_if_should_flip)
-{
-	stbi__vertically_flip_on_load_local = flag_true_if_should_flip;
-	stbi__vertically_flip_on_load_set = 1;
-}
-
-#define stbi__vertically_flip_on_load  (stbi__vertically_flip_on_load_set       \
-                                         ? stbi__vertically_flip_on_load_local  \
-                                         : stbi__vertically_flip_on_load_global)
-#endif // STBI_THREAD_LOCAL
 
 static void *stbi__load_main(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri, int bpc)
 {
@@ -372,14 +343,6 @@ static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, 
 		ri.bits_per_channel = 8;
 	}
 
-	// @TODO: move stbi__convert_format to here
-
-	if (stbi__vertically_flip_on_load)
-	{
-		int channels = req_comp ? req_comp : *comp;
-		stbi__vertical_flip(result, *x, *y, channels * sizeof(std::uint8_t));
-	}
-
 	return (unsigned char *) result;
 }
 
@@ -400,15 +363,6 @@ static std::uint16_t *stbi__load_and_postprocess_16bit(stbi__context *s, int *x,
 		ri.bits_per_channel = 16;
 	}
 
-	// @TODO: move stbi__convert_format16 to here
-	// @TODO: special case RGB-to-Y (and RGBA-to-YA) for 8-bit-to-16-bit case to keep more precision
-
-	if (stbi__vertically_flip_on_load)
-	{
-		int channels = req_comp ? req_comp : *comp;
-		stbi__vertical_flip(result, *x, *y, channels * sizeof(std::uint16_t));
-	}
-
 	return (std::uint16_t *) result;
 }
 
@@ -425,7 +379,7 @@ STBIDEF std::uint16_t *stbi_load_16_from_callbacks(stbi_io_callbacks const *clbk
                                              int *channels_in_file, int desired_channels)
 {
 	stbi__context s;
-	stbi__start_callbacks(&s, (stbi_io_callbacks *) clbk, user);
+	s.stbi__start_callbacks((stbi_io_callbacks *) clbk, user);
 	return stbi__load_and_postprocess_16bit(&s, x, y, channels_in_file, desired_channels);
 }
 
@@ -440,7 +394,7 @@ STBIDEF std::uint8_t *stbi_load_from_callbacks(stbi_io_callbacks const *clbk, vo
                                           int req_comp)
 {
 	stbi__context s;
-	stbi__start_callbacks(&s, (stbi_io_callbacks *) clbk, user);
+	s.stbi__start_callbacks((stbi_io_callbacks *) clbk, user);
 	return stbi__load_and_postprocess_8bit(&s, x, y, comp, req_comp);
 }
 
@@ -1671,7 +1625,7 @@ static int stbi__png_test(stbi__context *s)
 {
 	int r;
 	r = stbi__check_png_header(s);
-	stbi__rewind(s);
+	s->stbi__rewind();
 	return r;
 }
 
@@ -1679,7 +1633,7 @@ static int stbi__png_info_raw(stbi__png *p, int *x, int *y, int *comp)
 {
 	if (!stbi__parse_png_file(p, STBI__SCAN_header, 0))
 	{
-		stbi__rewind(p->s);
+		p->s->stbi__rewind();
 		return 0;
 	}
 	if (x) *x = p->s->img_x;
@@ -1703,7 +1657,7 @@ static int stbi__png_is16(stbi__context *s)
 		return 0;
 	if (p.depth != 16)
 	{
-		stbi__rewind(p.s);
+		p.s->stbi__rewind();
 		return 0;
 	}
 	return 1;
@@ -1736,7 +1690,7 @@ STBIDEF int stbi_info_from_memory(std::uint8_t const *buffer, int len, int *x, i
 STBIDEF int stbi_info_from_callbacks(stbi_io_callbacks const *c, void *user, int *x, int *y, int *comp)
 {
 	stbi__context s;
-	stbi__start_callbacks(&s, (stbi_io_callbacks *) c, user);
+	s.stbi__start_callbacks((stbi_io_callbacks *) c, user);
 	return stbi__info_main(&s, x, y, comp);
 }
 
@@ -1750,7 +1704,7 @@ STBIDEF int stbi_is_16_bit_from_memory(std::uint8_t const *buffer, int len)
 STBIDEF int stbi_is_16_bit_from_callbacks(stbi_io_callbacks const *c, void *user)
 {
 	stbi__context s;
-	stbi__start_callbacks(&s, (stbi_io_callbacks *) c, user);
+	s.stbi__start_callbacks((stbi_io_callbacks *) c, user);
 	return stbi__is_16_main(&s);
 }
 
