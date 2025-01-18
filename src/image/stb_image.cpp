@@ -198,6 +198,16 @@ struct stbi__context
 		}
 		return 0;
 	}
+	auto stbi__get16be () -> int
+	{
+		int z = stbi__get8();
+		return (z << 8) + stbi__get8();
+	}
+	auto stbi__get32be () -> std::uint32_t
+	{
+		auto z = stbi__get16be();
+		return (z << 16) + stbi__get16be();
+	}
 };
 
 
@@ -240,14 +250,8 @@ static void *stbi__malloc(size_t size)
 // stbi__errpf - error returning pointer to float
 // stbi__errpuc - error returning pointer to unsigned char
 
-#ifdef STBI_NO_FAILURE_STRINGS
-   #define stbi__err(x,y)  0
-#elif defined(STBI_FAILURE_USERMSG)
-   #define stbi__err(x,y)  stbi__err(y)
-#else
-#define stbi__err(x,y)  stbi__err(x)
-#endif
 
+#define stbi__err(x,y)  stbi__err(x)
 #define stbi__errpf(x,y)   ((float *)(size_t) (stbi__err(x,y)?NULL:NULL))
 #define stbi__errpuc(x,y)  ((unsigned char *)(size_t) (stbi__err(x,y)?NULL:NULL))
 
@@ -436,13 +440,11 @@ static int stbi__mul2sizes_valid(int a, int b)
 	return a <= INT_MAX / b;
 }
 
-#if !defined(STBI_NO_JPEG) || !defined(STBI_NO_PNG) || !defined(STBI_NO_TGA) || !defined(STBI_NO_HDR)
 // returns 1 if "a*b + add" has no negative terms/factors and doesn't overflow
 static int stbi__mad2sizes_valid(int a, int b, int add)
 {
 	return stbi__mul2sizes_valid(a, b) && stbi__addsizes_valid(a * b, add);
 }
-#endif
 
 // returns 1 if "a*b*c + add" has no negative terms/factors and doesn't overflow
 static int stbi__mad3sizes_valid(int a, int b, int c, int add)
@@ -451,28 +453,16 @@ static int stbi__mad3sizes_valid(int a, int b, int c, int add)
 			 stbi__addsizes_valid(a * b * c, add);
 }
 
-
-// returns 1 if "a*b*c*d + add" has no negative terms/factors and doesn't overflow
-#if !defined(STBI_NO_LINEAR) || !defined(STBI_NO_HDR) || !defined(STBI_NO_PNM)
-static int stbi__mad4sizes_valid(int a, int b, int c, int d, int add)
-{
-	return stbi__mul2sizes_valid(a, b) && stbi__mul2sizes_valid(a * b, c) &&
-			 stbi__mul2sizes_valid(a * b * c, d) && stbi__addsizes_valid(a * b * c * d, add);
-}
-#endif
-
-#if !defined(STBI_NO_JPEG) || !defined(STBI_NO_PNG) || !defined(STBI_NO_TGA) || !defined(STBI_NO_HDR)
 // mallocs with size overflow checking
 static void *stbi__malloc_mad2(int a, int b, int add)
 {
-	if (!stbi__mad2sizes_valid(a, b, add)) return NULL;
+	if (!stbi__mad2sizes_valid(a, b, add)) return nullptr;
 	return stbi__malloc(a * b + add);
 }
-#endif
 
 static void *stbi__malloc_mad3(int a, int b, int c, int add)
 {
-	if (!stbi__mad3sizes_valid(a, b, c, add)) return NULL;
+	if (!stbi__mad3sizes_valid(a, b, c, add)) return nullptr;
 	return stbi__malloc(a * b * c + add);
 }
 
@@ -547,25 +537,6 @@ static int stbi__getn(stbi__context *s, std::uint8_t *buffer, int n)
 }
 #endif
 
-#if defined(STBI_NO_JPEG) && defined(STBI_NO_PNG) && defined(STBI_NO_PSD) && defined(STBI_NO_PIC)
-// nothing
-#else
-static int stbi__get16be(stbi__context *s)
-{
-	int z = s->stbi__get8();
-	return (z << 8) + s->stbi__get8();
-}
-#endif
-
-#if defined(STBI_NO_PNG) && defined(STBI_NO_PSD) && defined(STBI_NO_PIC)
-// nothing
-#else
-static std::uint32_t stbi__get32be(stbi__context *s)
-{
-	std::uint32_t z = stbi__get16be(s);
-	return (z << 16) + stbi__get16be(s);
-}
-#endif
 
 
 
@@ -806,8 +777,8 @@ struct stbi__pngchunk
 static stbi__pngchunk stbi__get_chunk_header(stbi__context *s)
 {
 	stbi__pngchunk c;
-	c.length = stbi__get32be(s);
-	c.type = stbi__get32be(s);
+	c.length = s->stbi__get32be();
+	c.type = s->stbi__get32be();
 	return c;
 }
 
@@ -1286,8 +1257,8 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				first = 0;
 				if (c.length != 13)
 					return stbi__err("bad IHDR len", "Corrupt PNG");
-				s->img_x = stbi__get32be(s);
-				s->img_y = stbi__get32be(s);
+				s->img_x = s->stbi__get32be();
+				s->img_y = s->stbi__get32be();
 				if (s->img_y > STBI_MAX_DIMENSIONS)
 					return stbi__err("too large", "Very large image (corrupt?)");
 				if (s->img_x > STBI_MAX_DIMENSIONS)
@@ -1378,12 +1349,12 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					if (z->depth == 16)
 					{
 						for (k = 0; k < s->img_n && k < 3; ++k) // extra loop test to suppress false GCC warning
-							tc16[k] = (std::uint16_t) stbi__get16be(s); // copy the values as-is
+							tc16[k] = (std::uint16_t) s->stbi__get16be(); // copy the values as-is
 					}
 					else
 					{
 						for (k = 0; k < s->img_n && k < 3; ++k)
-							tc[k] = (std::uint8_t) (stbi__get16be(s) & 255) * stbi__depth_scale_table[z->depth];
+							tc[k] = (std::uint8_t) (s->stbi__get16be() & 255) * stbi__depth_scale_table[z->depth];
 						// non 8-bit images will be larger
 					}
 				}
@@ -1470,7 +1441,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				STBI_FREE(z->expanded);
 				z->expanded = NULL;
 				// end of PNG chunk, read and skip CRC
-				stbi__get32be(s);
+				s->stbi__get32be();
 				return 1;
 			}
 
@@ -1493,7 +1464,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				break;
 		}
 		// end of PNG chunk, read and skip CRC
-		stbi__get32be(s);
+		s->stbi__get32be();
 	}
 }
 

@@ -29,14 +29,6 @@ extern "C" {
 
 #define STBI_NO_STDIO
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// PRIMARY API - works on images of any type
-//
-
-//
-// load image by filename, open file, or memory buffer
-//
 
 struct stbi_io_callbacks
 {
@@ -86,16 +78,6 @@ STBIDEF float *stbi_loadf_from_callbacks(stbi_io_callbacks const *clbk, void *us
 #endif
 
 
-#ifndef STBI_NO_LINEAR
-STBIDEF void stbi_ldr_to_hdr_gamma(float gamma);
-
-STBIDEF void stbi_ldr_to_hdr_scale(float scale);
-#endif // STBI_NO_LINEAR
-
-#ifndef STBI_NO_STDIO
-
-#endif // STBI_NO_STDIO
-
 
 // get a VERY brief reason for failure
 // on most compilers (and ALL modern mainstream compilers) this is threadsafe
@@ -113,18 +95,6 @@ STBIDEF int stbi_is_16_bit_from_memory(std::uint8_t const *buffer, int len);
 
 STBIDEF int stbi_is_16_bit_from_callbacks(stbi_io_callbacks const *clbk, void *user);
 
-
-
-
-// for image formats that explicitly notate that they have premultiplied alpha,
-// we just return the colors as stored in the file. set this flag to force
-// unpremultiplication. results are undefined if the unpremultiply overflow.
-STBIDEF void stbi_set_unpremultiply_on_load(int flag_true_if_should_unpremultiply);
-
-// as above, but only applies to images loaded on the thread that calls the function
-// this function is only available if your compiler supports thread-local variables;
-// calling it will fail to link if your compiler doesn't
-STBIDEF void stbi_set_unpremultiply_on_load_thread(int flag_true_if_should_unpremultiply);
 
 
 #ifdef __cplusplus
