@@ -1,8 +1,12 @@
 
 #include "stb_zlib.hpp"
+
+#include <climits>
+
 #include "stb_image.hpp"
 
 #include <cstdint>
+#include <cstring>
 
 // public domain zlib decode    v0.2  Sean Barrett 2006-11-18
 //    simple implementation
@@ -507,7 +511,7 @@ STBIDEF std::uint8_t* stbi_zlib_decode_malloc_guesssize_headerflag(
 	int parse_header)
 {
 	Buffer a;
-	auto p = static_cast<std::uint8_t*>(stbi__malloc(initial_size));
+	auto p = new std::uint8_t[initial_size];
 	if (p == nullptr) return nullptr;
 	a.zbuffer = (std::uint8_t *) buffer;
 	a.zbuffer_end = (std::uint8_t *) buffer + len;
@@ -516,6 +520,7 @@ STBIDEF std::uint8_t* stbi_zlib_decode_malloc_guesssize_headerflag(
 		if (outlen) *outlen = (int) (a.zout - a.zout_start);
 		return a.zout_start;
 	}
+
 	STBI_FREE(a.zout_start);
 	return nullptr;
 }

@@ -47,11 +47,11 @@ STBIDEF void
 stbi_image_free(void *retval_from_stbi_load);
 
 // get image dimensions & components without fully decoding
-STBIDEF
-int stbi_info_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *comp);
+STBIDEF int
+stbi_info_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *comp);
 
-STBIDEF
-int stbi_is_16_bit_from_memory(std::uint8_t const *buffer, int len);
+STBIDEF int
+stbi_is_16_bit_from_memory(std::uint8_t const *buffer, int len);
 
 
 }

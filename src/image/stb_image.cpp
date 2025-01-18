@@ -14,35 +14,20 @@
 #include "stb_zlib.hpp"
 
 
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
+#include <cstdlib>
+#include <cstring>
+#include <climits>
 
-#if !defined(STBI_NO_LINEAR) || !defined(STBI_NO_HDR)
-#include <math.h>  // ldexp, pow
-#endif
+// #if !defined(STBI_NO_LINEAR) || !defined(STBI_NO_HDR)
+// #include <cmath>  // ldexp, pow
+// #endif
 
 #ifndef STBI_ASSERT
-#include <assert.h>
+#include <cassert>
 #define STBI_ASSERT(x) assert(x)
 #endif
 
-#ifdef __cplusplus
-#define STBI_EXTERN extern "C"
-#else
-#define STBI_EXTERN extern
-#endif
 
-
-#ifndef _MSC_VER
-#ifdef __cplusplus
-#define stbi_inline inline
-#else
-   #define stbi_inline
-#endif
-#else
-   #define stbi_inline __forceinline
-#endif
 
 #ifndef STBI_NO_THREAD_LOCALS
 #if defined(__cplusplus) &&  __cplusplus >= 201103L
@@ -68,20 +53,6 @@
 
 // should produce compiler error if size is wrong
 static_assert(sizeof(std::uint32_t) == 4);
-
-#ifdef _MSC_VER
-#define STBI_NOTUSED(v)  (void)(v)
-#else
-#define STBI_NOTUSED(v)  (void)sizeof(v)
-#endif
-
-
-
-#ifdef STBI_HAS_LROTL
-   #define stbi_lrot(x,y)  _lrotl(x,y)
-#else
-#define stbi_lrot(x,y)  (((x) << (y)) | ((x) >> (-(y) & 31)))
-#endif
 
 #if defined(STBI_MALLOC) && defined(STBI_FREE) && (defined(STBI_REALLOC) || defined(STBI_REALLOC_SIZED))
 // ok
@@ -460,9 +431,6 @@ enum
 };
 
 
-#if defined(STBI_NO_JPEG) && defined(STBI_NO_PNG) && defined(STBI_NO_BMP) && defined(STBI_NO_PSD) && defined(STBI_NO_TGA) && defined(STBI_NO_GIF) && defined(STBI_NO_PIC)
-// nothing
-#else
 static void stbi__skip(stbi__context *s, int n)
 {
 	if (n == 0) return; // already there!
@@ -483,11 +451,8 @@ static void stbi__skip(stbi__context *s, int n)
 	}
 	s->img_buffer += n;
 }
-#endif
 
-#if defined(STBI_NO_PNG) && defined(STBI_NO_TGA) && defined(STBI_NO_HDR) && defined(STBI_NO_PNM)
-// nothing
-#else
+
 static int stbi__getn(stbi__context *s, std::uint8_t *buffer, int n)
 {
 	if (s->io.read)
@@ -514,7 +479,7 @@ static int stbi__getn(stbi__context *s, std::uint8_t *buffer, int n)
 	}
 	return 0;
 }
-#endif
+
 
 
 
@@ -539,10 +504,6 @@ static std::uint8_t stbi__compute_y(int r, int g, int b)
 	return (std::uint8_t) (((r * 77) + (g * 150) + (29 * b)) >> 8);
 }
 
-
-#if defined(STBI_NO_PNG) && defined(STBI_NO_BMP) && defined(STBI_NO_PSD) && defined(STBI_NO_TGA) && defined(STBI_NO_GIF) && defined(STBI_NO_PIC) && defined(STBI_NO_PNM)
-// nothing
-#else
 static unsigned char *stbi__convert_format(unsigned char *data, int img_n, int req_comp, unsigned int x, unsigned int y)
 {
 	int i, j;
@@ -635,7 +596,6 @@ static unsigned char *stbi__convert_format(unsigned char *data, int img_n, int r
 	STBI_FREE(data);
 	return good;
 }
-#endif
 
 
 static std::uint16_t stbi__compute_y_16(int r, int g, int b)
@@ -736,15 +696,6 @@ static std::uint16_t *stbi__convert_format16(std::uint16_t *data, int img_n, int
 
 	STBI_FREE(data);
 	return good;
-}
-
-
-static stbi__pngchunk stbi__get_chunk_header(stbi__context *s)
-{
-	stbi__pngchunk c;
-	c.length = s->stbi__get32be();
-	c.type = s->stbi__get32be();
-	return c;
 }
 
 
@@ -1164,8 +1115,6 @@ static int stbi__expand_png_palette(stbi__png *a, std::uint8_t *palette, int len
 	STBI_FREE(a->out);
 	a->out = temp_out;
 
-	STBI_NOTUSED(len);
-
 	return 1;
 }
 
@@ -1191,7 +1140,9 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 
 	for (;;)
 	{
-		stbi__pngchunk c = stbi__get_chunk_header(s);
+		stbi__pngchunk c;
+		c.length = s->stbi__get32be();
+		c.type = s->stbi__get32be();
 		switch (c.type)
 		{
 			case STBI__PNG_TYPE('I', 'H', 'D', 'R'): {
@@ -1318,12 +1269,10 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				if ((int) (ioff + c.length) < (int) ioff) return 0;
 				if (ioff + c.length > idata_limit)
 				{
-					std::uint32_t idata_limit_old = idata_limit;
 					std::uint8_t *p;
 					if (idata_limit == 0) idata_limit = c.length > 4096 ? c.length : 4096;
 					while (ioff + c.length > idata_limit)
 						idata_limit *= 2;
-					STBI_NOTUSED(idata_limit_old);
 					p = (std::uint8_t *) STBI_REALLOC_SIZED(z->idata, idata_limit_old, idata_limit);
 					if (p == NULL) return stbi__err("outofmem", "Out of memory");
 					z->idata = p;
@@ -1341,7 +1290,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				// initial guess for decoded data size to avoid unnecessary reallocs
 				bpl = (s->img_x * z->depth + 7) / 8; // bytes per line, per component
 				raw_len = bpl * s->img_y * s->img_n /* pixels */ + s->img_y /* filter mode per row */;
-				z->expanded = (std::uint8_t *) stbi_zlib_decode_malloc_guesssize_headerflag(
+				z->expanded = stbi_zlib_decode_malloc_guesssize_headerflag(
 					z->idata,
 					ioff,
 					raw_len,
