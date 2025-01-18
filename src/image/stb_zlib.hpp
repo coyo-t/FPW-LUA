@@ -1,30 +1,13 @@
-//
-// Created by Chymic on 18-Jan-25.
-//
-
 #ifndef STB_ZLIB_HPP
 #define STB_ZLIB_HPP
 
-// #include "stb_image.hpp"
+#include <cstdint>
 
-// ZLIB client - used by PNG, available for other purposes
-
-// char *stbi_zlib_decode_malloc_guesssize(const char *buffer, int len, int initial_size, int *outlen);
-
-char *stbi_zlib_decode_malloc_guesssize_headerflag(const char *buffer, int len, int initial_size, int *outlen,
-																			  int parse_header);
-//
-// char *stbi_zlib_decode_malloc(const char *buffer, int len, int *outlen);
-//
-// int stbi_zlib_decode_buffer(char *obuffer, int olen, const char *ibuffer, int ilen);
-//
-// char *stbi_zlib_decode_noheader_malloc(const char *buffer, int len, int *outlen);
-//
-// int stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const char *ibuffer, int ilen);
-//
-//
-
-
-
+std::uint8_t* stbi_zlib_decode_malloc_guesssize_headerflag(
+	const std::uint8_t *buffer,
+	int len,
+	int initial_size,
+	int *outlen,
+	int parse_header);
 
 #endif //STB_ZLIB_HPP

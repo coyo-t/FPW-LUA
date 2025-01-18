@@ -165,9 +165,9 @@ struct Buffer {
 	int hit_zeof_once;
 	std::uint32_t code_buffer;
 
-	char *zout;
-	char *zout_start;
-	char *zout_end;
+	std::uint8_t* zout;
+	std::uint8_t* zout_start;
+	std::uint8_t* zout_end;
 	int z_expandable;
 
 	Huffman z_length, z_distance;
@@ -258,9 +258,9 @@ struct Buffer {
 		return zhuffman_decode_slowpath(z);
 	}
 	// need to make room for n bytes
-	auto zexpand(char *zout, int n) -> int
+	auto zexpand(std::uint8_t* zout, int n) -> int
 	{
-		char *q;
+		std::uint8_t *q;
 		unsigned int cur, limit, old_limit;
 		this->zout = zout;
 		if (!this->z_expandable) return stbi__err("output buffer limit", "Corrupt PNG");
@@ -272,7 +272,7 @@ struct Buffer {
 			if (limit > UINT_MAX / 2) return stbi__err("outofmem", "Out of memory");
 			limit *= 2;
 		}
-		q = (char *) STBI_REALLOC_SIZED(this->zout_start, old_limit, limit);
+		q = (std::uint8_t*) STBI_REALLOC_SIZED(this->zout_start, old_limit, limit);
 		STBI_NOTUSED(old_limit);
 		if (q == NULL) return stbi__err("outofmem", "Out of memory");
 		this->zout_start = q;
@@ -282,7 +282,7 @@ struct Buffer {
 	}
 	auto parse_huffman_block() -> int
 	{
-		char *zout = this->zout;
+		auto* zout = this->zout;
 		for (;;)
 		{
 			int z = this->zhuffman_decode(&this->z_length);
@@ -294,11 +294,10 @@ struct Buffer {
 					if (!this->zexpand(zout, 1)) return 0;
 					zout = this->zout;
 				}
-				*zout++ = (char) z;
+				*zout++ = static_cast<std::uint8_t>(z);
 			}
 			else
 			{
-				std::uint8_t *p;
 				if (z == 256)
 				{
 					this->zout = zout;
@@ -328,7 +327,7 @@ struct Buffer {
 					if (!this->zexpand(zout, len)) return 0;
 					zout = this->zout;
 				}
-				p = (std::uint8_t *) (zout - dist);
+				std::uint8_t *p = zout - dist;
 				if (dist == 1)
 				{
 					// run of one byte; common in images.
@@ -488,7 +487,7 @@ struct Buffer {
 		} while (!final);
 		return 1;
 	}
-	auto do_zlib(char *obuf, int olen, int exp, int parse_header) -> int
+	auto do_zlib(std::uint8_t* obuf, int olen, int exp, int parse_header) -> int
 	{
 		this->zout_start = obuf;
 		this->zout = obuf;
@@ -500,34 +499,15 @@ struct Buffer {
 };
 
 
-
-
-// STBIDEF char *stbi_zlib_decode_malloc_guesssize(const char *buffer, int len, int initial_size, int *outlen)
-// {
-// 	Buffer a;
-// 	char *p = (char *) stbi__malloc(initial_size);
-// 	if (p == NULL) return NULL;
-// 	a.zbuffer = (std::uint8_t *) buffer;
-// 	a.zbuffer_end = (std::uint8_t *) buffer + len;
-// 	if (a.do_zlib(p, initial_size, 1, 1))
-// 	{
-// 		if (outlen) *outlen = (int) (a.zout - a.zout_start);
-// 		return a.zout_start;
-// 	}
-// 	STBI_FREE(a.zout_start);
-// 	return NULL;
-// }
-
-// STBIDEF char *stbi_zlib_decode_malloc(char const *buffer, int len, int *outlen)
-// {
-// 	return stbi_zlib_decode_malloc_guesssize(buffer, len, 16384, outlen);
-// }
-
-STBIDEF char *stbi_zlib_decode_malloc_guesssize_headerflag(const char *buffer, int len, int initial_size, int *outlen,
-                                                           int parse_header)
+STBIDEF std::uint8_t* stbi_zlib_decode_malloc_guesssize_headerflag(
+	const std::uint8_t *buffer,
+	int len,
+	int initial_size,
+	int *outlen,
+	int parse_header)
 {
 	Buffer a;
-	auto p = (char *) stbi__malloc(initial_size);
+	auto p = static_cast<std::uint8_t*>(stbi__malloc(initial_size));
 	if (p == nullptr) return nullptr;
 	a.zbuffer = (std::uint8_t *) buffer;
 	a.zbuffer_end = (std::uint8_t *) buffer + len;
@@ -537,42 +517,5 @@ STBIDEF char *stbi_zlib_decode_malloc_guesssize_headerflag(const char *buffer, i
 		return a.zout_start;
 	}
 	STBI_FREE(a.zout_start);
-	return NULL;
+	return nullptr;
 }
-
-// STBIDEF int stbi_zlib_decode_buffer(char *obuffer, int olen, char const *ibuffer, int ilen)
-// {
-// 	Buffer a;
-// 	a.zbuffer = (std::uint8_t *) ibuffer;
-// 	a.zbuffer_end = (std::uint8_t *) ibuffer + ilen;
-// 	if (a.do_zlib(obuffer, olen, 0, 1))
-// 		return (int) (a.zout - a.zout_start);
-// 	return -1;
-// }
-//
-// STBIDEF char *stbi_zlib_decode_noheader_malloc(char const *buffer, int len, int *outlen)
-// {
-// 	Buffer a;
-// 	auto p = (char *) stbi__malloc(16384);
-// 	if (p == NULL) return NULL;
-// 	a.zbuffer = (std::uint8_t *) buffer;
-// 	a.zbuffer_end = (std::uint8_t *) buffer + len;
-// 	if (a.do_zlib(p, 16384, 1, 0))
-// 	{
-// 		if (outlen) *outlen = (int) (a.zout - a.zout_start);
-// 		return a.zout_start;
-// 	}
-// 	STBI_FREE(a.zout_start);
-// 	return NULL;
-// }
-//
-//
-// STBIDEF int stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const char *ibuffer, int ilen)
-// {
-// 	Buffer a;
-// 	a.zbuffer = (std::uint8_t *) ibuffer;
-// 	a.zbuffer_end = (std::uint8_t *) ibuffer + ilen;
-// 	if (a.do_zlib(obuffer, olen, 0, 0))
-// 		return (int) (a.zout - a.zout_start);
-// 	return -1;
-// }
