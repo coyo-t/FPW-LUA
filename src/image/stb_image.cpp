@@ -275,23 +275,6 @@ static std::uint8_t *stbi__convert_16_to_8(std::uint16_t *orig, int w, int h, in
 	return reduced;
 }
 
-static std::uint16_t *stbi__convert_8_to_16(std::uint8_t *orig, int w, int h, int channels)
-{
-	int i;
-	int img_len = w * h * channels;
-	std::uint16_t *enlarged;
-
-	enlarged = (std::uint16_t *) stbi__malloc(img_len * 2);
-	if (enlarged == nullptr)
-		return (std::uint16_t *) stbi__errpuc("outofmem", "Out of memory");
-
-	for (i = 0; i < img_len; ++i)
-		enlarged[i] = (std::uint16_t) ((orig[i] << 8) + orig[i]); // replicate to high and low byte, maps 0->0, 255->0xffff
-
-	STBI_FREE(orig);
-	return enlarged;
-}
-
 
 static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, int *y, int *comp, int req_comp)
 {
@@ -1892,22 +1875,6 @@ static int stbi__png_test(stbi__context *s)
 	return r;
 }
 
-static int stbi__png_info_raw(stbi__png *p, int *x, int *y, int *comp)
-{
-	if (!stbi__parse_png_file(p, STBI__SCAN_header, 0))
-	{
-		p->s->stbi__rewind();
-		return 0;
-	}
-	if (x != nullptr)
-		*x = p->s->img_x;
-	if (y != nullptr)
-		*y = p->s->img_y;
-	if (comp != nullptr)
-		*comp = p->s->img_n;
-	return 1;
-}
-
 
 STBIDEF int stbi_info_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *comp)
 {
@@ -1915,10 +1882,17 @@ STBIDEF int stbi_info_from_memory(std::uint8_t const *buffer, int len, int *x, i
 	s.stbi__start_mem(buffer, len);
 	stbi__png p;
 	p.s = &s;
-	if (stbi__png_info_raw(&p, x, y, comp))
+	if (!stbi__parse_png_file(&p, STBI__SCAN_header, 0))
 	{
-		return true;
+		p.s->stbi__rewind();
+		return stbi__err("unknown image type", "Image not of any known type, or corrupt");
 	}
-	return stbi__err("unknown image type", "Image not of any known type, or corrupt");
+	if (x != nullptr)
+		*x = p.s->img_x;
+	if (y != nullptr)
+		*y = p.s->img_y;
+	if (comp != nullptr)
+		*comp = p.s->img_n;
+	return true;
 }
 
