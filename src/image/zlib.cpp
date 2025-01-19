@@ -525,32 +525,6 @@ static int zparse_uncompressed_block(ZBuffer *a)
 	return 1;
 }
 
-static bool zparse_zlib_header(ZBuffer *a)
-{
-	int cmf = zget8(a);
-	int cm = cmf & 15;
-	/* int cinfo = cmf >> 4; */
-	int flg = zget8(a);
-	if (zeof(a))
-	{
-		return a->error_occured("bad zlib header"); // zlib spec
-	}
-	if ((cmf * 256 + flg) % 31 != 0)
-	{
-		return a->error_occured("bad zlib header"); // zlib spec
-	}
-	if (flg & 32)
-	{
-		return a->error_occured("no preset dict"); // preset dictionary not allowed in png
-	}
-	if (cm != 8)
-	{
-		return a->error_occured("bad compression"); // DEFLATE required for png
-	}
-	// window = 1 << (8 + cinfo)... but who cares, we fully buffer output
-	return true;
-}
-
 static const uint8_t zdefault_length[STBI__ZNSYMS] =
 {
 	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
@@ -591,7 +565,36 @@ static int zdo_zlib(ZBuffer *a, uint8_t* obuf, size_t olen, bool exp, bool parse
 	{
 		if (parse_header)
 		{
-			if (!zparse_zlib_header(a))
+			bool hdrresult;
+			int cmf = zget8(a);
+			int cm = cmf & 15;
+			/* int cinfo = cmf >> 4; */
+			int flg = zget8(a);
+			if (zeof(a))
+			{
+				hdrresult = a->error_occured("bad zlib header"); // zlib spec
+				goto hdrendl;
+			}
+			if ((cmf * 256 + flg) % 31 != 0)
+			{
+				hdrresult = a->error_occured("bad zlib header"); // zlib spec
+				goto hdrendl;
+			}
+			if (flg & 32)
+			{
+				hdrresult = a->error_occured("no preset dict"); // preset dictionary not allowed in png
+				goto hdrendl;
+			}
+			if (cm != 8)
+			{
+				hdrresult = a->error_occured("bad compression"); // DEFLATE required for png
+				goto hdrendl;
+			}
+			// window = 1 << (8 + cinfo)... but who cares, we fully buffer output
+			hdrresult = true;
+
+			hdrendl:
+			if (!hdrresult)
 			{
 				goto endl;
 			}
