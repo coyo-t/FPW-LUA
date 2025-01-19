@@ -73,7 +73,7 @@ namespace Coyote {
 	constexpr auto BoundsS8  = SignedBounds<8>();
 	constexpr auto BoundsS16 = SignedBounds<16>();
 	constexpr auto BoundsS32 = SignedBounds<32>();
-	constexpr auto BoundsS64 = SignedBounds<64>();
+	constexpr auto BoundsS64 = SignedBounds<64>()
 
 }
 

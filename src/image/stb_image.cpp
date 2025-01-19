@@ -1669,7 +1669,7 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 					{
 						return stbi__err("tRNS with alpha", "Corrupt PNG");
 					}
-					if (c.length != (U32) s->img_n * 2)
+					if (c.length != static_cast<U32>(s->img_n) * 2)
 					{
 						return stbi__err("bad tRNS len", "Corrupt PNG");
 					}
