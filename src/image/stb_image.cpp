@@ -1061,25 +1061,24 @@ static U16 *stbi__convert_format16(U16*data, int img_n, int req_comp, unsigned i
 	return good;
 }
 
-
-enum
+enum class Filter
 {
-	STBI__F_none = 0,
-	STBI__F_sub = 1,
-	STBI__F_up = 2,
-	STBI__F_avg = 3,
-	STBI__F_paeth = 4,
-	// synthetic filter used for first scanline to avoid needing a dummy row of 0s
-	STBI__F_avg_first
+	None = 0,
+	Sub = 1,
+	Up = 2,
+	Avg = 3,
+	Paeth = 4,
+	AvgFirst,
+
 };
 
-static Byte first_row_filter[5] =
-{
-	STBI__F_none,
-	STBI__F_sub,
-	STBI__F_none,
-	STBI__F_avg_first,
-	STBI__F_sub // Paeth with b=c=0 turns out to be equivalent to sub
+static auto first_row_filter[5] = {
+	Filter::None,
+	Filter::Sub,
+	Filter::None,
+	Filter::AvgFirst,
+	// Paeth with b=c=0 turns out to be equivalent to sub
+	Filter::Sub
 };
 
 static int stbi__paeth(int a, int b, int c)
@@ -1207,31 +1206,36 @@ static int stbi__create_png_image_raw(Png *a, Byte* raw, U32 raw_len, int out_n,
 		}
 
 		// if first row, use special filter that doesn't sample previous row
+		Filter targetFilter;
 		if (j == 0)
 		{
-			filter = first_row_filter[filter];
+			targetFilter = first_row_filter[filter];
+		}
+		else
+		{
+			targetFilter = static_cast<Filter>(filter);
 		}
 
 		// perform actual filtering
-		switch (filter)
+		switch (targetFilter)
 		{
-			case STBI__F_none:
+			case Filter::None:
 				memcpy(cur, raw, nk);
 				break;
-			case STBI__F_sub:
+			case Filter::Sub:
 				memcpy(cur, raw, filter_bytes);
 				for (k = filter_bytes; k < nk; ++k)
 				{
 					cur[k] = BYTECAST(raw[k] + cur[k-filter_bytes]);
 				}
 				break;
-			case STBI__F_up:
+			case Filter::Up:
 				for (k = 0; k < nk; ++k)
 				{
 					cur[k] = BYTECAST(raw[k] + prior[k]);
 				}
 				break;
-			case STBI__F_avg:
+			case Filter::Avg:
 				for (k = 0; k < filter_bytes; ++k)
 				{
 					cur[k] = BYTECAST(raw[k] + (prior[k]>>1));
@@ -1241,7 +1245,7 @@ static int stbi__create_png_image_raw(Png *a, Byte* raw, U32 raw_len, int out_n,
 					cur[k] = BYTECAST(raw[k] + ((prior[k] + cur[k-filter_bytes])>>1));
 				}
 				break;
-			case STBI__F_paeth:
+			case Filter::Paeth:
 				for (k = 0; k < filter_bytes; ++k)
 				{
 					// prior[k] == stbi__paeth(0,prior[k],0)
@@ -1252,7 +1256,7 @@ static int stbi__create_png_image_raw(Png *a, Byte* raw, U32 raw_len, int out_n,
 					cur[k] = BYTECAST(raw[k] + stbi__paeth(cur[k-filter_bytes], prior[k], prior[k-filter_bytes]));
 				}
 				break;
-			case STBI__F_avg_first:
+			case Filter::AvgFirst:
 				memcpy(cur, raw, filter_bytes);
 				for (k = filter_bytes; k < nk; ++k)
 				{
