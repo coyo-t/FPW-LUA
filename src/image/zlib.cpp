@@ -5,9 +5,6 @@
 #include<cstring>
 #include<climits>
 
-using stbi__uint16 = std::uint16_t;
-using stbi__uint32 = std::uint32_t;
-using stbi_uc = std::uint8_t;
 
 // public domain zlib decode    v0.2  Sean Barrett 2006-11-18
 //    simple implementation
@@ -27,12 +24,12 @@ static constexpr auto STBI__ZNSYMS = 288;
 // (jpegs packs from left, zlib from right, so can't share code)
 struct ZHuffman
 {
-	stbi__uint16 fast[1 << STBI__ZFAST_BITS];
-	stbi__uint16 firstcode[16];
+	uint16_t fast[1 << STBI__ZFAST_BITS];
+	uint16_t firstcode[16];
 	int maxcode[17];
-	stbi__uint16 firstsymbol[16];
-	stbi_uc size[STBI__ZNSYMS];
-	stbi__uint16 value[STBI__ZNSYMS];
+	uint16_t firstsymbol[16];
+	uint8_t size[STBI__ZNSYMS];
+	uint16_t value[STBI__ZNSYMS];
 };
 
 static int bitreverse16(int n)
@@ -52,14 +49,14 @@ static int bit_reverse(int v, int bits)
 	return bitreverse16(v) >> (16 - bits);
 }
 
-static int zbuild_huffman(ZHuffman *z, const stbi_uc *sizelist, int num)
+static int zbuild_huffman(ZHuffman *z, const uint8_t *sizelist, int num)
 {
 	int i, k = 0;
-	int next_code[16], sizes[17];
+	int next_code[16];
+	int sizes[17] = {};
 
-	// DEFLATE spec for generating codes
-	memset(sizes, 0, sizeof(sizes));
-	memset(z->fast, 0, sizeof(z->fast));
+	std::memset(sizes, 0, sizeof(sizes));
+	std::memset(z->fast, 0, sizeof(z->fast));
 	for (i = 0; i < num; ++i)
 	{
 		++sizes[sizelist[i]];
@@ -76,8 +73,8 @@ static int zbuild_huffman(ZHuffman *z, const stbi_uc *sizelist, int num)
 	for (i = 1; i < 16; ++i)
 	{
 		next_code[i] = code;
-		z->firstcode[i] = (stbi__uint16) code;
-		z->firstsymbol[i] = (stbi__uint16) k;
+		z->firstcode[i] = (uint16_t) code;
+		z->firstsymbol[i] = (uint16_t) k;
 		code = (code + sizes[i]);
 		if (sizes[i])
 		{
@@ -99,9 +96,9 @@ static int zbuild_huffman(ZHuffman *z, const stbi_uc *sizelist, int num)
 			continue;
 		}
 		int c = next_code[s] - z->firstcode[s] + z->firstsymbol[s];
-		stbi__uint16 fastv = (stbi__uint16) ((s << 9) | i);
-		z->size[c] = (stbi_uc) s;
-		z->value[c] = (stbi__uint16) i;
+		uint16_t fastv = (uint16_t) ((s << 9) | i);
+		z->size[c] = (uint8_t) s;
+		z->value[c] = (uint16_t) i;
 		if (s <= STBI__ZFAST_BITS)
 		{
 			int j = bit_reverse(next_code[s], s);
@@ -124,20 +121,21 @@ static int zbuild_huffman(ZHuffman *z, const stbi_uc *sizelist, int num)
 
 struct ZBuffer
 {
-	std::uint8_t * zbuffer;
-	std::uint8_t *zbuffer_end;
+	uint8_t * zbuffer;
+	uint8_t *zbuffer_end;
 	int num_bits;
 	int hit_zeof_once;
-	stbi__uint32 code_buffer;
+	uint32_t code_buffer;
 
-	std::uint8_t* zout;
-	std::uint8_t* zout_start;
-	std::uint8_t* zout_end;
+	uint8_t* zout;
+	uint8_t* zout_start;
+	uint8_t* zout_end;
 	int z_expandable;
 
-	ZHuffman z_length, z_distance;
+	ZHuffman z_length;
+	ZHuffman z_distance;
 
-	ZlibContext* context;
+	Zlib::Context* context;
 };
 
 static int zeof(ZBuffer *z)
@@ -145,7 +143,7 @@ static int zeof(ZBuffer *z)
 	return (z->zbuffer >= z->zbuffer_end);
 }
 
-static stbi_uc zget8(ZBuffer *z)
+static uint8_t zget8(ZBuffer *z)
 {
 	return zeof(z) ? 0 : *z->zbuffer++;
 }
@@ -247,7 +245,7 @@ static int zhuffman_decode(ZBuffer *a, ZHuffman *z)
 	return zhuffman_decode_slowpath(a, z);
 }
 
-static int zexpand(ZBuffer *z, std::uint8_t*zout, int n) // need to make room for n bytes
+static int zexpand(ZBuffer *z, uint8_t*zout, int n) // need to make room for n bytes
 {
 	unsigned int old_limit;
 	z->zout = zout;
@@ -393,10 +391,9 @@ static int zparse_huffman_block(ZBuffer *a)
 
 static int zcompute_huffman_codes(ZBuffer *a)
 {
-	static const stbi_uc length_dezigzag[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
+	static const uint8_t length_dezigzag[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 	ZHuffman z_codelength;
-	stbi_uc lencodes[286 + 32 + 137]; //padding for maximum single op
-	stbi_uc codelength_sizes[19];
+	uint8_t lencodes[286 + 32 + 137]; //padding for maximum single op
 	int i, n;
 
 	int hlit = zreceive(a, 5) + 257;
@@ -404,11 +401,11 @@ static int zcompute_huffman_codes(ZBuffer *a)
 	int hclen = zreceive(a, 4) + 4;
 	int ntot = hlit + hdist;
 
-	memset(codelength_sizes, 0, sizeof(codelength_sizes));
+	uint8_t codelength_sizes[19] = {};
 	for (i = 0; i < hclen; ++i)
 	{
 		int s = zreceive(a, 3);
-		codelength_sizes[length_dezigzag[i]] = (stbi_uc) s;
+		codelength_sizes[length_dezigzag[i]] = (uint8_t) s;
 	}
 	if (!zbuild_huffman(&z_codelength, codelength_sizes, 19))
 	{
@@ -425,11 +422,11 @@ static int zcompute_huffman_codes(ZBuffer *a)
 		}
 		if (c < 16)
 		{
-			lencodes[n++] = (stbi_uc) c;
+			lencodes[n++] = (uint8_t) c;
 		}
 		else
 		{
-			stbi_uc fill = 0;
+			uint8_t fill = 0;
 			if (c == 16)
 			{
 				c = zreceive(a, 2) + 3;
@@ -455,7 +452,7 @@ static int zcompute_huffman_codes(ZBuffer *a)
 			{
 				return stbi__err("bad codelengths", "Corrupt PNG");
 			}
-			memset(lencodes + n, fill, c);
+			std::memset(lencodes + n, fill, c);
 			n += c;
 		}
 	}
@@ -476,7 +473,7 @@ static int zcompute_huffman_codes(ZBuffer *a)
 
 static int zparse_uncompressed_block(ZBuffer *a)
 {
-	stbi_uc header[4];
+	uint8_t header[4];
 	int len, nlen, k;
 	if (a->num_bits & 7)
 	{
@@ -486,7 +483,7 @@ static int zparse_uncompressed_block(ZBuffer *a)
 	k = 0;
 	while (a->num_bits > 0)
 	{
-		header[k++] = (stbi_uc) (a->code_buffer & 255); // suppress MSVC run-time check
+		header[k++] = (uint8_t) (a->code_buffer & 255); // suppress MSVC run-time check
 		a->code_buffer >>= 8;
 		a->num_bits -= 8;
 	}
@@ -516,7 +513,7 @@ static int zparse_uncompressed_block(ZBuffer *a)
 			return 0;
 		}
 	}
-	memcpy(a->zout, a->zbuffer, len);
+	std::memcpy(a->zout, a->zbuffer, len);
 	a->zbuffer += len;
 	a->zout += len;
 	return 1;
@@ -548,7 +545,7 @@ static int zparse_zlib_header(ZBuffer *a)
 	return 1;
 }
 
-static const stbi_uc zdefault_length[STBI__ZNSYMS] =
+static const uint8_t zdefault_length[STBI__ZNSYMS] =
 {
 	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
 	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
@@ -560,7 +557,7 @@ static const stbi_uc zdefault_length[STBI__ZNSYMS] =
 	9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
 	7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8
 };
-static const stbi_uc zdefault_distance[32] =
+static const uint8_t zdefault_distance[32] =
 {
 	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
 };
@@ -635,7 +632,7 @@ static int zparse_zlib(ZBuffer *a, int parse_header)
 	return 1;
 }
 
-static int zdo_zlib(ZBuffer *a, std::uint8_t* obuf, int olen, int exp, int parse_header)
+static int zdo_zlib(ZBuffer *a, uint8_t* obuf, int olen, int exp, int parse_header)
 {
 	a->zout_start = obuf;
 	a->zout = obuf;
@@ -646,22 +643,22 @@ static int zdo_zlib(ZBuffer *a, std::uint8_t* obuf, int olen, int exp, int parse
 }
 
 
-std::uint8_t *stbi_zlib_decode_malloc_guesssize_headerflag(ZlibContext *context)
+auto Zlib::Context::decode_malloc_guesssize_headerflag() -> uint8_t *
 {
-	const auto p = context->malloc_t<std::uint8_t>(context->initial_size);
+	const auto p = this->malloc_t<uint8_t>(this->initial_size);
 	if (p == nullptr)
 	{
 		return nullptr;
 	}
 	ZBuffer a;
-	a.zbuffer = context->buffer;
-	a.zbuffer_end = context->buffer +context->len;
-	if (zdo_zlib(&a, p,context->initial_size, 1, context->parse_header))
+	a.zbuffer = this->buffer;
+	a.zbuffer_end = this->buffer + this->len;
+	if (zdo_zlib(&a, p, this->initial_size, 1, this->parse_header))
 	{
-		context->out_len = a.zout - a.zout_start;
+		this->out_len = a.zout - a.zout_start;
 		return a.zout_start;
 	}
-	context->free(a.zout_start);
+	this->free_t(a.zout_start);
 	return nullptr;
 }
 

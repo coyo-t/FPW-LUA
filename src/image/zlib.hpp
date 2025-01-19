@@ -5,63 +5,60 @@
 
 #include<cstdint>
 
-struct ZlibContext
-{
-	using MallocCallback = auto (std::size_t size) -> void*;
-	using FreeCallback = auto (void* addr) -> void;
-	using ReallocCallback = auto (
-		void* addr,
-		std::size_t old_size,
-		std::size_t new_size
-	) -> void*;
+namespace Zlib {
+	using std::uint8_t;
+	using std::size_t;
 
-	MallocCallback*
-	malloc = nullptr;
-
-	FreeCallback*
-	free = nullptr;
-
-	ReallocCallback*
-	realloc = nullptr;
-
-	std::uint8_t* buffer = nullptr;
-	std::size_t len = 0;
-	std::size_t initial_size = 0;
-	std::size_t out_len = 0;
-	std::uint8_t parse_header = false;
-
-	template<typename T>
-	auto realloc_t (T* p, std::size_t olds, std::size_t news) -> T*
+	struct Context
 	{
-		if (realloc != nullptr)
+		using MallocCallback = auto (size_t size) -> void*;
+		using FreeCallback = auto (void* addr) -> void;
+		using ReallocCallback = auto (
+			void* addr,
+			size_t old_size,
+			size_t new_size
+		) -> void*;
+
+		MallocCallback*
+		malloc = nullptr;
+
+		FreeCallback*
+		free = nullptr;
+
+		ReallocCallback*
+		realloc = nullptr;
+
+		uint8_t* buffer = nullptr;
+		uint8_t parse_header = false;
+		size_t len = 0;
+		size_t initial_size = 0;
+		size_t out_len = 0;
+
+		template<typename T>
+		auto free_t (T* p)
 		{
-			return static_cast<T*>(realloc(p, olds, news));
+			if (free != nullptr)
+			{
+				free(p);
+			}
 		}
-		return nullptr;
-	}
 
-	template<typename T>
-	auto malloc_t (std::size_t count) -> T*
-	{
-		if (malloc != nullptr)
+		template<typename T>
+		auto realloc_t (T* p, size_t olds, size_t news) -> T*
 		{
-			return static_cast<T*>(malloc(sizeof(T) * count));
+			return realloc != nullptr ? static_cast<T*>(realloc(p, olds, news)) : nullptr;
 		}
-		return nullptr;
-	}
-};
 
+		template<typename T>
+		auto malloc_t (size_t count) -> T*
+		{
+			return malloc != nullptr ? static_cast<T*>(malloc(sizeof(T) * count)) : nullptr;
+		}
 
-extern auto
-stbi_zlib_decode_malloc_guesssize_headerflag(ZlibContext *context) -> std::uint8_t*;
+		auto decode_malloc_guesssize_headerflag() -> uint8_t*;
+	};
+}
 
-// extern char *stbi_zlib_decode_malloc_guesssize_headerflag(
-// 	const char *buffer,
-// 	int len,
-// 	int initial_size,
-// 	int *outlen,
-// 	int parse_header
-// );
 
 
 #endif //ZLIB_HPP

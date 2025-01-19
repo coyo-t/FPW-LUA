@@ -1416,7 +1416,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				bpl = (s->img_x * z->depth + 7) / 8; // bytes per line, per component
 				raw_len = bpl * s->img_y * s->img_n /* pixels */ + s->img_y /* filter mode per row */;
 
-				auto zctx = ZlibContext();
+				auto zctx = Zlib::Context();
 				zctx.buffer = z->idata;
 				zctx.len = ioff;
 				zctx.initial_size = raw_len;
@@ -1426,7 +1426,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				zctx.free    = [](void* p) { STBI_FREE(p); };
 				zctx.realloc = [](void* p, size_t olds, size_t news) { return STBI_REALLOC_SIZED(p, olds, news); };
 
-				z->expanded = stbi_zlib_decode_malloc_guesssize_headerflag(&zctx);
+				z->expanded = zctx.decode_malloc_guesssize_headerflag();
 
 				raw_len = zctx.out_len;
 
