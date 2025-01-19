@@ -77,4 +77,6 @@ add_library(
 	src/luatemplate.hpp
 		  src/coyote/numberz.hpp
 		  src/image/stb_image.cpp
+		  src/image/zlib.hpp
+		  src/image/zlib.cpp
 )
