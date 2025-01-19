@@ -33,7 +33,7 @@ Init algorithm:
 	for (i=0; i <=  31; ++i)     stbi__zdefault_distance[i] = 5;
 }
 */
-static const uint8_t zdefault_length[STBI__ZNSYMS] =
+static const uint8_t DEFAULT_LENGTH[STBI__ZNSYMS] =
 {
 	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
 	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
@@ -45,10 +45,30 @@ static const uint8_t zdefault_length[STBI__ZNSYMS] =
 	9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
 	7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8
 };
-static const uint8_t zdefault_distance[32] =
+static const uint8_t DEFAULT_DISTANCE[32] =
 {
 	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
 };
+
+static const uint8_t LENGTH_DE_ZIGZAG[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
+
+static const int ZLENGTH_BASE[31] = {
+	3, 4, 5, 6, 7, 8, 9, 10, 11, 13,
+	15, 17, 19, 23, 27, 31, 35, 43, 51, 59,
+	67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0
+};
+
+static const int stbi__zlength_extra[31] =
+		{0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, 0, 0};
+
+static const int ZDIST_BASE[32] = {
+	1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193,
+	257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577, 0, 0
+};
+
+static const int ZDIST_EXTRA[32] =
+		{0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13};
+
 
 struct ZHuffman
 {
@@ -101,48 +121,44 @@ struct ZBuffer
 
 	Zlib::Context* context;
 
-	auto error_occured (const char* message) -> bool
+	auto zeof() -> bool
 	{
-		return context->error_occured(message);
+		return zbuffer >= zbuffer_end;
+	}
+	auto zget8() -> uint8_t
+	{
+		return zeof() ? 0 : *zbuffer++;
+	}
+	auto zfill_bits () -> void
+	{
+		do
+		{
+			if (code_buffer >= (1U << num_bits))
+			{
+				zbuffer = zbuffer_end; /* treat this as EOF so we fail. */
+				return;
+			}
+			code_buffer |= static_cast<unsigned int>(zget8()) << num_bits;
+			num_bits += 8;
+		} while (num_bits <= 24);
+	}
+	auto zreceive(int n) -> unsigned int
+	{
+		unsigned int k;
+		if (num_bits < n)
+		{
+			zfill_bits();
+		}
+		k = code_buffer & ((1 << n) - 1);
+		code_buffer >>= n;
+		num_bits -= n;
+		return k;
 	}
 };
 
-static int zeof(ZBuffer *z)
-{
-	return (z->zbuffer >= z->zbuffer_end);
-}
 
-static uint8_t zget8(ZBuffer *z)
-{
-	return zeof(z) ? 0 : *z->zbuffer++;
-}
 
-static void zfill_bits(ZBuffer *z)
-{
-	do
-	{
-		if (z->code_buffer >= (1U << z->num_bits))
-		{
-			z->zbuffer = z->zbuffer_end; /* treat this as EOF so we fail. */
-			return;
-		}
-		z->code_buffer |= static_cast<unsigned int>(zget8(z)) << z->num_bits;
-		z->num_bits += 8;
-	} while (z->num_bits <= 24);
-}
 
-static unsigned int zreceive(ZBuffer *z, int n)
-{
-	unsigned int k;
-	if (z->num_bits < n)
-	{
-		zfill_bits(z);
-	}
-	k = z->code_buffer & ((1 << n) - 1);
-	z->code_buffer >>= n;
-	z->num_bits -= n;
-	return k;
-}
 
 static int zhuffman_decode_slowpath(ZBuffer *a, ZHuffman *z)
 {
@@ -181,7 +197,7 @@ static int zhuffman_decode(ZBuffer *a, ZHuffman *z)
 	int b, s;
 	if (a->num_bits < 16)
 	{
-		if (zeof(a))
+		if (a->zeof())
 		{
 			if (!a->hit_zeof_once)
 			{
@@ -200,7 +216,7 @@ static int zhuffman_decode(ZBuffer *a, ZHuffman *z)
 		}
 		else
 		{
-			zfill_bits(a);
+			a->zfill_bits();
 		}
 	}
 	b = z->fast[a->code_buffer & STBI__ZFAST_MASK];
@@ -214,25 +230,26 @@ static int zhuffman_decode(ZBuffer *a, ZHuffman *z)
 	return zhuffman_decode_slowpath(a, z);
 }
 
-static int zexpand(ZBuffer *z, uint8_t*zout, int n) // need to make room for n bytes
+static void zexpand(ZBuffer *z, uint8_t*zout, int n)
 {
+	// need to make room for n bytes
 	unsigned int old_limit;
 	z->zout = zout;
 	if (!z->z_expandable)
 	{
-		return z->error_occured("output buffer limit");
+		throw Zlib::Er("output buffer limit");
 	}
 	auto cur = (z->zout - z->zout_start);
 	auto limit = old_limit = (z->zout_end - z->zout_start);
 	if (UINT_MAX - cur < n)
 	{
-		return z->error_occured("outofmem");
+		throw Zlib::Er("outofmem");
 	}
 	while (cur + n > limit)
 	{
 		if (limit > UINT_MAX / 2)
 		{
-			return z->error_occured("outofmem");
+			throw Zlib::Er("outofmem");
 		}
 		limit *= 2;
 	}
@@ -240,126 +257,14 @@ static int zexpand(ZBuffer *z, uint8_t*zout, int n) // need to make room for n b
 	// STBI_NOTUSED(old_limit);
 	if (q == nullptr)
 	{
-		return z->error_occured("outofmem");
+		throw Zlib::Er("outofmem");
 	}
 	z->zout_start = q;
 	z->zout = q + cur;
 	z->zout_end = q + limit;
-	return 1;
 }
 
-static const int stbi__zlength_base[31] = {
-	3, 4, 5, 6, 7, 8, 9, 10, 11, 13,
-	15, 17, 19, 23, 27, 31, 35, 43, 51, 59,
-	67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0
-};
-
-static const int stbi__zlength_extra[31] =
-		{0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, 0, 0};
-
-static const int stbi__zdist_base[32] = {
-	1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193,
-	257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577, 0, 0
-};
-
-static const int stbi__zdist_extra[32] =
-		{0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13};
-
-static int zparse_huffman_block(ZBuffer *a)
-{
-	auto zout = a->zout;
-	for (;;)
-	{
-		int z = zhuffman_decode(a, &a->z_length);
-		if (z < 256)
-		{
-			if (z < 0)
-			{
-				// error in huffman codes
-				return a->error_occured("bad huffman code");
-			}
-			if (zout >= a->zout_end)
-			{
-				if (!zexpand(a, zout, 1))
-				{
-					return 0;
-				}
-				zout = a->zout;
-			}
-			*zout++ = (char) z;
-		}
-		else
-		{
-			int len, dist;
-			if (z == 256)
-			{
-				a->zout = zout;
-				if (a->hit_zeof_once && a->num_bits < 16)
-				{
-					// The first time we hit zeof, we inserted 16 extra zero bits into our bit
-					// buffer so the decoder can just do its speculative decoding. But if we
-					// actually consumed any of those bits (which is the case when num_bits < 16),
-					// the stream actually read past the end so it is malformed.
-					return a->error_occured("unexpected end");
-				}
-				return 1;
-			}
-			if (z >= 286)
-			{
-				return a->error_occured("bad huffman code");
-			}
-			// per DEFLATE, length codes 286 and 287 must not appear in compressed data
-			z -= 257;
-			len = stbi__zlength_base[z];
-			if (stbi__zlength_extra[z])
-			{
-				len += zreceive(a, stbi__zlength_extra[z]);
-			}
-			z = zhuffman_decode(a, &a->z_distance);
-			if (z < 0 || z >= 30)
-			{
-				return a->error_occured("bad huffman code");
-			}
-			// per DEFLATE, distance codes 30 and 31 must not appear in compressed data
-			dist = stbi__zdist_base[z];
-			if (stbi__zdist_extra[z])
-			{
-				dist += zreceive(a, stbi__zdist_extra[z]);
-			}
-			if (zout - a->zout_start < dist)
-			{
-				return a->error_occured("bad dist");
-			}
-			if (len > a->zout_end - zout)
-			{
-				if (!zexpand(a, zout, len))
-				{
-					return 0;
-				}
-				zout = a->zout;
-			}
-			auto p = zout - dist;
-			if (dist == 1)
-			{
-				// run of one byte; common in images.
-				auto v = *p;
-				if (len)
-				{
-					do *zout++ = v; while (--len);
-				}
-			}
-			else
-			{
-				if (len)
-				{
-					do *zout++ = *p++; while (--len);
-				}
-			}
-		}
-	}
-}
-
-static int zbuild_huffman(ZBuffer* ctx, ZHuffman *z, const uint8_t *sizelist, int num)
+static void zbuild_huffman(ZHuffman *z, const uint8_t *sizelist, int num)
 {
 	int i, k = 0;
 	int next_code[16];
@@ -376,7 +281,7 @@ static int zbuild_huffman(ZBuffer* ctx, ZHuffman *z, const uint8_t *sizelist, in
 	{
 		if (sizes[i] > (1 << i))
 		{
-			return ctx->error_occured("bad sizes");
+			throw Zlib::Er("bad sizes");
 		}
 	}
 	int code = 0;
@@ -390,7 +295,7 @@ static int zbuild_huffman(ZBuffer* ctx, ZHuffman *z, const uint8_t *sizelist, in
 		{
 			if (code - 1 >= (1 << i))
 			{
-				return ctx->error_occured("bad codelengths");
+				throw Zlib::Er("bad codelengths");
 			}
 		}
 		z->maxcode[i] = code << (16 - i); // preshift for inner loop
@@ -420,138 +325,6 @@ static int zbuild_huffman(ZBuffer* ctx, ZHuffman *z, const uint8_t *sizelist, in
 		}
 		++next_code[s];
 	}
-	return 1;
-}
-
-
-static int zcompute_huffman_codes(ZBuffer *a)
-{
-	static const uint8_t length_dezigzag[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
-	ZHuffman z_codelength;
-	uint8_t lencodes[286 + 32 + 137]; //padding for maximum single op
-	int i, n;
-
-	int hlit = zreceive(a, 5) + 257;
-	int hdist = zreceive(a, 5) + 1;
-	int hclen = zreceive(a, 4) + 4;
-	int ntot = hlit + hdist;
-
-	uint8_t codelength_sizes[19] = {};
-	for (i = 0; i < hclen; ++i)
-	{
-		int s = zreceive(a, 3);
-		codelength_sizes[length_dezigzag[i]] = (uint8_t) s;
-	}
-	if (!zbuild_huffman(a, &z_codelength, codelength_sizes, 19))
-	{
-		return 0;
-	}
-
-	n = 0;
-	while (n < ntot)
-	{
-		int c = zhuffman_decode(a, &z_codelength);
-		if (c < 0 || c >= 19)
-		{
-			return a->error_occured("bad codelengths");
-		}
-		if (c < 16)
-		{
-			lencodes[n++] = (uint8_t) c;
-		}
-		else
-		{
-			uint8_t fill = 0;
-			if (c == 16)
-			{
-				c = zreceive(a, 2) + 3;
-				if (n == 0)
-				{
-					return a->error_occured("bad codelengths");
-				}
-				fill = lencodes[n - 1];
-			}
-			else if (c == 17)
-			{
-				c = zreceive(a, 3) + 3;
-			}
-			else if (c == 18)
-			{
-				c = zreceive(a, 7) + 11;
-			}
-			else
-			{
-				return a->error_occured("bad codelengths");
-			}
-			if (ntot - n < c)
-			{
-				return a->error_occured("bad codelengths");
-			}
-			std::memset(lencodes + n, fill, c);
-			n += c;
-		}
-	}
-	if (n != ntot)
-	{
-		return a->error_occured("bad codelengths");
-	}
-	if (!zbuild_huffman(a, &a->z_length, lencodes, hlit))
-	{
-		return 0;
-	}
-	if (!zbuild_huffman(a, &a->z_distance, lencodes + hlit, hdist))
-	{
-		return 0;
-	}
-	return 1;
-}
-
-static int zparse_uncompressed_block(ZBuffer *a)
-{
-	uint8_t header[4];
-	int len, nlen, k;
-	if (a->num_bits & 7)
-	{
-		zreceive(a, a->num_bits & 7); // discard
-	}
-	// drain the bit-packed data into header
-	k = 0;
-	while (a->num_bits > 0)
-	{
-		header[k++] = (uint8_t) (a->code_buffer & 255); // suppress MSVC run-time check
-		a->code_buffer >>= 8;
-		a->num_bits -= 8;
-	}
-	if (a->num_bits < 0)
-	{
-		return a->error_occured("zlib corrupt");
-	}
-	// now fill header the normal way
-	while (k < 4)
-	{
-		header[k++] = zget8(a);
-	}
-	len = header[1] * 256 + header[0];
-	nlen = header[3] * 256 + header[2];
-	if (nlen != (len ^ 0xffff))
-	{
-		return a->error_occured("zlib corrupt");
-	}
-	if (a->zbuffer + len > a->zbuffer_end)
-	{
-		return a->error_occured("read past buffer");
-	}
-	if (a->zout + len > a->zout_end)
-	{
-		if (!zexpand(a, a->zout, len))
-		{
-			return 0;
-		}
-	}
-	std::memcpy(a->zout, a->zbuffer, len);
-	a->zbuffer += len;
-	a->zout += len;
-	return 1;
 }
 
 
@@ -565,11 +338,11 @@ static void zdo_zlib(ZBuffer *a, uint8_t* obuf, size_t olen, bool exp, bool pars
 
 	if (parse_header)
 	{
-		int cmf = zget8(a);
+		int cmf = a->zget8();
 		int cm = cmf & 15;
 		/* int cinfo = cmf >> 4; */
-		int flg = zget8(a);
-		if (zeof(a))
+		int flg = a->zget8();
+		if (a->zeof())
 		{
 			// zlib spec
 			throw Zlib::Er("bad zlib header");
@@ -597,14 +370,50 @@ static void zdo_zlib(ZBuffer *a, uint8_t* obuf, size_t olen, bool exp, bool pars
 	int final;
 	do
 	{
-		final = zreceive(a, 1);
-		int type = zreceive(a, 2);
+		final = a->zreceive(1);
+		int type = a->zreceive(2);
 		if (type == 0)
 		{
-			if (!zparse_uncompressed_block(a))
+			uint8_t header[4];
+			int len, nlen, k;
+			if (a->num_bits & 7)
 			{
-				throw Zlib::Er("zdo_zlib: !zparse_uncompressed_block");
+				a->zreceive(a->num_bits & 7); // discard
 			}
+			// drain the bit-packed data into header
+			k = 0;
+			while (a->num_bits > 0)
+			{
+				header[k++] = (uint8_t) (a->code_buffer & 255); // suppress MSVC run-time check
+				a->code_buffer >>= 8;
+				a->num_bits -= 8;
+			}
+			if (a->num_bits < 0)
+			{
+				throw Zlib::Er("zlib corrupt");
+			}
+			// now fill header the normal way
+			while (k < 4)
+			{
+				header[k++] = a->zget8();
+			}
+			len = header[1] * 256 + header[0];
+			nlen = header[3] * 256 + header[2];
+			if (nlen != (len ^ 0xffff))
+			{
+				throw Zlib::Er("zlib corrupt");
+			}
+			if (a->zbuffer + len > a->zbuffer_end)
+			{
+				throw Zlib::Er("read past buffer");
+			}
+			if (a->zout + len > a->zout_end)
+			{
+				zexpand(a, a->zout, len);
+			}
+			std::memcpy(a->zout, a->zbuffer, len);
+			a->zbuffer += len;
+			a->zout += len;
 		}
 		else if (type == 3)
 		{
@@ -615,25 +424,166 @@ static void zdo_zlib(ZBuffer *a, uint8_t* obuf, size_t olen, bool exp, bool pars
 			if (type == 1)
 			{
 				// use fixed code lengths
-				if (!zbuild_huffman(a, &a->z_length, zdefault_length, STBI__ZNSYMS))
-				{
-					throw Zlib::Er("zbuild_huffman(..., STBI__ZNSYMS)");
-				}
-				if (!zbuild_huffman(a, &a->z_distance, zdefault_distance, 32))
-				{
-					throw Zlib::Er("zbuild_huffman(..., 32)");
-				}
+				zbuild_huffman(&a->z_length, DEFAULT_LENGTH, STBI__ZNSYMS);
+				zbuild_huffman(&a->z_distance, DEFAULT_DISTANCE, 32);
 			}
 			else
 			{
-				if (!zcompute_huffman_codes(a))
+				// zcompute_huffman_codes
+				ZHuffman z_codelength;
+				uint8_t lencodes[286 + 32 + 137]; //padding for maximum single op
+
+				const int hlit = a->zreceive(5) + 257;
+				const int hdist = a->zreceive(5) + 1;
+				const int hclen = a->zreceive(4) + 4;
+				const int ntot = hlit + hdist;
+
+				uint8_t codelength_sizes[19] = {};
+				for (int i = 0; i < hclen; ++i)
 				{
-					throw Zlib::Er("!zcompute_huffman_codes(a)");
+					int s = a->zreceive(3);
+					codelength_sizes[LENGTH_DE_ZIGZAG[i]] = (uint8_t) s;
 				}
+				zbuild_huffman(&z_codelength, codelength_sizes, 19);
+
+				int n = 0;
+				while (n < ntot)
+				{
+					int c = zhuffman_decode(a, &z_codelength);
+					if (c < 0 || c >= 19)
+					{
+						throw Zlib::Er("bad codelengths");
+					}
+					if (c < 16)
+					{
+						lencodes[n++] = (uint8_t) c;
+					}
+					else
+					{
+						uint8_t fill = 0;
+						if (c == 16)
+						{
+							c = a->zreceive(2) + 3;
+							if (n == 0)
+							{
+								throw Zlib::Er("bad codelengths");
+							}
+							fill = lencodes[n - 1];
+						}
+						else if (c == 17)
+						{
+							c = a->zreceive(3) + 3;
+						}
+						else if (c == 18)
+						{
+							c = a->zreceive(7) + 11;
+						}
+						else
+						{
+							throw Zlib::Er("bad codelengths");
+						}
+						if (ntot - n < c)
+						{
+							throw Zlib::Er("bad codelengths");
+						}
+						std::memset(lencodes + n, fill, c);
+						n += c;
+					}
+				}
+				if (n != ntot)
+				{
+					throw Zlib::Er("bad codelengths");
+				}
+				zbuild_huffman(&a->z_length, lencodes, hlit);
+				zbuild_huffman(&a->z_distance, lencodes + hlit, hdist);
 			}
-			if (!zparse_huffman_block(a))
+
+			// zparse_huffman_block
+			auto zout = a->zout;
+			for (;;)
 			{
-				throw Zlib::Er("!zparse_huffman_block(a)");
+				int z = zhuffman_decode(a, &a->z_length);
+				if (z < 256)
+				{
+					if (z < 0)
+					{
+						// error in huffman codes
+						throw Zlib::Er("bad huffman code");
+					}
+					if (zout >= a->zout_end)
+					{
+						zexpand(a, zout, 1);
+						zout = a->zout;
+					}
+					*zout++ = (char) z;
+				}
+				else
+				{
+					int len, dist;
+					if (z == 256)
+					{
+						a->zout = zout;
+						if (a->hit_zeof_once && a->num_bits < 16)
+						{
+							// The first time we hit zeof, we inserted 16 extra zero bits into our bit
+							// buffer so the decoder can just do its speculative decoding. But if we
+							// actually consumed any of those bits (which is the case when num_bits < 16),
+							// the stream actually read past the end so it is malformed.
+							throw Zlib::Er("unexpected end");
+						}
+					}
+					else
+					{
+						if (z >= 286)
+						{
+							throw Zlib::Er("bad huffman code");
+						}
+						// per DEFLATE, length codes 286 and 287 must not appear in compressed data
+						z -= 257;
+						len = ZLENGTH_BASE[z];
+						if (stbi__zlength_extra[z])
+						{
+							len += a->zreceive(stbi__zlength_extra[z]);
+						}
+						z = zhuffman_decode(a, &a->z_distance);
+						if (z < 0 || z >= 30)
+						{
+							throw Zlib::Er("bad huffman code");
+						}
+						// per DEFLATE, distance codes 30 and 31 must not appear in compressed data
+						dist = ZDIST_BASE[z];
+						if (ZDIST_EXTRA[z])
+						{
+							dist += a->zreceive(ZDIST_EXTRA[z]);
+						}
+						if (zout - a->zout_start < dist)
+						{
+							throw Zlib::Er("bad dist");
+						}
+						if (len > a->zout_end - zout)
+						{
+							zexpand(a, zout, len);
+							zout = a->zout;
+						}
+						auto p = zout - dist;
+						if (dist == 1)
+						{
+							// run of one byte; common in images.
+							auto v = *p;
+							if (len)
+							{
+								do *zout++ = v; while (--len);
+							}
+						}
+						else
+						{
+							if (len)
+							{
+								do *zout++ = *p++; while (--len);
+							}
+						}
+					}
+				}
 			}
 		}
 	} while (!final);
