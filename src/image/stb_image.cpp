@@ -921,11 +921,6 @@ enum class Scan
 	Header,
 };
 
-
-// truncate int to byte without warnings
-#define STBI__BYTECAST(x)  ((Byte)((x) & 255))
-
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //  generic converter from built-in img_n to req_comp
@@ -1262,6 +1257,9 @@ static int stbi__create_png_image_raw(stbi__png *a, Byte* raw, U32 raw_len, int 
 		width = img_width_bytes;
 	}
 
+	static auto BYTECAST = [](Coyote::S64 x) {return static_cast<Byte>((x) & 255); };
+
+
 	for (U32 j = 0; j < y; ++j)
 	{
 		// cur/prior filter buffers alternate
@@ -1279,7 +1277,10 @@ static int stbi__create_png_image_raw(stbi__png *a, Byte* raw, U32 raw_len, int 
 		}
 
 		// if first row, use special filter that doesn't sample previous row
-		if (j == 0) filter = first_row_filter[filter];
+		if (j == 0)
+		{
+			filter = first_row_filter[filter];
+		}
 
 		// perform actual filtering
 		switch (filter)
@@ -1291,40 +1292,40 @@ static int stbi__create_png_image_raw(stbi__png *a, Byte* raw, U32 raw_len, int 
 				memcpy(cur, raw, filter_bytes);
 				for (k = filter_bytes; k < nk; ++k)
 				{
-					cur[k] = STBI__BYTECAST(raw[k] + cur[k-filter_bytes]);
+					cur[k] = BYTECAST(raw[k] + cur[k-filter_bytes]);
 				}
 				break;
 			case STBI__F_up:
 				for (k = 0; k < nk; ++k)
 				{
-					cur[k] = STBI__BYTECAST(raw[k] + prior[k]);
+					cur[k] = BYTECAST(raw[k] + prior[k]);
 				}
 				break;
 			case STBI__F_avg:
 				for (k = 0; k < filter_bytes; ++k)
 				{
-					cur[k] = STBI__BYTECAST(raw[k] + (prior[k]>>1));
+					cur[k] = BYTECAST(raw[k] + (prior[k]>>1));
 				}
 				for (k = filter_bytes; k < nk; ++k)
 				{
-					cur[k] = STBI__BYTECAST(raw[k] + ((prior[k] + cur[k-filter_bytes])>>1));
+					cur[k] = BYTECAST(raw[k] + ((prior[k] + cur[k-filter_bytes])>>1));
 				}
 				break;
 			case STBI__F_paeth:
 				for (k = 0; k < filter_bytes; ++k)
 				{
-					cur[k] = STBI__BYTECAST(raw[k] + prior[k]); // prior[k] == stbi__paeth(0,prior[k],0)
+					cur[k] = BYTECAST(raw[k] + prior[k]); // prior[k] == stbi__paeth(0,prior[k],0)
 				}
 				for (k = filter_bytes; k < nk; ++k)
 				{
-					cur[k] = STBI__BYTECAST(raw[k] + stbi__paeth(cur[k-filter_bytes], prior[k], prior[k-filter_bytes]));
+					cur[k] = BYTECAST(raw[k] + stbi__paeth(cur[k-filter_bytes], prior[k], prior[k-filter_bytes]));
 				}
 				break;
 			case STBI__F_avg_first:
 				memcpy(cur, raw, filter_bytes);
 				for (k = filter_bytes; k < nk; ++k)
 				{
-					cur[k] = STBI__BYTECAST(raw[k] + (cur[k-filter_bytes] >> 1));
+					cur[k] = BYTECAST(raw[k] + (cur[k-filter_bytes] >> 1));
 				}
 				break;
 		}
