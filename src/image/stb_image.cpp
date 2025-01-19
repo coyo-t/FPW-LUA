@@ -855,7 +855,7 @@ enum class Scan
 	Header,
 };
 
-static Byte* stbi__convert_format (
+static Byte* stbi_convert_format (
 	Byte* data,
 	int img_n,
 	int req_comp,
@@ -962,7 +962,7 @@ static Byte* stbi__convert_format (
 }
 
 
-static U16 *stbi__convert_format16(U16*data, int img_n, int req_comp, unsigned int x, unsigned int y)
+static U16 *stbi_convert_format16(U16*data, int img_n, int req_comp, unsigned int x, unsigned int y)
 {
 	if (req_comp == img_n)
 	{
@@ -1081,7 +1081,7 @@ static auto first_row_filter[5] = {
 	Filter::Sub
 };
 
-static int stbi__paeth(int a, int b, int c)
+static int stbi_paeth(int a, int b, int c)
 {
 	// This formulation looks very different from the reference in the PNG spec, but is
 	// actually equivalent and has favorable data dependencies and admits straightforward
@@ -1094,7 +1094,7 @@ static int stbi__paeth(int a, int b, int c)
 	return t1;
 }
 
-static const Byte stbi__depth_scale_table[9] = {
+static const Byte depth_scale_table[9] = {
 	0, 0xff, 0x55,
 	0, 0x11, 0,
 	0, 0,    0x01
@@ -1103,7 +1103,7 @@ static const Byte stbi__depth_scale_table[9] = {
 // adds an extra all-255 alpha channel
 // dest == src is legal
 // img_n must be 1 or 3
-static void stbi__create_png_alpha_expand8(Byte*dest, Byte*src, U32 x, int img_n)
+static void stbi_create_png_alpha_expand8(Byte*dest, Byte*src, U32 x, int img_n)
 {
 	int i;
 	// must process data backwards since we allow dest==src
@@ -1129,7 +1129,7 @@ static void stbi__create_png_alpha_expand8(Byte*dest, Byte*src, U32 x, int img_n
 }
 
 // create the png data from post-deflated data
-static int stbi__create_png_image_raw(Png *a, Byte* raw, U32 raw_len, int out_n, U32 x, U32 y, int depth, int color)
+static int stbi_create_png_image_raw(Png *a, Byte* raw, U32 raw_len, int out_n, U32 x, U32 y, int depth, int color)
 {
 	int bytes = (depth == 16 ? 2 : 1);
 	Context *s = a->s;
@@ -1253,7 +1253,7 @@ static int stbi__create_png_image_raw(Png *a, Byte* raw, U32 raw_len, int out_n,
 				}
 				for (k = filter_bytes; k < nk; ++k)
 				{
-					cur[k] = BYTECAST(raw[k] + stbi__paeth(cur[k-filter_bytes], prior[k], prior[k-filter_bytes]));
+					cur[k] = BYTECAST(raw[k] + stbi_paeth(cur[k-filter_bytes], prior[k], prior[k-filter_bytes]));
 				}
 				break;
 			case Filter::AvgFirst:
@@ -1271,7 +1271,7 @@ static int stbi__create_png_image_raw(Png *a, Byte* raw, U32 raw_len, int out_n,
 		if (depth < 8)
 		{
 			// scale grayscale values to 0..255 range
-			Byte scale = (color == 0) ? stbi__depth_scale_table[depth] : 1;
+			Byte scale = (color == 0) ? depth_scale_table[depth] : 1;
 			auto* in = cur;
 			auto* out = dest;
 			Byte inb = 0;
@@ -1319,7 +1319,7 @@ static int stbi__create_png_image_raw(Png *a, Byte* raw, U32 raw_len, int out_n,
 			// insert alpha=255 values if desired
 			if (img_n != out_n)
 			{
-				stbi__create_png_alpha_expand8(dest, dest, x, img_n);
+				stbi_create_png_alpha_expand8(dest, dest, x, img_n);
 			}
 		}
 		else if (depth == 8)
@@ -1330,7 +1330,7 @@ static int stbi__create_png_image_raw(Png *a, Byte* raw, U32 raw_len, int out_n,
 			}
 			else
 			{
-				stbi__create_png_alpha_expand8(dest, cur, x, img_n);
+				stbi_create_png_alpha_expand8(dest, cur, x, img_n);
 			}
 		}
 		else if (depth == 16)
@@ -1379,13 +1379,13 @@ static int stbi__create_png_image_raw(Png *a, Byte* raw, U32 raw_len, int out_n,
 	return 1;
 }
 
-static int stbi__create_png_image(Png *a, Byte*image_data, U32 image_data_len, int out_n, int depth, int color, int interlaced)
+static int stbi_create_png_image(Png *a, Byte*image_data, U32 image_data_len, int out_n, int depth, int color, int interlaced)
 {
 	int bytes = (depth == 16 ? 2 : 1);
 	int out_bytes = out_n * bytes;
 	if (!interlaced)
 	{
-		return stbi__create_png_image_raw(
+		return stbi_create_png_image_raw(
 			a,
 			image_data,
 			image_data_len,
@@ -1416,7 +1416,7 @@ static int stbi__create_png_image(Png *a, Byte*image_data, U32 image_data_len, i
 		if (x && y)
 		{
 			U32 img_len = ((((a->s->img_n * x * depth) + 7) >> 3) + 1) * y;
-			if (!stbi__create_png_image_raw(a, image_data, image_data_len, out_n, x, y, depth, color))
+			if (!stbi_create_png_image_raw(a, image_data, image_data_len, out_n, x, y, depth, color))
 			{
 				STBI_FREE(final);
 				return 0;
@@ -1441,7 +1441,7 @@ static int stbi__create_png_image(Png *a, Byte*image_data, U32 image_data_len, i
 	return 1;
 }
 
-static int stbi__parse_png_file(Png *z, Scan scan, int req_comp)
+static int stbi_parse_png_file(Png *z, Scan scan, int req_comp)
 {
 	static constexpr auto FOURCC = [](char a, char b, char c, char d) -> U32
 	{
@@ -1646,7 +1646,7 @@ static int stbi__parse_png_file(Png *z, Scan scan, int req_comp)
 					{
 						for (k = 0; k < s->img_n && k < 3; ++k)
 						{
-							tc[k] = static_cast<Byte>(s->readu16be() & 255) * stbi__depth_scale_table[z->depth];
+							tc[k] = static_cast<Byte>(s->readu16be() & 255) * depth_scale_table[z->depth];
 						}
 						// non 8-bit images will be larger
 					}
@@ -1759,7 +1759,7 @@ static int stbi__parse_png_file(Png *z, Scan scan, int req_comp)
 				{
 					s->img_out_n = s->img_n;
 				}
-				if (!stbi__create_png_image(z, z->expanded, raw_len, s->img_out_n, z->depth, color, interlace))
+				if (!stbi_create_png_image(z, z->expanded, raw_len, s->img_out_n, z->depth, color, interlace))
 				{
 					return 0;
 				}
@@ -1940,18 +1940,23 @@ static int stbi__parse_png_file(Png *z, Scan scan, int req_comp)
 	}
 }
 
+STBIDEF const char *stbi_failure_reason()
+{
+	return stbi__g_failure_reason;
+}
+
 STBIDEF void stbi_image_free(void *retval_from_stbi_load)
 {
 	STBI_FREE(retval_from_stbi_load);
 }
 
-STBIDEF int stbi_info_from_memory(Byte const *buffer, int len, int *x, int *y, int *comp)
+STBIDEF int stbi_info_from_memory(Byte const *buffer, U64 len, U64 * x, U64 * y, U64 * comp)
 {
 	Context s;
 	s.start_mem(buffer, len);
 	Png p;
 	p.s = &s;
-	if (!stbi__parse_png_file(&p, Scan::Header, 0))
+	if (!stbi_parse_png_file(&p, Scan::Header, 0))
 	{
 		p.s->rewind();
 		return stbi__err("unknown image type", "Image not of any known type, or corrupt");
@@ -1971,7 +1976,7 @@ STBIDEF int stbi_info_from_memory(Byte const *buffer, int len, int *x, int *y, i
 	return true;
 }
 
-STBIDEF Byte *stbi_load_from_memory(Byte const *buffer, int len, int *x, int *y, int *comp, int req_comp)
+STBIDEF Byte *stbi_load_from_memory(Byte const *buffer, U64 len, U64* x, U64* y, U64* comp, U64 req_comp)
 {
 	Context s;
 	s.start_mem(buffer, len);
@@ -2005,7 +2010,7 @@ STBIDEF Byte *stbi_load_from_memory(Byte const *buffer, int len, int *x, int *y,
 			result = stbi__errpuc("bad req_comp", "Internal error");
 			goto ret;
 		}
-		if (stbi__parse_png_file(&p, Scan::Load, req_comp))
+		if (stbi_parse_png_file(&p, Scan::Load, req_comp))
 		{
 			if (p.depth <= 8)
 			{
@@ -2026,11 +2031,11 @@ STBIDEF Byte *stbi_load_from_memory(Byte const *buffer, int len, int *x, int *y,
 			{
 				if (ri.bits_per_channel == 8)
 				{
-					result2 = stbi__convert_format(static_cast<Byte*>(result2), p.s->img_out_n, req_comp, p.s->img_x, p.s->img_y);
+					result2 = stbi_convert_format(static_cast<Byte*>(result2), p.s->img_out_n, req_comp, p.s->img_x, p.s->img_y);
 				}
 				else
 				{
-					result2 = stbi__convert_format16(static_cast<U16*>(result2), p.s->img_out_n, req_comp, p.s->img_x, p.s->img_y);
+					result2 = stbi_convert_format16(static_cast<U16*>(result2), p.s->img_out_n, req_comp, p.s->img_x, p.s->img_y);
 				}
 				p.s->img_out_n = req_comp;
 				if (result2 == nullptr)
@@ -2087,9 +2092,4 @@ STBIDEF Byte *stbi_load_from_memory(Byte const *buffer, int len, int *x, int *y,
 	}
 
 	return static_cast<Byte*>(result);
-}
-
-STBIDEF const char *stbi_failure_reason()
-{
-	return stbi__g_failure_reason;
 }

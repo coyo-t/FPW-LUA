@@ -4,6 +4,7 @@
 #include "coyote/numberz.hpp"
 
 using Coyote::Byte;
+using Coyote::U64;
 
 enum
 {
@@ -23,7 +24,7 @@ extern "C" {
 
 
 STBIDEF Byte*
-stbi_load_from_memory(Byte const *buffer, int len, int *x, int *y, int *channels_in_file, int desired_channels);
+stbi_load_from_memory(Byte const *buffer, U64 len, U64*x, U64*y, U64 *channels_in_file, U64 desired_channels);
 
 
 // get a VERY brief reason for failure
@@ -37,7 +38,7 @@ stbi_image_free(void *retval_from_stbi_load);
 
 // get image dimensions & components without fully decoding
 STBIDEF int
-stbi_info_from_memory(Byte const *buffer, int len, int *x, int *y, int *comp);
+stbi_info_from_memory(Byte const *buffer, U64 len, U64* x, U64* y, U64* comp);
 
 
 }
