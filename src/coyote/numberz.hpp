@@ -1,7 +1,7 @@
 #ifndef NUMBERZ_HPP
 #define NUMBERZ_HPP
 
-namespace Coyote {
+namespace Coyote::Numberz {
 	using U8  = unsigned char;
 	using U16 = unsigned short;
 	using U32 = unsigned int;

@@ -13,8 +13,7 @@ include_directories(src)
 add_library(
 	LuaMod
 	SHARED
-		  src/image/stb_image.hpp
-	src/lapi.cpp
+		  src/lapi.cpp
 	src/lapi.hpp
 	src/lauxlib.cpp
 	src/libs/lbaselib.cpp
@@ -76,8 +75,6 @@ add_library(
 		  src/libs/random/random.cpp
 	src/libs/bufferlib.cpp
 	src/luatemplate.hpp
-		  src/image/stb_image.cpp
 		  src/coyote/numberz.hpp
-		  src/coyote/zlib.hpp
-		  src/coyote/zlib.cpp
+		  src/image/stb_image.cpp
 )
