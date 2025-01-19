@@ -1493,18 +1493,18 @@ static int stbi__create_png_image(stbi__png *a, Byte*image_data, U32 image_data_
 	return 1;
 }
 
-static constexpr auto FOURCC (char a, char b, char c, char d) -> U32
-{
-	return (
-		(static_cast<U32>(a) << 24) |
-		(static_cast<U32>(b) << 16) |
-		(static_cast<U32>(c) << 8) |
-		static_cast<U32>(d)
-	);
-}
 
 static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 {
+	static constexpr auto FOURCC = [](char a, char b, char c, char d) -> U32
+	{
+		return (
+			(static_cast<U32>(a) << 24) |
+			(static_cast<U32>(b) << 16) |
+			(static_cast<U32>(c) << 8) |
+			static_cast<U32>(d)
+		);
+	};
 	Byte palette[1024];
 	Byte pal_img_n = 0;
 	Byte has_trans = 0;
@@ -1946,7 +1946,7 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 				return true;
 			}
 
-			default:
+			default: {
 				// if critical, fail
 				if (first)
 				{
@@ -1954,18 +1954,13 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 				}
 				if ((c.type & (1 << 29)) == 0)
 				{
-#ifndef STBI_NO_FAILURE_STRINGS
 					// not threadsafe
 					static char invalid_chunk[] = "XXXX PNG chunk not known";
-					invalid_chunk[0] = STBI__BYTECAST(c.type >> 24);
-					invalid_chunk[1] = STBI__BYTECAST(c.type >> 16);
-					invalid_chunk[2] = STBI__BYTECAST(c.type >> 8);
-					invalid_chunk[3] = STBI__BYTECAST(c.type >> 0);
-#endif
 					return stbi__err(invalid_chunk, "PNG not supported: unknown PNG chunk type");
 				}
 				s->stbi__skip(c.length);
 				break;
+			}
 		}
 		// end of PNG chunk, read and skip CRC
 		s->readu32be();
@@ -2007,7 +2002,6 @@ STBIDEF Byte *stbi_load_from_memory(Byte const *buffer, int len, int *x, int *y,
 	stbi__result_info ri;
 
 	void* result;
-	// void *result = stbi__load_main(&s, x, y, comp, req_comp, &ri, 8);
 	{
 		memset(&ri, 0, sizeof(ri)); // make sure it's initialized if we add new fields
 		ri.bits_per_channel = 8; // default is 8 so most paths don't have to be changed
@@ -2021,7 +2015,6 @@ STBIDEF Byte *stbi_load_from_memory(Byte const *buffer, int len, int *x, int *y,
 			goto ret;
 		}
 
-		// result = static_cast<std::uint8_t*>(stbi__png_load(&s, x, y, comp, req_comp, &ri));
 		stbi__png p;
 		p.s = &s;
 
