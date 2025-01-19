@@ -2,42 +2,6 @@
 
 #include <cmath>
 
-#define STBI_ONLY_PNG
-#define STBI_NO_STDIO
-
-#if defined(STBI_ONLY_JPEG) || defined(STBI_ONLY_PNG) || defined(STBI_ONLY_BMP) \
-  || defined(STBI_ONLY_TGA) || defined(STBI_ONLY_GIF) || defined(STBI_ONLY_PSD) \
-  || defined(STBI_ONLY_HDR) || defined(STBI_ONLY_PIC) || defined(STBI_ONLY_PNM) \
-  || defined(STBI_ONLY_ZLIB)
-#ifndef STBI_ONLY_JPEG
-#define STBI_NO_JPEG
-#endif
-#ifndef STBI_ONLY_PNG
-   #define STBI_NO_PNG
-#endif
-#ifndef STBI_ONLY_BMP
-#define STBI_NO_BMP
-#endif
-#ifndef STBI_ONLY_PSD
-#define STBI_NO_PSD
-#endif
-#ifndef STBI_ONLY_TGA
-#define STBI_NO_TGA
-#endif
-#ifndef STBI_ONLY_GIF
-#define STBI_NO_GIF
-#endif
-#ifndef STBI_ONLY_HDR
-#define STBI_NO_HDR
-#endif
-#ifndef STBI_ONLY_PIC
-#define STBI_NO_PIC
-#endif
-#ifndef STBI_ONLY_PNM
-#define STBI_NO_PNM
-#endif
-#endif
-
 
 #include <cstdlib>
 #include <cstring>
@@ -170,9 +134,6 @@ static int stbi__png_is16(stbi__context *s);
 
 
 static
-#ifdef STBI_THREAD_LOCAL
-STBI_THREAD_LOCAL
-#endif
 const char *stbi__g_failure_reason;
 
 STBIDEF const char *stbi_failure_reason(void)
@@ -309,32 +270,6 @@ STBIDEF void stbi_image_free(void *retval_from_stbi_load)
 	STBI_FREE(retval_from_stbi_load);
 }
 
-#ifndef STBI_NO_LINEAR
-static float *stbi__ldr_to_hdr(stbi_uc *data, int x, int y, int comp);
-#endif
-
-static int stbi__vertically_flip_on_load_global = 0;
-
-STBIDEF void stbi_set_flip_vertically_on_load(int flag_true_if_should_flip)
-{
-	stbi__vertically_flip_on_load_global = flag_true_if_should_flip;
-}
-
-#ifndef STBI_THREAD_LOCAL
-#define stbi__vertically_flip_on_load  stbi__vertically_flip_on_load_global
-#else
-static STBI_THREAD_LOCAL int stbi__vertically_flip_on_load_local, stbi__vertically_flip_on_load_set;
-
-STBIDEF void stbi_set_flip_vertically_on_load_thread(int flag_true_if_should_flip)
-{
-	stbi__vertically_flip_on_load_local = flag_true_if_should_flip;
-	stbi__vertically_flip_on_load_set = 1;
-}
-
-#define stbi__vertically_flip_on_load  (stbi__vertically_flip_on_load_set       \
-                                         ? stbi__vertically_flip_on_load_local  \
-                                         : stbi__vertically_flip_on_load_global)
-#endif // STBI_THREAD_LOCAL
 
 static void *stbi__load_main(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri, int bpc)
 {
@@ -424,14 +359,6 @@ static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, 
 		ri.bits_per_channel = 8;
 	}
 
-	// @TODO: move stbi__convert_format to here
-
-	if (stbi__vertically_flip_on_load)
-	{
-		int channels = req_comp ? req_comp : *comp;
-		stbi__vertical_flip(result, *x, *y, channels * sizeof(stbi_uc));
-	}
-
 	return (unsigned char *) result;
 }
 
@@ -453,13 +380,6 @@ static stbi__uint16 *stbi__load_and_postprocess_16bit(stbi__context *s, int *x, 
 	}
 
 	// @TODO: move stbi__convert_format16 to here
-	// @TODO: special case RGB-to-Y (and RGBA-to-YA) for 8-bit-to-16-bit case to keep more precision
-
-	if (stbi__vertically_flip_on_load)
-	{
-		int channels = req_comp ? req_comp : *comp;
-		stbi__vertical_flip(result, *x, *y, channels * sizeof(stbi__uint16));
-	}
 
 	return (stbi__uint16 *) result;
 }
@@ -497,41 +417,6 @@ STBIDEF stbi_uc *stbi_load_from_callbacks(stbi_io_callbacks const *clbk, void *u
 	return stbi__load_and_postprocess_8bit(&s, x, y, comp, req_comp);
 }
 
-
-#ifndef STBI_NO_LINEAR
-static float *stbi__loadf_main(stbi__context *s, int *x, int *y, int *comp, int req_comp)
-{
-	unsigned char *data;
-	data = stbi__load_and_postprocess_8bit(s, x, y, comp, req_comp);
-	if (data)
-		return stbi__ldr_to_hdr(data, *x, *y, req_comp ? req_comp : *comp);
-	return stbi__errpf("unknown image type", "Image not of any known type, or corrupt");
-}
-
-STBIDEF float *stbi_loadf_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *comp, int req_comp)
-{
-	stbi__context s;
-	stbi__start_mem(&s, buffer, len);
-	return stbi__loadf_main(&s, x, y, comp, req_comp);
-}
-
-STBIDEF float *stbi_loadf_from_callbacks(stbi_io_callbacks const *clbk, void *user, int *x, int *y, int *comp,
-                                         int req_comp)
-{
-	stbi__context s;
-	stbi__start_callbacks(&s, (stbi_io_callbacks *) clbk, user);
-	return stbi__loadf_main(&s, x, y, comp, req_comp);
-}
-
-#endif // !STBI_NO_LINEAR
-
-
-#ifndef STBI_NO_LINEAR
-static float stbi__l2h_gamma = 2.2f, stbi__l2h_scale = 1.0f;
-
-STBIDEF void stbi_ldr_to_hdr_gamma(float gamma) { stbi__l2h_gamma = gamma; }
-STBIDEF void stbi_ldr_to_hdr_scale(float scale) { stbi__l2h_scale = scale; }
-#endif
 
 static float stbi__h2l_gamma_i = 1.0f / 2.2f, stbi__h2l_scale_i = 1.0f;
 
@@ -584,9 +469,7 @@ static stbi_uc stbi__get8(stbi__context *s)
 }
 
 
-#if defined(STBI_NO_JPEG) && defined(STBI_NO_PNG) && defined(STBI_NO_BMP) && defined(STBI_NO_PSD) && defined(STBI_NO_TGA) && defined(STBI_NO_GIF) && defined(STBI_NO_PIC)
-// nothing
-#else
+
 static void stbi__skip(stbi__context *s, int n)
 {
 	if (n == 0) return; // already there!
@@ -607,11 +490,8 @@ static void stbi__skip(stbi__context *s, int n)
 	}
 	s->img_buffer += n;
 }
-#endif
 
-#if defined(STBI_NO_PNG) && defined(STBI_NO_TGA) && defined(STBI_NO_HDR) && defined(STBI_NO_PNM)
-// nothing
-#else
+
 static int stbi__getn(stbi__context *s, stbi_uc *buffer, int n)
 {
 	if (s->io.read)
@@ -639,35 +519,27 @@ static int stbi__getn(stbi__context *s, stbi_uc *buffer, int n)
 	else
 		return 0;
 }
-#endif
 
-#if defined(STBI_NO_JPEG) && defined(STBI_NO_PNG) && defined(STBI_NO_PSD) && defined(STBI_NO_PIC)
-// nothing
-#else
+
+
 static int stbi__get16be(stbi__context *s)
 {
 	int z = stbi__get8(s);
 	return (z << 8) + stbi__get8(s);
 }
-#endif
 
-#if defined(STBI_NO_PNG) && defined(STBI_NO_PSD) && defined(STBI_NO_PIC)
-// nothing
-#else
+
 static stbi__uint32 stbi__get32be(stbi__context *s)
 {
 	stbi__uint32 z = stbi__get16be(s);
 	return (z << 16) + stbi__get16be(s);
 }
-#endif
 
 
 
 #define STBI__BYTECAST(x)  ((stbi_uc) ((x) & 255))  // truncate int to byte without warnings
 
-#if defined(STBI_NO_JPEG) && defined(STBI_NO_PNG) && defined(STBI_NO_BMP) && defined(STBI_NO_PSD) && defined(STBI_NO_TGA) && defined(STBI_NO_GIF) && defined(STBI_NO_PIC) && defined(STBI_NO_PNM)
-// nothing
-#else
+
 //////////////////////////////////////////////////////////////////////////////
 //
 //  generic converter from built-in img_n to req_comp
@@ -683,11 +555,8 @@ static stbi_uc stbi__compute_y(int r, int g, int b)
 {
 	return (stbi_uc) (((r * 77) + (g * 150) + (29 * b)) >> 8);
 }
-#endif
 
-#if defined(STBI_NO_PNG) && defined(STBI_NO_BMP) && defined(STBI_NO_PSD) && defined(STBI_NO_TGA) && defined(STBI_NO_GIF) && defined(STBI_NO_PIC) && defined(STBI_NO_PNM)
-// nothing
-#else
+
 static unsigned char *stbi__convert_format(unsigned char *data, int img_n, int req_comp, unsigned int x, unsigned int y)
 {
 	int i, j;
@@ -780,20 +649,13 @@ static unsigned char *stbi__convert_format(unsigned char *data, int img_n, int r
 	STBI_FREE(data);
 	return good;
 }
-#endif
 
-#if defined(STBI_NO_PNG) && defined(STBI_NO_PSD)
-// nothing
-#else
+
 static stbi__uint16 stbi__compute_y_16(int r, int g, int b)
 {
 	return (stbi__uint16) (((r * 77) + (g * 150) + (29 * b)) >> 8);
 }
-#endif
 
-#if defined(STBI_NO_PNG) && defined(STBI_NO_PSD)
-// nothing
-#else
 static stbi__uint16 *stbi__convert_format16(stbi__uint16 *data, int img_n, int req_comp, unsigned int x, unsigned int y)
 {
 	int i, j;
@@ -886,41 +748,6 @@ static stbi__uint16 *stbi__convert_format16(stbi__uint16 *data, int img_n, int r
 	STBI_FREE(data);
 	return good;
 }
-#endif
-
-#ifndef STBI_NO_LINEAR
-static float *stbi__ldr_to_hdr(stbi_uc *data, int x, int y, int comp)
-{
-	int i, k, n;
-	float *output;
-	if (!data) return NULL;
-	output = (float *) stbi__malloc_mad4(x, y, comp, sizeof(float), 0);
-	if (output == NULL)
-	{
-		STBI_FREE(data);
-		return stbi__errpf("outofmem", "Out of memory");
-	}
-	// compute number of non-alpha components
-	if (comp & 1) n = comp;
-	else n = comp - 1;
-	for (i = 0; i < x * y; ++i)
-	{
-		for (k = 0; k < n; ++k)
-		{
-			output[i * comp + k] = (float) (pow(data[i * comp + k] / 255.0f, stbi__l2h_gamma) * stbi__l2h_scale);
-		}
-	}
-	if (n < comp)
-	{
-		for (i = 0; i < x * y; ++i)
-		{
-			output[i * comp + n] = data[i * comp + n] / 255.0f;
-		}
-	}
-	STBI_FREE(data);
-	return output;
-}
-#endif
 
 
 // public domain zlib decode    v0.2  Sean Barrett 2006-11-18
@@ -1511,7 +1338,6 @@ STBIDEF int stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const char
 //    performance
 //      - uses stb_zlib, a PD zlib implementation with fast huffman decoding
 
-#ifndef STBI_NO_PNG
 typedef struct
 {
 	stbi__uint32 length;
@@ -1951,101 +1777,6 @@ static int stbi__expand_png_palette(stbi__png *a, stbi_uc *palette, int len, int
 	return 1;
 }
 
-static int stbi__unpremultiply_on_load_global = 0;
-static int stbi__de_iphone_flag_global = 0;
-
-STBIDEF void stbi_set_unpremultiply_on_load(int flag_true_if_should_unpremultiply)
-{
-	stbi__unpremultiply_on_load_global = flag_true_if_should_unpremultiply;
-}
-
-STBIDEF void stbi_convert_iphone_png_to_rgb(int flag_true_if_should_convert)
-{
-	stbi__de_iphone_flag_global = flag_true_if_should_convert;
-}
-
-#ifndef STBI_THREAD_LOCAL
-#define stbi__unpremultiply_on_load  stbi__unpremultiply_on_load_global
-#define stbi__de_iphone_flag  stbi__de_iphone_flag_global
-#else
-static STBI_THREAD_LOCAL int stbi__unpremultiply_on_load_local, stbi__unpremultiply_on_load_set;
-static STBI_THREAD_LOCAL int stbi__de_iphone_flag_local, stbi__de_iphone_flag_set;
-
-STBIDEF void stbi_set_unpremultiply_on_load_thread(int flag_true_if_should_unpremultiply)
-{
-	stbi__unpremultiply_on_load_local = flag_true_if_should_unpremultiply;
-	stbi__unpremultiply_on_load_set = 1;
-}
-
-STBIDEF void stbi_convert_iphone_png_to_rgb_thread(int flag_true_if_should_convert)
-{
-	stbi__de_iphone_flag_local = flag_true_if_should_convert;
-	stbi__de_iphone_flag_set = 1;
-}
-
-#define stbi__unpremultiply_on_load  (stbi__unpremultiply_on_load_set           \
-                                       ? stbi__unpremultiply_on_load_local      \
-                                       : stbi__unpremultiply_on_load_global)
-#define stbi__de_iphone_flag  (stbi__de_iphone_flag_set                         \
-                                ? stbi__de_iphone_flag_local                    \
-                                : stbi__de_iphone_flag_global)
-#endif // STBI_THREAD_LOCAL
-
-static void stbi__de_iphone(stbi__png *z)
-{
-	stbi__context *s = z->s;
-	stbi__uint32 i, pixel_count = s->img_x * s->img_y;
-	stbi_uc *p = z->out;
-
-	if (s->img_out_n == 3)
-	{
-		// convert bgr to rgb
-		for (i = 0; i < pixel_count; ++i)
-		{
-			stbi_uc t = p[0];
-			p[0] = p[2];
-			p[2] = t;
-			p += 3;
-		}
-	}
-	else
-	{
-		STBI_ASSERT(s->img_out_n == 4);
-		if (stbi__unpremultiply_on_load)
-		{
-			// convert bgr to rgb and unpremultiply
-			for (i = 0; i < pixel_count; ++i)
-			{
-				stbi_uc a = p[3];
-				stbi_uc t = p[0];
-				if (a)
-				{
-					stbi_uc half = a / 2;
-					p[0] = (p[2] * 255 + half) / a;
-					p[1] = (p[1] * 255 + half) / a;
-					p[2] = (t * 255 + half) / a;
-				}
-				else
-				{
-					p[0] = p[2];
-					p[2] = t;
-				}
-				p += 4;
-			}
-		}
-		else
-		{
-			// convert bgr to rgb
-			for (i = 0; i < pixel_count; ++i)
-			{
-				stbi_uc t = p[0];
-				p[0] = p[2];
-				p[2] = t;
-				p += 4;
-			}
-		}
-	}
-}
 
 #define STBI__PNG_TYPE(a,b,c,d)  (((unsigned) (a) << 24) + ((unsigned) (b) << 16) + ((unsigned) (c) << 8) + (unsigned) (d))
 
@@ -2231,8 +1962,6 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 						if (!stbi__compute_transparency(z, tc, s->img_out_n)) return 0;
 					}
 				}
-				if (is_iphone && stbi__de_iphone_flag && s->img_out_n > 2)
-					stbi__de_iphone(z);
 				if (pal_img_n)
 				{
 					// pal_img_n == 3 or 4
@@ -2364,7 +2093,6 @@ static int stbi__png_is16(stbi__context *s)
 	}
 	return 1;
 }
-#endif
 
 
 static int stbi__info_main(stbi__context *s, int *x, int *y, int *comp)
