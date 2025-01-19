@@ -457,7 +457,6 @@ struct Buffer {
 	std::uint8_t* zout;
 	std::uint8_t* zout_start;
 	std::uint8_t* zout_end;
-	bool z_expandable;
 
 	Huffman z_length, z_distance;
 
@@ -567,7 +566,7 @@ struct Buffer {
 	auto zexpand (std::uint8_t* zout, int n) -> int
 	{
 		this->zout = zout;
-		if (!this->z_expandable)
+		if (!true)
 		{
 			return stbi__err("output buffer limit", "Corrupt PNG");
 		}
@@ -887,60 +886,58 @@ struct Buffer {
 		a.zout_start = p;
 		a.zout = p;
 		a.zout_end = p + initial_size;
-		a.z_expandable = true;
 
+		if (parse_header && !a.parse_zlib_header())
 		{
-			if (parse_header && !a.parse_zlib_header())
+			goto fail;
+		}
+		a.num_bits = 0;
+		a.code_buffer = 0;
+		a.hit_zeof_once = 0;
+		int final;
+		do
+		{
+			final = a.recieve(1);
+			int type = a.recieve(2);
+			if (type == 0)
 			{
-				goto fail;
-			}
-			a.num_bits = 0;
-			a.code_buffer = 0;
-			a.hit_zeof_once = 0;
-			int final;
-			do
-			{
-				final = a.recieve(1);
-				int type = a.recieve(2);
-				if (type == 0)
-				{
-					if (!a.parse_uncompressed_block())
-					{
-						goto fail;
-					}
-				}
-				else if (type == 3)
+				if (!a.parse_uncompressed_block())
 				{
 					goto fail;
 				}
-				else
+			}
+			else if (type == 3)
+			{
+				goto fail;
+			}
+			else
+			{
+				if (type == 1)
 				{
-					if (type == 1)
+					// use fixed code lengths
+					if (!a.z_length.zbuild_huffman(DEFAULT_LENGTH, NSYMS))
 					{
-						// use fixed code lengths
-						if (!a.z_length.zbuild_huffman(DEFAULT_LENGTH, NSYMS))
-						{
-							goto fail;
-						}
-						if (!a.z_distance.zbuild_huffman(DEFAULT_DISTANCE, 32))
-						{
-							goto fail;
-						}
+						goto fail;
 					}
-					else
-					{
-						if (!a.compute_huffman_codes())
-						{
-							goto fail;
-						}
-					}
-					if (!a.parse_huffman_block())
+					if (!a.z_distance.zbuild_huffman(DEFAULT_DISTANCE, 32))
 					{
 						goto fail;
 					}
 				}
-			} while (!final);
-		}
+				else
+				{
+					if (!a.compute_huffman_codes())
+					{
+						goto fail;
+					}
+				}
+				if (!a.parse_huffman_block())
+				{
+					goto fail;
+				}
+			}
+		} while (!final);
+
 
 		if (outlen != nullptr)
 		{
