@@ -735,88 +735,6 @@ struct Buffer {
 		zout += len;
 		return true;
 	}
-	auto parse_zlib_header() -> int
-	{
-		const int cmf = get8();
-		/* int cinfo = cmf >> 4; */
-		const int flg = get8();
-		// zlib spec
-		if (this->eof())
-		{
-			return stbi__err("bad zlib header", "Corrupt PNG");
-		}
-		// zlib spec
-		if ((cmf * 256 + flg) % 31 != 0)
-		{
-			return stbi__err("bad zlib header", "Corrupt PNG");
-		}
-		// preset dictionary not allowed in png
-		if (flg & 32)
-		{
-			return stbi__err("no preset dict", "Corrupt PNG");
-		}
-		// DEFLATE required for png
-		if (const int cm = cmf & 15; cm != 8)
-		{
-			return stbi__err("bad compression", "Corrupt PNG");
-		}
-		// window = 1 << (8 + cinfo)... but who cares, we fully buffer output
-		return 1;
-	}
-	auto parse_zlib(int parse_header) -> bool
-	{
-		if (parse_header && !parse_zlib_header())
-		{
-			return false;
-		}
-		this->num_bits = 0;
-		this->code_buffer = 0;
-		this->hit_zeof_once = 0;
-		int final;
-		do
-		{
-			final = recieve(1);
-			int type = recieve(2);
-			if (type == 0)
-			{
-				if (!parse_uncompressed_block())
-				{
-					return false;
-				}
-			}
-			else if (type == 3)
-			{
-				return false;
-			}
-			else
-			{
-				if (type == 1)
-				{
-					// use fixed code lengths
-					if (!z_length.zbuild_huffman(DEFAULT_LENGTH, NSYMS))
-					{
-						return false;
-					}
-					if (!z_distance.zbuild_huffman(DEFAULT_DISTANCE, 32))
-					{
-						return false;
-					}
-				}
-				else
-				{
-					if (!compute_huffman_codes())
-					{
-						return false;
-					}
-				}
-				if (!parse_huffman_block())
-				{
-					return false;
-				}
-			}
-		} while (!final);
-		return true;
-	}
 	static auto zlib_decode_malloc_guesssize_headerflag(
 		const Byte* buffer,
 		int len,
@@ -837,7 +755,36 @@ struct Buffer {
 		a.zout = p;
 		a.zout_end = p + initial_size;
 
-		if (parse_header && !a.parse_zlib_header())
+		bool parse_header_result = true;
+		{
+			const int cmf = a.get8();
+			/* int cinfo = cmf >> 4; */
+			const int flg = a.get8();
+			// zlib spec
+			if (a.eof())
+			{
+				parse_header_result = stbi__err("bad zlib header", "Corrupt PNG");
+			}
+			// zlib spec
+			if ((cmf * 256 + flg) % 31 != 0)
+			{
+				parse_header_result = stbi__err("bad zlib header", "Corrupt PNG");
+			}
+			// preset dictionary not allowed in png
+			if (flg & 32)
+			{
+				parse_header_result = stbi__err("no preset dict", "Corrupt PNG");
+			}
+			// DEFLATE required for png
+			if (const int cm = cmf & 15; cm != 8)
+			{
+				parse_header_result = stbi__err("bad compression", "Corrupt PNG");
+			}
+			// window = 1 << (8 + cinfo)... but who cares, we fully buffer output
+			// parse_header_result = true;
+		}
+
+		if (parse_header && !parse_header_result)
 		{
 			goto fail;
 		}
