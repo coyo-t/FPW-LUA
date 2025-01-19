@@ -1964,25 +1964,25 @@ static int stbi_parse_png_file(Png *z, Scan scan, int req_comp)
 	}
 }
 
-const char *stbi_failure_reason()
+const char *coyote_stbi_failure_reason()
 {
 	return stbi__g_failure_reason;
 }
 
-void stbi_image_free(void *retval_from_stbi_load)
+void coyote_stbi_image_free(void *retval_from_stbi_load)
 {
 	STBI_FREE(retval_from_stbi_load);
 }
 
-bool stbi_info_from_memory(
-	Byte const *buffer,
+bool coyote_stbi_info_from_memory(
+	Byte const *source_buffer,
 	U64 len,
 	U64* out_x,
 	U64* out_y,
-	U64* out_comp)
+	U64* channels_in_file)
 {
 	Context s;
-	s.start_mem(buffer, len);
+	s.start_mem(source_buffer, len);
 	Png p;
 	p.s = &s;
 	if (!stbi_parse_png_file(&p, Scan::Header, 0))
@@ -1998,22 +1998,22 @@ bool stbi_info_from_memory(
 	{
 		*out_y = p.s->img_y;
 	}
-	if (out_comp != nullptr)
+	if (channels_in_file != nullptr)
 	{
-		*out_comp = p.s->img_n;
+		*channels_in_file = p.s->img_n;
 	}
 	return true;
 }
 
-Byte *stbi_load_from_memory(
-	Byte const *buffer,
+Byte *coyote_stbi_load_from_memory(
+	Byte const *source_buffer,
 	U64 len,
 	U64 *out_x,
 	U64 *out_y,
 	U64 *out_comp)
 {
 	Context s;
-	s.start_mem(buffer, len);
+	s.start_mem(source_buffer, len);
 	ResultInfo ri;
 
 	void* result;

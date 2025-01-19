@@ -24,12 +24,12 @@ extern "C" {
 #define STBI_NO_STDIO
 
 
-STBIDEF stbi_failure_reason() -> const char*;
+STBIDEF coyote_stbi_failure_reason () -> const char*;
 
-STBIDEF stbi_image_free(void *retval_from_stbi_load) -> void;
+STBIDEF coyote_stbi_image_free(void *retval_from_stbi_load) -> void;
 
-STBIDEF stbi_load_from_memory (
-	Byte const *buffer,
+STBIDEF coyote_stbi_load_from_memory (
+	Byte const *source_buffer,
 	U64 len,
 	U64 *out_x,
 	U64 *out_y,
@@ -37,12 +37,12 @@ STBIDEF stbi_load_from_memory (
 ) -> Byte*;
 
 
-STBIDEF stbi_info_from_memory (
-	Byte const *buffer,
+STBIDEF coyote_stbi_info_from_memory (
+	Byte const *source_buffer,
 	U64 len,
 	U64* out_x,
 	U64* out_y,
-	U64* out_comp
+	U64* channels_in_file
 ) -> bool;
 
 
