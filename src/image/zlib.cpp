@@ -153,6 +153,39 @@ struct ZBuffer
 		num_bits -= n;
 		return k;
 	}
+	auto zexpand(uint8_t*zout, int n) -> void
+	{
+		// need to make room for n bytes
+		unsigned int old_limit;
+		this->zout = zout;
+		if (!this->z_expandable)
+		{
+			throw Zlib::Er("output buffer limit");
+		}
+		auto cur = (this->zout - this->zout_start);
+		auto limit = old_limit = (this->zout_end - this->zout_start);
+		if (UINT_MAX - cur < n)
+		{
+			throw Zlib::Er("outofmem");
+		}
+		while (cur + n > limit)
+		{
+			if (limit > UINT_MAX / 2)
+			{
+				throw Zlib::Er("outofmem");
+			}
+			limit *= 2;
+		}
+		auto q = this->context->realloc_t(this->zout_start, old_limit, limit);
+		// STBI_NOTUSED(old_limit);
+		if (q == nullptr)
+		{
+			throw Zlib::Er("outofmem");
+		}
+		this->zout_start = q;
+		this->zout = q + cur;
+		this->zout_end = q + limit;
+	}
 };
 
 
@@ -222,40 +255,6 @@ static int zhuffman_decode(ZBuffer *a, ZHuffman *z)
 	return z->value[b2];
 }
 
-static void zexpand(ZBuffer *z, uint8_t*zout, int n)
-{
-	// need to make room for n bytes
-	unsigned int old_limit;
-	z->zout = zout;
-	if (!z->z_expandable)
-	{
-		throw Zlib::Er("output buffer limit");
-	}
-	auto cur = (z->zout - z->zout_start);
-	auto limit = old_limit = (z->zout_end - z->zout_start);
-	if (UINT_MAX - cur < n)
-	{
-		throw Zlib::Er("outofmem");
-	}
-	while (cur + n > limit)
-	{
-		if (limit > UINT_MAX / 2)
-		{
-			throw Zlib::Er("outofmem");
-		}
-		limit *= 2;
-	}
-	auto q = z->context->realloc_t(z->zout_start, old_limit, limit);
-	// STBI_NOTUSED(old_limit);
-	if (q == nullptr)
-	{
-		throw Zlib::Er("outofmem");
-	}
-	z->zout_start = q;
-	z->zout = q + cur;
-	z->zout_end = q + limit;
-}
-
 static void zbuild_huffman(ZHuffman *z, const uint8_t *sizelist, int num)
 {
 	int i, k = 0;
@@ -320,268 +319,6 @@ static void zbuild_huffman(ZHuffman *z, const uint8_t *sizelist, int num)
 }
 
 
-static void zdo_zlib(ZBuffer *a, uint8_t* obuf, size_t olen, bool exp, bool parse_header)
-{
-	a->zout_start = obuf;
-	a->zout = obuf;
-	a->zout_end = obuf + olen;
-	a->z_expandable = exp;
-
-
-	if (parse_header)
-	{
-		int cmf = a->zget8();
-		int cm = cmf & 15;
-		/* int cinfo = cmf >> 4; */
-		int flg = a->zget8();
-		if (a->zeof())
-		{
-			// zlib spec
-			throw Zlib::Er("bad zlib header");
-		}
-		if ((cmf * 256 + flg) % 31 != 0)
-		{
-			// zlib spec
-			throw Zlib::Er("bad zlib header");
-		}
-		if (flg & 32)
-		{
-			// preset dictionary not allowed in png
-			throw Zlib::Er("no preset dict");
-		}
-		if (cm != 8)
-		{
-			// DEFLATE required for png
-			throw Zlib::Er("bad compression");
-		}
-		// window = 1 << (8 + cinfo)... but who cares, we fully buffer output
-	}
-	a->num_bits = 0;
-	a->code_buffer = 0;
-	a->hit_zeof_once = 0;
-	int final;
-	do
-	{
-		final = a->zreceive(1);
-		int type = a->zreceive(2);
-		if (type == 0)
-		{
-			uint8_t header[4];
-			int len, nlen, k;
-			if (a->num_bits & 7)
-			{
-				a->zreceive(a->num_bits & 7); // discard
-			}
-			// drain the bit-packed data into header
-			k = 0;
-			while (a->num_bits > 0)
-			{
-				header[k++] = (uint8_t) (a->code_buffer & 255); // suppress MSVC run-time check
-				a->code_buffer >>= 8;
-				a->num_bits -= 8;
-			}
-			if (a->num_bits < 0)
-			{
-				throw Zlib::Er("zlib corrupt");
-			}
-			// now fill header the normal way
-			while (k < 4)
-			{
-				header[k++] = a->zget8();
-			}
-			len = header[1] * 256 + header[0];
-			nlen = header[3] * 256 + header[2];
-			if (nlen != (len ^ 0xffff))
-			{
-				throw Zlib::Er("zlib corrupt");
-			}
-			if (a->zbuffer + len > a->zbuffer_end)
-			{
-				throw Zlib::Er("read past buffer");
-			}
-			if (a->zout + len > a->zout_end)
-			{
-				zexpand(a, a->zout, len);
-			}
-			std::memcpy(a->zout, a->zbuffer, len);
-			a->zbuffer += len;
-			a->zout += len;
-		}
-		else if (type == 3)
-		{
-			throw Zlib::Er("zdo_zlib: type == 3");
-		}
-		else
-		{
-			if (type == 1)
-			{
-				// use fixed code lengths
-				zbuild_huffman(&a->z_length, DEFAULT_LENGTH, STBI__ZNSYMS);
-				zbuild_huffman(&a->z_distance, DEFAULT_DISTANCE, 32);
-			}
-			else
-			{
-				// zcompute_huffman_codes
-				ZHuffman z_codelength;
-				uint8_t lencodes[286 + 32 + 137]; //padding for maximum single op
-
-				const int hlit = a->zreceive(5) + 257;
-				const int hdist = a->zreceive(5) + 1;
-				const int hclen = a->zreceive(4) + 4;
-				const int ntot = hlit + hdist;
-
-				uint8_t codelength_sizes[19] = {};
-				for (int i = 0; i < hclen; ++i)
-				{
-					int s = a->zreceive(3);
-					codelength_sizes[LENGTH_DE_ZIGZAG[i]] = (uint8_t) s;
-				}
-				zbuild_huffman(&z_codelength, codelength_sizes, 19);
-
-				int n = 0;
-				while (n < ntot)
-				{
-					int c = zhuffman_decode(a, &z_codelength);
-					if (c < 0 || c >= 19)
-					{
-						throw Zlib::Er("bad codelengths");
-					}
-					if (c < 16)
-					{
-						lencodes[n++] = (uint8_t) c;
-					}
-					else
-					{
-						uint8_t fill = 0;
-						if (c == 16)
-						{
-							c = a->zreceive(2) + 3;
-							if (n == 0)
-							{
-								throw Zlib::Er("bad codelengths");
-							}
-							fill = lencodes[n - 1];
-						}
-						else if (c == 17)
-						{
-							c = a->zreceive(3) + 3;
-						}
-						else if (c == 18)
-						{
-							c = a->zreceive(7) + 11;
-						}
-						else
-						{
-							throw Zlib::Er("bad codelengths");
-						}
-						if (ntot - n < c)
-						{
-							throw Zlib::Er("bad codelengths");
-						}
-						std::memset(lencodes + n, fill, c);
-						n += c;
-					}
-				}
-				if (n != ntot)
-				{
-					throw Zlib::Er("bad codelengths");
-				}
-				zbuild_huffman(&a->z_length, lencodes, hlit);
-				zbuild_huffman(&a->z_distance, lencodes + hlit, hdist);
-			}
-
-			// zparse_huffman_block
-			auto zout = a->zout;
-			for (;;)
-			{
-				int z = zhuffman_decode(a, &a->z_length);
-				if (z < 256)
-				{
-					if (z < 0)
-					{
-						// error in huffman codes
-						throw Zlib::Er("bad huffman code");
-					}
-					if (zout >= a->zout_end)
-					{
-						zexpand(a, zout, 1);
-						zout = a->zout;
-					}
-					*zout++ = (char) z;
-				}
-				else
-				{
-					int len, dist;
-					if (z == 256)
-					{
-						a->zout = zout;
-						if (a->hit_zeof_once && a->num_bits < 16)
-						{
-							// The first time we hit zeof, we inserted 16 extra zero bits into our bit
-							// buffer so the decoder can just do its speculative decoding. But if we
-							// actually consumed any of those bits (which is the case when num_bits < 16),
-							// the stream actually read past the end so it is malformed.
-							throw Zlib::Er("unexpected end");
-						}
-					}
-					else
-					{
-						if (z >= 286)
-						{
-							throw Zlib::Er("bad huffman code");
-						}
-						// per DEFLATE, length codes 286 and 287 must not appear in compressed data
-						z -= 257;
-						len = ZLENGTH_BASE[z];
-						if (stbi__zlength_extra[z])
-						{
-							len += a->zreceive(stbi__zlength_extra[z]);
-						}
-						z = zhuffman_decode(a, &a->z_distance);
-						if (z < 0 || z >= 30)
-						{
-							throw Zlib::Er("bad huffman code");
-						}
-						// per DEFLATE, distance codes 30 and 31 must not appear in compressed data
-						dist = ZDIST_BASE[z];
-						if (ZDIST_EXTRA[z])
-						{
-							dist += a->zreceive(ZDIST_EXTRA[z]);
-						}
-						if (zout - a->zout_start < dist)
-						{
-							throw Zlib::Er("bad dist");
-						}
-						if (len > a->zout_end - zout)
-						{
-							zexpand(a, zout, len);
-							zout = a->zout;
-						}
-						auto p = zout - dist;
-						if (dist == 1)
-						{
-							// run of one byte; common in images.
-							auto v = *p;
-							if (len)
-							{
-								do *zout++ = v; while (--len);
-							}
-						}
-						else
-						{
-							if (len)
-							{
-								do *zout++ = *p++; while (--len);
-							}
-						}
-					}
-				}
-			}
-		}
-	} while (!final);
-}
-
-
 auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 {
 	const auto p = this->malloc_t<uint8_t>(this->initial_size);
@@ -594,7 +331,267 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 	a.zbuffer_end = this->buffer + this->len;
 	try
 	{
-		zdo_zlib(&a, p, this->initial_size, true, this->parse_header);
+		// zdo_zlib(&a, p, this->initial_size, true, this->parse_header);
+		a.zout_start = p;
+		a.zout = p;
+		a.zout_end = p + this->initial_size;
+		a.z_expandable = this->parse_header;
+
+
+		if (parse_header)
+		{
+			int cmf = a.zget8();
+			int cm = cmf & 15;
+			/* int cinfo = cmf >> 4; */
+			int flg = a.zget8();
+			if (a.zeof())
+			{
+				// zlib spec
+				throw Zlib::Er("bad zlib header");
+			}
+			if ((cmf * 256 + flg) % 31 != 0)
+			{
+				// zlib spec
+				throw Zlib::Er("bad zlib header");
+			}
+			if (flg & 32)
+			{
+				// preset dictionary not allowed in png
+				throw Zlib::Er("no preset dict");
+			}
+			if (cm != 8)
+			{
+				// DEFLATE required for png
+				throw Zlib::Er("bad compression");
+			}
+			// window = 1 << (8 + cinfo)... but who cares, we fully buffer output
+		}
+		a.num_bits = 0;
+		a.code_buffer = 0;
+		a.hit_zeof_once = 0;
+		int final;
+		do
+		{
+			final = a.zreceive(1);
+			int type = a.zreceive(2);
+			if (type == 0)
+			{
+				uint8_t header[4];
+				int len;
+				if (a.num_bits & 7)
+				{
+					a.zreceive(a.num_bits & 7); // discard
+				}
+				// drain the bit-packed data into header
+				int k = 0;
+				while (a.num_bits > 0)
+				{
+					// suppress MSVC run-time check
+					header[k++] = static_cast<uint8_t>(a.code_buffer & 255);
+					a.code_buffer >>= 8;
+					a.num_bits -= 8;
+				}
+				if (a.num_bits < 0)
+				{
+					throw Zlib::Er("zlib corrupt");
+				}
+				// now fill header the normal way
+				while (k < 4)
+				{
+					header[k++] = a.zget8();
+				}
+				len = header[1] * 256 + header[0];
+				int nlen = header[3] * 256 + header[2];
+				if (nlen != (len ^ 0xffff))
+				{
+					throw Zlib::Er("zlib corrupt");
+				}
+				if (a.zbuffer + len > a.zbuffer_end)
+				{
+					throw Zlib::Er("read past buffer");
+				}
+				if (a.zout + len > a.zout_end)
+				{
+					a.zexpand(a.zout, len);
+				}
+				std::memcpy(a.zout, a.zbuffer, len);
+				a.zbuffer += len;
+				a.zout += len;
+			}
+			else if (type == 3)
+			{
+				throw Zlib::Er("zdo_zlib: type == 3");
+			}
+			else
+			{
+				if (type == 1)
+				{
+					// use fixed code lengths
+					zbuild_huffman(&a.z_length, DEFAULT_LENGTH, STBI__ZNSYMS);
+					zbuild_huffman(&a.z_distance, DEFAULT_DISTANCE, 32);
+				}
+				else
+				{
+					// zcompute_huffman_codes
+					ZHuffman z_codelength;
+					uint8_t lencodes[286 + 32 + 137]; //padding for maximum single op
+
+					const int hlit = a.zreceive(5) + 257;
+					const int hdist = a.zreceive(5) + 1;
+					const int hclen = a.zreceive(4) + 4;
+					const int ntot = hlit + hdist;
+
+					uint8_t codelength_sizes[19] = {};
+					for (int i = 0; i < hclen; ++i)
+					{
+						int s = a.zreceive(3);
+						codelength_sizes[LENGTH_DE_ZIGZAG[i]] = (uint8_t) s;
+					}
+					zbuild_huffman(&z_codelength, codelength_sizes, 19);
+
+					int n = 0;
+					while (n < ntot)
+					{
+						int c = zhuffman_decode(&a, &z_codelength);
+						if (c < 0 || c >= 19)
+						{
+							throw Zlib::Er("bad codelengths");
+						}
+						if (c < 16)
+						{
+							lencodes[n++] = (uint8_t) c;
+						}
+						else
+						{
+							uint8_t fill = 0;
+							if (c == 16)
+							{
+								c = a.zreceive(2) + 3;
+								if (n == 0)
+								{
+									throw Zlib::Er("bad codelengths");
+								}
+								fill = lencodes[n - 1];
+							}
+							else if (c == 17)
+							{
+								c = a.zreceive(3) + 3;
+							}
+							else if (c == 18)
+							{
+								c = a.zreceive(7) + 11;
+							}
+							else
+							{
+								throw Zlib::Er("bad codelengths");
+							}
+							if (ntot - n < c)
+							{
+								throw Zlib::Er("bad codelengths");
+							}
+							std::memset(lencodes + n, fill, c);
+							n += c;
+						}
+					}
+					if (n != ntot)
+					{
+						throw Zlib::Er("bad codelengths");
+					}
+					zbuild_huffman(&a.z_length, lencodes, hlit);
+					zbuild_huffman(&a.z_distance, lencodes + hlit, hdist);
+				}
+
+				// zparse_huffman_block
+				auto zout = a.zout;
+				for (;;)
+				{
+					int z = zhuffman_decode(&a, &a.z_length);
+					if (z < 256)
+					{
+						if (z < 0)
+						{
+							// error in huffman codes
+							throw Zlib::Er("bad huffman code");
+						}
+						if (zout >= a.zout_end)
+						{
+							a.zexpand(zout, 1);
+							zout = a.zout;
+						}
+						*zout++ = static_cast<char>(z);
+					}
+					else
+					{
+						int len, dist;
+						if (z == 256)
+						{
+							a.zout = zout;
+							if (a.hit_zeof_once && a.num_bits < 16)
+							{
+								// The first time we hit zeof, we inserted 16 extra zero bits into our bit
+								// buffer so the decoder can just do its speculative decoding. But if we
+								// actually consumed any of those bits (which is the case when num_bits < 16),
+								// the stream actually read past the end so it is malformed.
+								throw Zlib::Er("unexpected end");
+							}
+						}
+						else
+						{
+							if (z >= 286)
+							{
+								throw Zlib::Er("bad huffman code");
+							}
+							// per DEFLATE, length codes 286 and 287 must not appear in compressed data
+							z -= 257;
+							len = ZLENGTH_BASE[z];
+							if (stbi__zlength_extra[z])
+							{
+								len += a.zreceive(stbi__zlength_extra[z]);
+							}
+							z = zhuffman_decode(&a, &a.z_distance);
+							if (z < 0 || z >= 30)
+							{
+								throw Zlib::Er("bad huffman code");
+							}
+							// per DEFLATE, distance codes 30 and 31 must not appear in compressed data
+							dist = ZDIST_BASE[z];
+							if (ZDIST_EXTRA[z])
+							{
+								dist += a.zreceive(ZDIST_EXTRA[z]);
+							}
+							if (zout - a.zout_start < dist)
+							{
+								throw Zlib::Er("bad dist");
+							}
+							if (len > a.zout_end - zout)
+							{
+								a.zexpand(zout, len);
+								zout = a.zout;
+							}
+							auto p = zout - dist;
+							if (dist == 1)
+							{
+								// run of one byte; common in images.
+								auto v = *p;
+								if (len)
+								{
+									do *zout++ = v; while (--len);
+								}
+							}
+							else
+							{
+								if (len)
+								{
+									do *zout++ = *p++; while (--len);
+								}
+							}
+						}
+					}
+				}
+			}
+		} while (!final);
+
+//
 		this->out_len = a.zout - a.zout_start;
 		return a.zout_start;
 	}
