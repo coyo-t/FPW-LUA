@@ -59,6 +59,37 @@ typedef struct
 
 	stbi_uc *img_buffer, *img_buffer_end;
 	stbi_uc *img_buffer_original, *img_buffer_original_end;
+
+	auto stbi__get8() -> stbi_uc
+	{
+		if (this->img_buffer < this->img_buffer_end)
+			return *this->img_buffer++;
+		return 0;
+	}
+
+	auto stbi__get16be () -> int
+	{
+		int z = this->stbi__get8();
+		return (z << 8) + this->stbi__get8();
+	}
+
+
+	auto stbi__get32be() -> stbi__uint32
+	{
+		stbi__uint32 z = this->stbi__get16be();
+		return (z << 16) + this->stbi__get16be();
+	}
+
+	auto stbi__skip(int n) -> void
+	{
+		if (n == 0) return; // already there!
+		if (n < 0)
+		{
+			this->img_buffer = this->img_buffer_end;
+			return;
+		}
+		this->img_buffer += n;
+	}
 } stbi__context;
 
 
@@ -100,7 +131,7 @@ static void *stbi__png_load(stbi__context *s, int *x, int *y, int *comp, int req
 static
 const char *stbi__g_failure_reason;
 
-STBIDEF const char *stbi_failure_reason(void)
+STBIDEF const char *stbi_failure_reason()
 {
 	return stbi__g_failure_reason;
 }
@@ -259,27 +290,6 @@ enum
 	STBI__SCAN_header
 };
 
-static stbi_uc stbi__get8(stbi__context *s)
-{
-	if (s->img_buffer < s->img_buffer_end)
-		return *s->img_buffer++;
-	return 0;
-}
-
-
-
-static void stbi__skip(stbi__context *s, int n)
-{
-	if (n == 0) return; // already there!
-	if (n < 0)
-	{
-		s->img_buffer = s->img_buffer_end;
-		return;
-	}
-	s->img_buffer += n;
-}
-
-
 static int stbi__getn(stbi__context *s, stbi_uc *buffer, int n)
 {
 	if (s->img_buffer + n <= s->img_buffer_end)
@@ -292,19 +302,6 @@ static int stbi__getn(stbi__context *s, stbi_uc *buffer, int n)
 }
 
 
-
-static int stbi__get16be(stbi__context *s)
-{
-	int z = stbi__get8(s);
-	return (z << 8) + stbi__get8(s);
-}
-
-
-static stbi__uint32 stbi__get32be(stbi__context *s)
-{
-	stbi__uint32 z = stbi__get16be(s);
-	return (z << 16) + stbi__get16be(s);
-}
 
 
 
@@ -540,8 +537,8 @@ typedef struct
 static stbi__pngchunk stbi__get_chunk_header(stbi__context *s)
 {
 	stbi__pngchunk c;
-	c.length = stbi__get32be(s);
-	c.type = stbi__get32be(s);
+	c.length = s->stbi__get32be();
+	c.type = s->stbi__get32be();
 	return c;
 }
 
@@ -550,7 +547,7 @@ static int stbi__check_png_header(stbi__context *s)
 	static const stbi_uc png_sig[8] = {137, 80, 78, 71, 13, 10, 26, 10};
 	for (const auto i : png_sig)
 	{
-		if (stbi__get8(s) != i)
+		if (s->stbi__get8() != i)
 		{
 			return stbi__err("bad png sig", "Not a PNG");
 		}
@@ -1038,7 +1035,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 		{
 			case STBI__PNG_TYPE('C', 'g', 'B', 'I'): {
 				is_iphone = 1;
-				stbi__skip(s, c.length);
+				s->stbi__skip(c.length);
 				break;
 			}
 			case STBI__PNG_TYPE('I', 'H', 'D', 'R'): {
@@ -1049,8 +1046,8 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				}
 				first = 0;
 				if (c.length != 13) return stbi__err("bad IHDR len", "Corrupt PNG");
-				s->img_x = stbi__get32be(s);
-				s->img_y = stbi__get32be(s);
+				s->img_x = s->stbi__get32be();
+				s->img_y = s->stbi__get32be();
 				if (s->img_y > STBI_MAX_DIMENSIONS)
 				{
 					return stbi__err("too large", "Very large image (corrupt?)");
@@ -1059,13 +1056,13 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				{
 					return stbi__err("too large", "Very large image (corrupt?)");
 				}
-				z->depth = stbi__get8(s);
+				z->depth = s->stbi__get8();
 				if (z->depth != 1 && z->depth != 2 && z->depth != 4 && z->depth != 8 && z->depth != 16)
 				{
 					return stbi__err(
 						"1/2/4/8/16-bit only", "PNG not supported: 1/2/4/8/16-bit only");
 				}
-				color = stbi__get8(s);
+				color = s->stbi__get8();
 				if (color > 6)
 				{
 					return stbi__err("bad ctype", "Corrupt PNG");
@@ -1082,17 +1079,17 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				{
 					return stbi__err("bad ctype", "Corrupt PNG");
 				}
-				comp = stbi__get8(s);
+				comp = s->stbi__get8();
 				if (comp)
 				{
 					return stbi__err("bad comp method", "Corrupt PNG");
 				}
-				filter = stbi__get8(s);
+				filter = s->stbi__get8();
 				if (filter)
 				{
 					return stbi__err("bad filter method", "Corrupt PNG");
 				}
-				interlace = stbi__get8(s);
+				interlace = s->stbi__get8();
 				if (interlace > 1)
 				{
 					return stbi__err("bad interlace method", "Corrupt PNG");
@@ -1140,9 +1137,9 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				}
 				for (i = 0; i < pal_len; ++i)
 				{
-					palette[i * 4 + 0] = stbi__get8(s);
-					palette[i * 4 + 1] = stbi__get8(s);
-					palette[i * 4 + 2] = stbi__get8(s);
+					palette[i * 4 + 0] = s->stbi__get8();
+					palette[i * 4 + 1] = s->stbi__get8();
+					palette[i * 4 + 2] = s->stbi__get8();
 					palette[i * 4 + 3] = 255;
 				}
 				break;
@@ -1175,7 +1172,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					pal_img_n = 4;
 					for (i = 0; i < c.length; ++i)
 					{
-						palette[i * 4 + 3] = stbi__get8(s);
+						palette[i * 4 + 3] = s->stbi__get8();
 					}
 				}
 				else
@@ -1199,14 +1196,14 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					{
 						for (k = 0; k < s->img_n && k < 3; ++k) // extra loop test to suppress false GCC warning
 						{
-							tc16[k] = (stbi__uint16) stbi__get16be(s); // copy the values as-is
+							tc16[k] = (stbi__uint16)s->stbi__get16be(); // copy the values as-is
 						}
 					}
 					else
 					{
 						for (k = 0; k < s->img_n && k < 3; ++k)
 						{
-							tc[k] = (stbi_uc) (stbi__get16be(s) & 255) * stbi__depth_scale_table[z->depth];
+							tc[k] = (stbi_uc) (s->stbi__get16be() & 255) * stbi__depth_scale_table[z->depth];
 						}
 						// non 8-bit images will be larger
 					}
@@ -1358,7 +1355,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				STBI_FREE(z->expanded);
 				z->expanded = NULL;
 				// end of PNG chunk, read and skip CRC
-				stbi__get32be(s);
+				s->stbi__get32be();
 				return 1;
 			}
 
@@ -1380,12 +1377,12 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 #endif
 					return stbi__err(invalid_chunk, "PNG not supported: unknown PNG chunk type");
 				}
-				stbi__skip(s, c.length);
+				s->stbi__skip(c.length);
 				break;
 			}
 		}
 		// end of PNG chunk, read and skip CRC
-		stbi__get32be(s);
+		s->stbi__get32be();
 	}
 }
 
