@@ -135,14 +135,7 @@ struct stbi__context
 		}
 		return true;
 	}
-
-	auto stbi__png_test () -> bool
-	{
-		auto r = check_png_header();
-		rewind();
-		return r;
-	}
-	auto stbi__skip (int n) -> void
+	auto skip (int n) -> void
 	{
 		if (n != 0)
 		{
@@ -154,7 +147,7 @@ struct stbi__context
 			img_buffer += n;
 		}
 	}
-	auto stbi__getn(Byte* buffer, int n) -> bool
+	auto getn(Byte* buffer, int n) -> bool
 	{
 		if (img_buffer + n > img_buffer_end)
 		{
@@ -202,7 +195,10 @@ STBIDEF void stbi_image_free(void *retval_from_stbi_load)
 // negative terms are considered invalid.
 static bool stbi__addsizes_valid(int a, int b)
 {
-	if (b < 0) return false;
+	if (b < 0)
+	{
+		return false;
+	}
 	// now 0 <= b <= INT_MAX, hence also
 	// 0 <= INT_MAX - b <= INTMAX.
 	// And "a + b <= INT_MAX" (which might overflow) is the
@@ -214,8 +210,15 @@ static bool stbi__addsizes_valid(int a, int b)
 // negative factors are considered invalid.
 static bool stbi__mul2sizes_valid(int a, int b)
 {
-	if (a < 0 || b < 0) return false;
-	if (b == 0) return true; // mul-by-0 is always safe
+	if (a < 0 || b < 0)
+	{
+		return false;
+	}
+	if (b == 0)
+	{
+		// mul-by-0 is always safe
+		return true;
+	}
 	// portable way to check for no overflows in a*b
 	return a <= INT_MAX / b;
 }
@@ -618,7 +621,9 @@ struct Buffer {
 				if (len > zout_end - zoutl)
 				{
 					if (!zexpand(zoutl, len))
+					{
 						return false;
+					}
 					zoutl = this->zout;
 				}
 				auto* p = zoutl - dist;
@@ -766,16 +771,24 @@ struct Buffer {
 		const int flg = get8();
 		// zlib spec
 		if (this->eof())
+		{
 			return stbi__err("bad zlib header", "Corrupt PNG");
+		}
 		// zlib spec
 		if ((cmf * 256 + flg) % 31 != 0)
+		{
 			return stbi__err("bad zlib header", "Corrupt PNG");
+		}
 		// preset dictionary not allowed in png
 		if (flg & 32)
+		{
 			return stbi__err("no preset dict", "Corrupt PNG");
+		}
 		// DEFLATE required for png
 		if (const int cm = cmf & 15; cm != 8)
+		{
 			return stbi__err("bad compression", "Corrupt PNG");
+		}
 		// window = 1 << (8 + cinfo)... but who cares, we fully buffer output
 		return 1;
 	}
@@ -840,9 +853,12 @@ struct Buffer {
 		int *outlen,
 		int parse_header) -> Byte*
 	{
-		Buffer a;
 		auto p = (Byte*)stbi__malloc(initial_size);
-		if (p == nullptr) return nullptr;
+		if (p == nullptr)
+		{
+			return nullptr;
+		}
+		Buffer a;
 		a.zbuffer = (Byte*) buffer;
 		a.zbuffer_end = (Byte*) buffer + len;
 
@@ -921,23 +937,19 @@ enum class Scan
 	Header,
 };
 
-//////////////////////////////////////////////////////////////////////////////
-//
-//  generic converter from built-in img_n to req_comp
-//    individual types do this automatically as much as possible (e.g. jpeg
-//    does all cases internally since it needs to colorspace convert anyway,
-//    and it never has alpha, so very few cases ). png can automatically
-//    interleave an alpha=255 channel, but falls back to this for other cases
-//
-//  assume data buffer is malloced, so malloc a new one and free that one
-//  only failure mode is malloc failing
-
-
-static Byte* stbi__convert_format(Byte* data, int img_n, int req_comp, unsigned int x, unsigned int y)
+static Byte* stbi__convert_format (
+	Byte* data,
+	int img_n,
+	int req_comp,
+	U32 x,
+	U32 y)
 {
 	int i, j;
 
-	if (req_comp == img_n) return data;
+	if (req_comp == img_n)
+	{
+		return data;
+	}
 	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
 
 	const auto good = stbi__malloc_fma3<Byte>(req_comp, x, y, 0);
@@ -1040,7 +1052,7 @@ static U16 *stbi__convert_format16(U16*data, int img_n, int req_comp, unsigned i
 	}
 	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
 
-	const auto good = static_cast<U16 *>(stbi__malloc(req_comp * x * y * 2));
+	const auto good = static_cast<U16*>(stbi__malloc(req_comp * x * y * 2));
 	if (good == nullptr)
 	{
 		STBI_FREE(data);
@@ -1314,7 +1326,8 @@ static int stbi__create_png_image_raw(stbi__png *a, Byte* raw, U32 raw_len, int 
 			case STBI__F_paeth:
 				for (k = 0; k < filter_bytes; ++k)
 				{
-					cur[k] = BYTECAST(raw[k] + prior[k]); // prior[k] == stbi__paeth(0,prior[k],0)
+					// prior[k] == stbi__paeth(0,prior[k],0)
+					cur[k] = BYTECAST(raw[k] + prior[k]);
 				}
 				for (k = filter_bytes; k < nk; ++k)
 				{
@@ -1335,7 +1348,8 @@ static int stbi__create_png_image_raw(stbi__png *a, Byte* raw, U32 raw_len, int 
 		// expand decoded bits in cur to dest, also adding an extra alpha channel if desired
 		if (depth < 8)
 		{
-			Byte scale = (color == 0) ? stbi__depth_scale_table[depth] : 1; // scale grayscale values to 0..255 range
+			// scale grayscale values to 0..255 range
+			Byte scale = (color == 0) ? stbi__depth_scale_table[depth] : 1;
 			auto* in = cur;
 			auto* out = dest;
 			Byte inb = 0;
@@ -1382,14 +1396,20 @@ static int stbi__create_png_image_raw(stbi__png *a, Byte* raw, U32 raw_len, int 
 
 			// insert alpha=255 values if desired
 			if (img_n != out_n)
+			{
 				stbi__create_png_alpha_expand8(dest, dest, x, img_n);
+			}
 		}
 		else if (depth == 8)
 		{
 			if (img_n == out_n)
+			{
 				memcpy(dest, cur, x * img_n);
+			}
 			else
+			{
 				stbi__create_png_alpha_expand8(dest, cur, x, img_n);
+			}
 		}
 		else if (depth == 16)
 		{
@@ -1498,7 +1518,6 @@ static int stbi__create_png_image(stbi__png *a, Byte*image_data, U32 image_data_
 
 	return 1;
 }
-
 
 static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 {
@@ -1756,7 +1775,7 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 					}
 					z->idata = p;
 				}
-				if (!s->stbi__getn(z->idata + ioff, c.length))
+				if (!s->getn(z->idata + ioff, c.length))
 				{
 					return stbi__err("outofdata", "Corrupt PNG");
 				}
@@ -1964,7 +1983,7 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 					static char invalid_chunk[] = "XXXX PNG chunk not known";
 					return stbi__err(invalid_chunk, "PNG not supported: unknown PNG chunk type");
 				}
-				s->stbi__skip(c.length);
+				s->skip(c.length);
 				break;
 			}
 		}
@@ -2000,7 +2019,6 @@ STBIDEF int stbi_info_from_memory(Byte const *buffer, int len, int *x, int *y, i
 	return true;
 }
 
-
 STBIDEF Byte *stbi_load_from_memory(Byte const *buffer, int len, int *x, int *y, int *comp, int req_comp)
 {
 	stbi__context s;
@@ -2015,10 +2033,15 @@ STBIDEF Byte *stbi_load_from_memory(Byte const *buffer, int len, int *x, int *y,
 
 		// test the formats with a very explicit header first (at least a FOURCC
 		// or distinctive magic number first)
-		if (!s.stbi__png_test())
+
 		{
-			result = stbi__errpuc("unknown image type", "Image not of any known type, or corrupt");
-			goto ret;
+			auto r = s.check_png_header();
+			s.rewind();
+			if (!r)
+			{
+				result = stbi__errpuc("unknown image type", "Image not of any known type, or corrupt");
+				goto ret;
+			}
 		}
 
 		stbi__png p;
