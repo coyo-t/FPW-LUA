@@ -555,103 +555,88 @@ static int zparse_uncompressed_block(ZBuffer *a)
 }
 
 
-static int zdo_zlib(ZBuffer *a, uint8_t* obuf, size_t olen, bool exp, bool parse_header)
+static void zdo_zlib(ZBuffer *a, uint8_t* obuf, size_t olen, bool exp, bool parse_header)
 {
 	a->zout_start = obuf;
 	a->zout = obuf;
 	a->zout_end = obuf + olen;
 	a->z_expandable = exp;
 
-	bool result = false;
-	{
-		if (parse_header)
-		{
-			bool hdrresult;
-			int cmf = zget8(a);
-			int cm = cmf & 15;
-			/* int cinfo = cmf >> 4; */
-			int flg = zget8(a);
-			if (zeof(a))
-			{
-				hdrresult = a->error_occured("bad zlib header"); // zlib spec
-				goto hdrendl;
-			}
-			if ((cmf * 256 + flg) % 31 != 0)
-			{
-				hdrresult = a->error_occured("bad zlib header"); // zlib spec
-				goto hdrendl;
-			}
-			if (flg & 32)
-			{
-				hdrresult = a->error_occured("no preset dict"); // preset dictionary not allowed in png
-				goto hdrendl;
-			}
-			if (cm != 8)
-			{
-				hdrresult = a->error_occured("bad compression"); // DEFLATE required for png
-				goto hdrendl;
-			}
-			// window = 1 << (8 + cinfo)... but who cares, we fully buffer output
-			hdrresult = true;
 
-			hdrendl:
-			if (!hdrresult)
+	if (parse_header)
+	{
+		int cmf = zget8(a);
+		int cm = cmf & 15;
+		/* int cinfo = cmf >> 4; */
+		int flg = zget8(a);
+		if (zeof(a))
+		{
+			// zlib spec
+			throw Zlib::Er("bad zlib header");
+		}
+		if ((cmf * 256 + flg) % 31 != 0)
+		{
+			// zlib spec
+			throw Zlib::Er("bad zlib header");
+		}
+		if (flg & 32)
+		{
+			// preset dictionary not allowed in png
+			throw Zlib::Er("no preset dict");
+		}
+		if (cm != 8)
+		{
+			// DEFLATE required for png
+			throw Zlib::Er("bad compression");
+		}
+		// window = 1 << (8 + cinfo)... but who cares, we fully buffer output
+	}
+	a->num_bits = 0;
+	a->code_buffer = 0;
+	a->hit_zeof_once = 0;
+	int final;
+	do
+	{
+		final = zreceive(a, 1);
+		int type = zreceive(a, 2);
+		if (type == 0)
+		{
+			if (!zparse_uncompressed_block(a))
 			{
-				goto endl;
+				throw Zlib::Er("zdo_zlib: !zparse_uncompressed_block");
 			}
 		}
-		a->num_bits = 0;
-		a->code_buffer = 0;
-		a->hit_zeof_once = 0;
-		int final;
-		do
+		else if (type == 3)
 		{
-			final = zreceive(a, 1);
-			int type = zreceive(a, 2);
-			if (type == 0)
+			throw Zlib::Er("zdo_zlib: type == 3");
+		}
+		else
+		{
+			if (type == 1)
 			{
-				if (!zparse_uncompressed_block(a))
+				// use fixed code lengths
+				if (!zbuild_huffman(a, &a->z_length, zdefault_length, STBI__ZNSYMS))
 				{
-					goto endl;
+					throw Zlib::Er("zbuild_huffman(..., STBI__ZNSYMS)");
 				}
-			}
-			else if (type == 3)
-			{
-				goto endl;
+				if (!zbuild_huffman(a, &a->z_distance, zdefault_distance, 32))
+				{
+					throw Zlib::Er("zbuild_huffman(..., 32)");
+				}
 			}
 			else
 			{
-				if (type == 1)
+				if (!zcompute_huffman_codes(a))
 				{
-					// use fixed code lengths
-					if (!zbuild_huffman(a, &a->z_length, zdefault_length, STBI__ZNSYMS))
-					{
-						goto endl;
-					}
-					if (!zbuild_huffman(a, &a->z_distance, zdefault_distance, 32))
-					{
-						goto endl;
-					}
-				}
-				else
-				{
-					if (!zcompute_huffman_codes(a))
-					{
-						goto endl;
-					}
-				}
-				if (!zparse_huffman_block(a))
-				{
-					goto endl;
+					throw Zlib::Er("!zcompute_huffman_codes(a)");
 				}
 			}
-		} while (!final);
-
-		result = true;
-		endl:
-	}
-
-	return result;
+			if (!zparse_huffman_block(a))
+			{
+				throw Zlib::Er("!zparse_huffman_block(a)");
+			}
+		}
+	} while (!final);
 }
 
 
@@ -665,12 +650,16 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 	ZBuffer a;
 	a.zbuffer = this->buffer;
 	a.zbuffer_end = this->buffer + this->len;
-	if (zdo_zlib(&a, p, this->initial_size, true, this->parse_header))
+	try
 	{
+		zdo_zlib(&a, p, this->initial_size, true, this->parse_header);
 		this->out_len = a.zout - a.zout_start;
 		return a.zout_start;
 	}
-	this->free_t(a.zout_start);
-	return nullptr;
+	catch (Zlib::Er e)
+	{
+		this->free_t(a.zout_start);
+		throw e;
+	}
 }
 

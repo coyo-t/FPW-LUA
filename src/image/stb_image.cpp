@@ -1439,7 +1439,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 
 				if (z->expanded == nullptr)
 				{
-					return stbi__err(zctx.error, "");
+					return stbi__err("z->expanded == nullptr", "");
 				}
 				STBI_FREE(z->idata);
 				z->idata = nullptr;
