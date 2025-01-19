@@ -937,10 +937,6 @@ enum class Scan
 //  assume data buffer is malloced, so malloc a new one and free that one
 //  only failure mode is malloc failing
 
-static Byte stbi__compute_y(int r, int g, int b)
-{
-	return static_cast<Byte>(((r * 77) + (g * 150) + (29 * b)) >> 8);
-}
 
 static Byte* stbi__convert_format(Byte* data, int img_n, int req_comp, unsigned int x, unsigned int y)
 {
@@ -956,6 +952,11 @@ static Byte* stbi__convert_format(Byte* data, int img_n, int req_comp, unsigned 
 		return stbi__errpuc("outofmem", "Out of memory");
 	}
 
+	static auto stbi__compute_y = [](int r, int g, int b) -> Byte
+	{
+		return static_cast<Byte>(((r * 77) + (g * 150) + (29 * b)) >> 8);
+	};
+
 	for (j = 0; j < (int) y; ++j)
 	{
 		auto src = data + j * x * img_n;
@@ -963,6 +964,7 @@ static Byte* stbi__convert_format(Byte* data, int img_n, int req_comp, unsigned 
 
 #define STBI__COMBO(a,b)  ((a)*8+(b))
 #define STBI__CASE(a,b)   case STBI__COMBO(a,b): for(i=x-1; i >= 0; --i, src += a, dest += b)
+
 		// convert source image with img_n components to one with req_comp components;
 		// avoid switch per pixel, so use switch per scanline and massive macros
 		switch (STBI__COMBO(img_n, req_comp))
@@ -1033,9 +1035,6 @@ static Byte* stbi__convert_format(Byte* data, int img_n, int req_comp, unsigned 
 	STBI_FREE(data);
 	return good;
 }
-
-
-
 
 
 static U16 *stbi__convert_format16(U16*data, int img_n, int req_comp, unsigned int x, unsigned int y)
