@@ -817,7 +817,7 @@ struct Buffer {
 		// window = 1 << (8 + cinfo)... but who cares, we fully buffer output
 		return 1;
 	}
-	auto parse_zlib(int parse_header) -> int
+	auto parse_zlib(int parse_header) -> bool
 	{
 		if (parse_header && !parse_zlib_header())
 		{
@@ -869,7 +869,7 @@ struct Buffer {
 				}
 			}
 		} while (!final);
-		return 1;
+		return true;
 	}
 	static auto zlib_decode_malloc_guesssize_headerflag(
 		const std::uint8_t *buffer,
@@ -889,17 +889,67 @@ struct Buffer {
 		a.zout_end = p + initial_size;
 		a.z_expandable = true;
 
-		if (a.parse_zlib(parse_header))
 		{
-			if (outlen != nullptr)
+			if (parse_header && !a.parse_zlib_header())
 			{
-				*outlen = static_cast<int>(a.zout - a.zout_start);
+				goto fail;
 			}
-			return a.zout_start;
+			a.num_bits = 0;
+			a.code_buffer = 0;
+			a.hit_zeof_once = 0;
+			int final;
+			do
+			{
+				final = a.recieve(1);
+				int type = a.recieve(2);
+				if (type == 0)
+				{
+					if (!a.parse_uncompressed_block())
+					{
+						goto fail;
+					}
+				}
+				else if (type == 3)
+				{
+					goto fail;
+				}
+				else
+				{
+					if (type == 1)
+					{
+						// use fixed code lengths
+						if (!a.z_length.zbuild_huffman(DEFAULT_LENGTH, NSYMS))
+						{
+							goto fail;
+						}
+						if (!a.z_distance.zbuild_huffman(DEFAULT_DISTANCE, 32))
+						{
+							goto fail;
+						}
+					}
+					else
+					{
+						if (!a.compute_huffman_codes())
+						{
+							goto fail;
+						}
+					}
+					if (!a.parse_huffman_block())
+					{
+						goto fail;
+					}
+				}
+			} while (!final);
 		}
 
-		STBI_FREE(a.zout_start);
+		if (outlen != nullptr)
+		{
+			*outlen = static_cast<int>(a.zout - a.zout_start);
+		}
+		return a.zout_start;
 
+		fail:
+		STBI_FREE(a.zout_start);
 		return nullptr;
 	}
 };
