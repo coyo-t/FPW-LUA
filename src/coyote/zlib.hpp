@@ -33,6 +33,84 @@ namespace Coyote {
 		private:
 		const char* failure_reason = nullptr;
 	};
+
+
+
+
+
+
+
+
+	// zlib-from-memory implementation for PNG reading
+	//    because PNG allows splitting the zlib stream arbitrarily,
+	//    and it's annoying structurally to have PNG call ZLIB call PNG,
+	//    we require PNG read all the IDATs and combine them into a single
+	//    memory buffer
+
+	struct Huffer {
+		Byte* zbuffer;
+		Byte* zbuffer_end;
+		int num_bits;
+		int hit_zeof_once;
+		U32 code_buffer;
+
+		Byte* zout;
+		Byte* zout_start;
+		Byte* zout_end;
+
+		Huffman z_length, z_distance;
+
+		auto eof () const -> bool
+		{
+			return zbuffer >= zbuffer_end;
+		}
+		auto get8 () -> Byte
+		{
+			return eof() ? 0 : *zbuffer++;
+		}
+		auto fill_bits () -> void
+		{
+			do
+			{
+				if (code_buffer >= (1U << num_bits))
+				{
+					zbuffer = zbuffer_end; /* treat this as EOF so we fail. */
+					return;
+				}
+				code_buffer |= static_cast<U32>(get8()) << num_bits;
+				num_bits += 8;
+			} while (num_bits <= 24);
+
+		}
+		auto recieve (int bitcount) -> U32
+		{
+			if (num_bits < bitcount)
+			{
+				fill_bits();
+			}
+			const auto k = code_buffer & ((1 << bitcount) - 1);
+			code_buffer >>= bitcount;
+			num_bits -= bitcount;
+			return k;
+		}
+		auto zhuffman_decode(Huffman *z) -> int;
+
+		// need to make room for n bytes
+		auto zexpand (Byte* zout, int n) -> bool;
+
+		auto parse_huffman_block() -> int;
+
+		auto compute_huffman_codes() -> int;
+
+		auto parse_uncompressed_block() -> int;
+
+		static auto decode_malloc_guesssize_headerflag(
+			const Byte* buffer,
+			int len,
+			int initial_size,
+			int *outlen,
+			int parse_header) -> Byte*;
+	};
 }
 
 
