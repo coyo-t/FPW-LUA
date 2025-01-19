@@ -561,13 +561,9 @@ struct Buffer {
 		return z->value[b];
 	}
 	// need to make room for n bytes
-	auto zexpand (std::uint8_t* zout, int n) -> int
+	auto zexpand (std::uint8_t* zout, int n) -> bool
 	{
 		this->zout = zout;
-		if (!true)
-		{
-			return stbi__err("output buffer limit", "Corrupt PNG");
-		}
 		const auto cur = static_cast<unsigned int>(this->zout - this->zout_start);
 		auto limit = static_cast<unsigned>(this->zout_end - this->zout_start);
 		if (UINT_MAX - cur < static_cast<unsigned>(n))
@@ -590,7 +586,7 @@ struct Buffer {
 		this->zout_start = q;
 		this->zout = q + cur;
 		this->zout_end = q + limit;
-		return 1;
+		return true;
 	}
 	auto parse_huffman_block() -> int
 	{
