@@ -1976,13 +1976,14 @@ bool stbi_info_from_memory(Byte const *buffer, U64 len, U64 * x, U64 * y, U64 * 
 	return true;
 }
 
-Byte *stbi_load_from_memory(Byte const *buffer, U64 len, U64* x, U64* y, U64* comp, U64 req_comp)
+Byte *stbi_load_from_memory(Byte const *buffer, U64 len, U64* x, U64* y, U64* comp, DesiredChannels desired_channels)
 {
 	Context s;
 	s.start_mem(buffer, len);
 	ResultInfo ri;
 
 	void* result;
+	auto req_comp = static_cast<U64>(desired_channels);
 	{
 		memset(&ri, 0, sizeof(ri)); // make sure it's initialized if we add new fields
 		ri.bits_per_channel = 8; // default is 8 so most paths don't have to be changed
@@ -2005,6 +2006,7 @@ Byte *stbi_load_from_memory(Byte const *buffer, U64 len, U64* x, U64* y, U64* co
 		p.s = &s;
 
 		void *result2 = nullptr;
+
 		if (req_comp < 0 || req_comp > 4)
 		{
 			result = stbi__errpuc("bad req_comp", "Internal error");

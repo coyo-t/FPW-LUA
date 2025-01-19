@@ -6,14 +6,15 @@
 using Coyote::Byte;
 using Coyote::U64;
 
-enum
+enum class DesiredChannels : U64
 {
-	STBI_default = 0, // only used for desired_channels
+	// only used for desired_channels
+	Default = 0,
 
-	STBI_grey = 1,
-	STBI_grey_alpha = 2,
-	STBI_rgb = 3,
-	STBI_rgb_alpha = 4
+	Grey = 1,
+	GreyAlpha = 2,
+	RGB = 3,
+	RGBA = 4
 };
 
 extern "C" {
@@ -33,7 +34,7 @@ STBIDEF stbi_load_from_memory (
 	U64*x,
 	U64*y,
 	U64 *channels_in_file,
-	U64 desired_channels
+	DesiredChannels desired_channels
 ) -> Byte*;
 
 
