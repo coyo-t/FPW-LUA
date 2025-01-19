@@ -20,8 +20,36 @@ static constexpr auto STBI__ZFAST_MASK = ((1 << STBI__ZFAST_BITS) - 1);
 // number of symbols in literal/length alphabet
 static constexpr auto STBI__ZNSYMS = 288;
 
-// zlib-style huffman encoding
-// (jpegs packs from left, zlib from right, so can't share code)
+
+/*
+Init algorithm:
+{
+	int i;   // use <= to match clearly with spec
+	for (i=0; i <= 143; ++i)     stbi__zdefault_length[i]   = 8;
+	for (   ; i <= 255; ++i)     stbi__zdefault_length[i]   = 9;
+	for (   ; i <= 279; ++i)     stbi__zdefault_length[i]   = 7;
+	for (   ; i <= 287; ++i)     stbi__zdefault_length[i]   = 8;
+
+	for (i=0; i <=  31; ++i)     stbi__zdefault_distance[i] = 5;
+}
+*/
+static const uint8_t zdefault_length[STBI__ZNSYMS] =
+{
+	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+	7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8
+};
+static const uint8_t zdefault_distance[32] =
+{
+	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+};
+
 struct ZHuffman
 {
 	uint16_t fast[1 << STBI__ZFAST_BITS];
@@ -47,70 +75,6 @@ static int bit_reverse(int v, int bits)
 	// to bit reverse n bits, reverse 16 and shift
 	// e.g. 11 bits, bit reverse and shift away 5
 	return bitreverse16(v) >> (16 - bits);
-}
-
-static int zbuild_huffman(ZHuffman *z, const uint8_t *sizelist, int num)
-{
-	int i, k = 0;
-	int next_code[16];
-	int sizes[17] = {};
-
-	std::memset(sizes, 0, sizeof(sizes));
-	std::memset(z->fast, 0, sizeof(z->fast));
-	for (i = 0; i < num; ++i)
-	{
-		++sizes[sizelist[i]];
-	}
-	sizes[0] = 0;
-	for (i = 1; i < 16; ++i)
-	{
-		if (sizes[i] > (1 << i))
-		{
-			return stbi__err("bad sizes", "Corrupt PNG");
-		}
-	}
-	int code = 0;
-	for (i = 1; i < 16; ++i)
-	{
-		next_code[i] = code;
-		z->firstcode[i] = static_cast<uint16_t>(code);
-		z->firstsymbol[i] = static_cast<uint16_t>(k);
-		code = (code + sizes[i]);
-		if (sizes[i])
-		{
-			if (code - 1 >= (1 << i))
-			{
-				return stbi__err("bad codelengths", "Corrupt PNG");
-			}
-		}
-		z->maxcode[i] = code << (16 - i); // preshift for inner loop
-		code <<= 1;
-		k += sizes[i];
-	}
-	z->maxcode[16] = 0x10000; // sentinel
-	for (i = 0; i < num; ++i)
-	{
-		int s = sizelist[i];
-		if (!s)
-		{
-			continue;
-		}
-		int c = next_code[s] - z->firstcode[s] + z->firstsymbol[s];
-		auto fastv = static_cast<uint16_t>((s << 9) | i);
-		z->size[c] = static_cast<uint8_t>(s);
-		z->value[c] = static_cast<uint16_t>(i);
-		if (s <= STBI__ZFAST_BITS)
-		{
-			int j = bit_reverse(next_code[s], s);
-			while (j < (1 << STBI__ZFAST_BITS))
-			{
-				z->fast[j] = fastv;
-				j += (1 << s);
-			}
-		}
-		++next_code[s];
-	}
-	return 1;
 }
 
 // zlib-from-memory implementation for PNG reading
@@ -395,6 +359,71 @@ static int zparse_huffman_block(ZBuffer *a)
 	}
 }
 
+static int zbuild_huffman(ZBuffer* ctx, ZHuffman *z, const uint8_t *sizelist, int num)
+{
+	int i, k = 0;
+	int next_code[16];
+	int sizes[17] = {};
+
+	std::memset(sizes, 0, sizeof(sizes));
+	std::memset(z->fast, 0, sizeof(z->fast));
+	for (i = 0; i < num; ++i)
+	{
+		++sizes[sizelist[i]];
+	}
+	sizes[0] = 0;
+	for (i = 1; i < 16; ++i)
+	{
+		if (sizes[i] > (1 << i))
+		{
+			return ctx->error_occured("bad sizes");
+		}
+	}
+	int code = 0;
+	for (i = 1; i < 16; ++i)
+	{
+		next_code[i] = code;
+		z->firstcode[i] = static_cast<uint16_t>(code);
+		z->firstsymbol[i] = static_cast<uint16_t>(k);
+		code = (code + sizes[i]);
+		if (sizes[i])
+		{
+			if (code - 1 >= (1 << i))
+			{
+				return ctx->error_occured("bad codelengths");
+			}
+		}
+		z->maxcode[i] = code << (16 - i); // preshift for inner loop
+		code <<= 1;
+		k += sizes[i];
+	}
+	z->maxcode[16] = 0x10000; // sentinel
+	for (i = 0; i < num; ++i)
+	{
+		int s = sizelist[i];
+		if (!s)
+		{
+			continue;
+		}
+		int c = next_code[s] - z->firstcode[s] + z->firstsymbol[s];
+		auto fastv = static_cast<uint16_t>((s << 9) | i);
+		z->size[c] = static_cast<uint8_t>(s);
+		z->value[c] = static_cast<uint16_t>(i);
+		if (s <= STBI__ZFAST_BITS)
+		{
+			int j = bit_reverse(next_code[s], s);
+			while (j < (1 << STBI__ZFAST_BITS))
+			{
+				z->fast[j] = fastv;
+				j += (1 << s);
+			}
+		}
+		++next_code[s];
+	}
+	return 1;
+}
+
+
 static int zcompute_huffman_codes(ZBuffer *a)
 {
 	static const uint8_t length_dezigzag[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
@@ -413,7 +442,7 @@ static int zcompute_huffman_codes(ZBuffer *a)
 		int s = zreceive(a, 3);
 		codelength_sizes[length_dezigzag[i]] = (uint8_t) s;
 	}
-	if (!zbuild_huffman(&z_codelength, codelength_sizes, 19))
+	if (!zbuild_huffman(a, &z_codelength, codelength_sizes, 19))
 	{
 		return 0;
 	}
@@ -466,11 +495,11 @@ static int zcompute_huffman_codes(ZBuffer *a)
 	{
 		return a->error_occured("bad codelengths");
 	}
-	if (!zbuild_huffman(&a->z_length, lencodes, hlit))
+	if (!zbuild_huffman(a, &a->z_length, lencodes, hlit))
 	{
 		return 0;
 	}
-	if (!zbuild_huffman(&a->z_distance, lencodes + hlit, hdist))
+	if (!zbuild_huffman(a, &a->z_distance, lencodes + hlit, hdist))
 	{
 		return 0;
 	}
@@ -525,34 +554,6 @@ static int zparse_uncompressed_block(ZBuffer *a)
 	return 1;
 }
 
-static const uint8_t zdefault_length[STBI__ZNSYMS] =
-{
-	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-	9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-	9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-	9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-	7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8
-};
-static const uint8_t zdefault_distance[32] =
-{
-	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
-};
-/*
-Init algorithm:
-{
-   int i;   // use <= to match clearly with spec
-   for (i=0; i <= 143; ++i)     stbi__zdefault_length[i]   = 8;
-   for (   ; i <= 255; ++i)     stbi__zdefault_length[i]   = 9;
-   for (   ; i <= 279; ++i)     stbi__zdefault_length[i]   = 7;
-   for (   ; i <= 287; ++i)     stbi__zdefault_length[i]   = 8;
-
-   for (i=0; i <=  31; ++i)     stbi__zdefault_distance[i] = 5;
-}
-*/
 
 static int zdo_zlib(ZBuffer *a, uint8_t* obuf, size_t olen, bool exp, bool parse_header)
 {
@@ -623,11 +624,11 @@ static int zdo_zlib(ZBuffer *a, uint8_t* obuf, size_t olen, bool exp, bool parse
 				if (type == 1)
 				{
 					// use fixed code lengths
-					if (!zbuild_huffman(&a->z_length, zdefault_length, STBI__ZNSYMS))
+					if (!zbuild_huffman(a, &a->z_length, zdefault_length, STBI__ZNSYMS))
 					{
 						goto endl;
 					}
-					if (!zbuild_huffman(&a->z_distance, zdefault_distance, 32))
+					if (!zbuild_huffman(a, &a->z_distance, zdefault_distance, 32))
 					{
 						goto endl;
 					}
