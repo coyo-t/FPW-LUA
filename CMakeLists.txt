@@ -77,4 +77,5 @@ add_library(
 	src/libs/bufferlib.cpp
 	src/luatemplate.hpp
 		  src/image/stb_image.cpp
+		  src/coyote/numberz.hpp
 )

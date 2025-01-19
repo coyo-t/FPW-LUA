@@ -1,7 +1,9 @@
 #ifndef STBI_INCLUDE_STB_IMAGE_H
 #define STBI_INCLUDE_STB_IMAGE_H
 
-#include <cstdint>
+#include "coyote/numberz.hpp"
+
+using Coyote::Byte;
 
 enum
 {
@@ -20,8 +22,8 @@ extern "C" {
 #define STBI_NO_STDIO
 
 
-STBIDEF std::uint8_t*
-stbi_load_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *channels_in_file, int desired_channels);
+STBIDEF Byte*
+stbi_load_from_memory(Byte const *buffer, int len, int *x, int *y, int *channels_in_file, int desired_channels);
 
 
 // get a VERY brief reason for failure
@@ -35,7 +37,7 @@ stbi_image_free(void *retval_from_stbi_load);
 
 // get image dimensions & components without fully decoding
 STBIDEF int
-stbi_info_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *comp);
+stbi_info_from_memory(Byte const *buffer, int len, int *x, int *y, int *comp);
 
 
 }
