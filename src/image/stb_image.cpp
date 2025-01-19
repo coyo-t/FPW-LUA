@@ -135,18 +135,6 @@ struct Context
 		}
 		return true;
 	}
-	auto skip (int n) -> void
-	{
-		if (n != 0)
-		{
-			if (n < 0)
-			{
-				img_buffer = img_buffer_end;
-				return;
-			}
-			img_buffer += n;
-		}
-	}
 	auto getn(Byte* buffer, int n) -> bool
 	{
 		if (img_buffer + n > img_buffer_end)
@@ -1976,7 +1964,19 @@ static int stbi__parse_png_file(Png *z, Scan scan, int req_comp)
 					static char invalid_chunk[] = "XXXX PNG chunk not known";
 					return stbi__err(invalid_chunk, "PNG not supported: unknown PNG chunk type");
 				}
-				s->skip(c.length);
+
+				if (const auto n = c.length; n != 0)
+				{
+					if (n < 0)
+					{
+						s->img_buffer = s->img_buffer_end;
+					}
+					else
+					{
+						s->img_buffer += n;
+					}
+				}
+
 				break;
 			}
 		}
