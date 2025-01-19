@@ -493,40 +493,6 @@ struct Buffer {
 		num_bits -= bitcount;
 		return k;
 	}
-	auto zhuffman_decode_slowpath (Huffman* z) -> int
-	{
-		int s;
-		// not resolved by fast table, so compute it the slow way
-		// use jpeg approach, which requires MSbits at top
-		const int k = bit_reverse(code_buffer, 16);
-		for (s = FAST_BITS + 1; ; ++s)
-		{
-			if (k < z->maxcode[s])
-			{
-				break;
-			}
-		}
-		if (s >= 16)
-		{
-			// invalid code!
-			return -1;
-		}
-		// code size is s, so:
-		const int b = (k >> (16 - s)) - z->firstcode[s] + z->firstsymbol[s];
-		if (b >= NSYMS)
-		{
-			// some data was corrupt somewhere!
-			return -1;
-		}
-		if (z->size[b] != s)
-		{
-			// was originally an assert, but report failure instead.
-			return -1;
-		}
-		code_buffer >>= s;
-		num_bits -= s;
-		return z->value[b];
-	}
 	auto zhuffman_decode(Huffman *z) -> int
 	{
 		if (num_bits < 16)
@@ -560,7 +526,39 @@ struct Buffer {
 			num_bits -= s;
 			return b & 511;
 		}
-		return zhuffman_decode_slowpath(z);
+
+		// zhuffman_decode_slowpath(z);
+		// not resolved by fast table, so compute it the slow way
+		// use jpeg approach, which requires MSbits at top
+		const int k = bit_reverse(code_buffer, 16);
+		int s;
+		for (s = FAST_BITS + 1; ; ++s)
+		{
+			if (k < z->maxcode[s])
+			{
+				break;
+			}
+		}
+		if (s >= 16)
+		{
+			// invalid code!
+			return -1;
+		}
+		// code size is s, so:
+		const int b = (k >> (16 - s)) - z->firstcode[s] + z->firstsymbol[s];
+		if (b >= NSYMS)
+		{
+			// some data was corrupt somewhere!
+			return -1;
+		}
+		if (z->size[b] != s)
+		{
+			// was originally an assert, but report failure instead.
+			return -1;
+		}
+		code_buffer >>= s;
+		num_bits -= s;
+		return z->value[b];
 	}
 	// need to make room for n bytes
 	auto zexpand (std::uint8_t* zout, int n) -> int
