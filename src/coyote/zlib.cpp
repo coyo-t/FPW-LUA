@@ -2,7 +2,16 @@
 
 #include <cstring>
 
-using Coyote::Byte;
+namespace Coyote {
+
+// fast-way is faster to check than jpeg huffman, but slow way is slower
+// accelerate all cases in default tables
+static constexpr auto FAST_BITS =  9;
+static constexpr auto FAST_MASK =  ((1 << FAST_BITS) - 1);
+
+// number of symbols in literal/length alphabet
+static constexpr auto NSYMS = 288;
+
 
 static constexpr auto LENGTH_BASE[31] = {
 	3, 4, 5, 6, 7, 8, 9, 10, 11, 13,
@@ -47,7 +56,6 @@ Init algorithm:
 }
 */
 
-static constexpr auto NSYMS = 288;
 static constexpr Byte DEFAULT_LENGTH[NSYMS] = {
 	8, 8, 8, 8, 8, 8, 8, 8,
 	8, 8, 8, 8, 8, 8, 8, 8,
@@ -93,6 +101,15 @@ static constexpr Byte DEFAULT_DISTANCE[32] = {
 	5, 5, 5, 5, 5, 5, 5, 5,
 };
 
+static constexpr Byte length_dezigzag[19] = {
+	16, 17, 18, 0,
+	8,  7,  9,  6,
+	10, 5,  11, 4,
+	12, 3,  13, 2,
+	14, 1,  15,
+};
+
+
 static int bit_reverse(const int v, const int bits)
 {
 	// to bit reverse n bits, reverse 16 and shift
@@ -105,7 +122,91 @@ static int bit_reverse(const int v, const int bits)
 	return n >> (16 - bits);
 }
 
-auto Coyote::Huffman::zbuild_huffman(const Byte *sizelist, int num) -> bool
+struct Huffman {
+	U16 fast[1 << FAST_BITS];
+	U16 firstcode[16];
+	int maxcode[17];
+	U16 firstsymbol[16];
+	Byte size[NSYMS];
+	U16 value[NSYMS];
+
+	auto zbuild_huffman(const Byte *sizelist, int num) -> bool;
+
+	auto get_failure_reason() -> const char *;
+
+private:
+	const char* failure_reason = nullptr;
+
+};
+
+struct Huffer {
+	Byte* zbuffer;
+	Byte* zbuffer_end;
+	int num_bits;
+	int hit_zeof_once;
+	U32 code_buffer;
+
+	Byte* zout;
+	Byte* zout_start;
+	Byte* zout_end;
+
+	Huffman z_length;
+	Huffman z_distance;
+
+	auto eof () const -> bool
+	{
+		return zbuffer >= zbuffer_end;
+	}
+	auto get8 () -> Byte
+	{
+		return eof() ? 0 : *zbuffer++;
+	}
+	auto fill_bits () -> void
+	{
+		do
+		{
+			if (code_buffer >= (1U << num_bits))
+			{
+				zbuffer = zbuffer_end; /* treat this as EOF so we fail. */
+				return;
+			}
+			code_buffer |= static_cast<U32>(get8()) << num_bits;
+			num_bits += 8;
+		} while (num_bits <= 24);
+
+	}
+	auto recieve (int bitcount) -> U32
+	{
+		if (num_bits < bitcount)
+		{
+			fill_bits();
+		}
+		const auto k = code_buffer & ((1 << bitcount) - 1);
+		code_buffer >>= bitcount;
+		num_bits -= bitcount;
+		return k;
+	}
+
+	auto zhuffman_decode(Huffman *z) -> int;
+
+	// need to make room for n bytes
+	auto zexpand (Byte* zout, int n) -> bool;
+
+	auto parse_huffman_block() -> int;
+
+	auto compute_huffman_codes() -> int;
+
+	auto parse_uncompressed_block() -> int;
+
+	static auto decode_malloc_guesssize_headerflag(
+		const Byte* buffer,
+		int len,
+		int initial_size,
+		int *outlen,
+		int parse_header) -> Byte*;
+};
+
+auto Huffman::zbuild_huffman(const Byte *sizelist, int num) -> bool
 {
 
 	int i;
@@ -170,12 +271,12 @@ auto Coyote::Huffman::zbuild_huffman(const Byte *sizelist, int num) -> bool
 
 }
 
-auto Coyote::Huffman::get_failure_reason () -> const char *
+auto Huffman::get_failure_reason () -> const char *
 {
 	return this->failure_reason;
 }
 
-auto Coyote::Huffer::zhuffman_decode(Huffman *z) -> int
+auto Huffer::zhuffman_decode(Huffman *z) -> int
 {
 	if (num_bits < 16)
 	{
@@ -201,7 +302,7 @@ auto Coyote::Huffer::zhuffman_decode(Huffman *z) -> int
 			fill_bits();
 		}
 	}
-	if (const int b = z->fast[code_buffer & Coyote::FAST_MASK])
+	if (const int b = z->fast[code_buffer & FAST_MASK])
 	{
 		const int s = b >> 9;
 		code_buffer >>= s;
@@ -214,7 +315,7 @@ auto Coyote::Huffer::zhuffman_decode(Huffman *z) -> int
 	// use jpeg approach, which requires MSbits at top
 	const int k = bit_reverse(code_buffer, 16);
 	int s;
-	for (s = Coyote::FAST_BITS + 1; ; ++s)
+	for (s = FAST_BITS + 1; ; ++s)
 	{
 		if (k < z->maxcode[s])
 		{
@@ -243,18 +344,18 @@ auto Coyote::Huffer::zhuffman_decode(Huffman *z) -> int
 	return z->value[b];
 }
 
-auto Coyote::Huffer::zexpand(Byte *zout, int n) -> bool
+auto Huffer::zexpand(Byte *zout, int n) -> bool
 {
 	this->zout = zout;
 	const auto cur = static_cast<unsigned int>(this->zout - this->zout_start);
 	auto limit = static_cast<unsigned>(this->zout_end - this->zout_start);
-	if (Coyote::BoundsU32.max - cur < static_cast<unsigned>(n))
+	if (BoundsU32.max - cur < static_cast<unsigned>(n))
 	{
 		return stbi__err("outofmem", "Out of memory");
 	}
 	while (cur + n > limit)
 	{
-		if (limit > Coyote::BoundsU32.max / 2)
+		if (limit > BoundsU32.max / 2)
 		{
 			return stbi__err("outofmem", "Out of memory");
 		}
@@ -271,7 +372,7 @@ auto Coyote::Huffer::zexpand(Byte *zout, int n) -> bool
 	return true;
 }
 
-auto Coyote::Huffer::parse_huffman_block() -> int
+auto Huffer::parse_huffman_block() -> int
 {
 	auto* zoutl = this->zout;
 	while (true)
@@ -358,9 +459,8 @@ auto Coyote::Huffer::parse_huffman_block() -> int
 	}
 }
 
-auto Coyote::Huffer::compute_huffman_codes() -> int
+auto Huffer::compute_huffman_codes() -> int
 {
-	static constexpr Byte length_dezigzag[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 	Huffman z_codelength;
 	//padding for maximum single op
 	Byte lencodes[286 + 32 + 137];
@@ -416,7 +516,10 @@ auto Coyote::Huffer::compute_huffman_codes() -> int
 			{
 				return stbi__err("bad codelengths", "Corrupt PNG");
 			}
-			if (ntot - n < c) return stbi__err("bad codelengths", "Corrupt PNG");
+			if (ntot - n < c)
+			{
+				return stbi__err("bad codelengths", "Corrupt PNG");
+			}
 			memset(lencodes + n, fill, c);
 			n += c;
 		}
@@ -436,7 +539,7 @@ auto Coyote::Huffer::compute_huffman_codes() -> int
 	return true;
 }
 
-auto Coyote::Huffer::parse_uncompressed_block() -> int
+auto Huffer::parse_uncompressed_block() -> int
 {
 	Byte header[4];
 	if (num_bits & 7)
@@ -481,7 +584,7 @@ auto Coyote::Huffer::parse_uncompressed_block() -> int
 	return true;
 }
 
-auto Coyote::Huffer::decode_malloc_guesssize_headerflag(const Byte *buffer, int len, int initial_size, int *outlen,
+auto Huffer::decode_malloc_guesssize_headerflag(const Byte *buffer, int len, int initial_size, int *outlen,
 	int parse_header) -> Byte *
 {
 	auto p = (Byte*)stbi_malloc(initial_size);
@@ -587,4 +690,6 @@ auto Coyote::Huffer::decode_malloc_guesssize_headerflag(const Byte *buffer, int 
 	fail:
 	STBI_FREE(a.zout_start);
 	return nullptr;
+}
+
 }
