@@ -1950,7 +1950,12 @@ void stbi_image_free(void *retval_from_stbi_load)
 	STBI_FREE(retval_from_stbi_load);
 }
 
-bool stbi_info_from_memory(Byte const *buffer, U64 len, U64 * x, U64 * y, U64 * comp)
+bool stbi_info_from_memory(
+	Byte const *buffer,
+	U64 len,
+	U64* out_x,
+	U64* out_y,
+	U64* out_comp)
 {
 	Context s;
 	s.start_mem(buffer, len);
@@ -1961,29 +1966,34 @@ bool stbi_info_from_memory(Byte const *buffer, U64 len, U64 * x, U64 * y, U64 * 
 		p.s->rewind();
 		return stbi__err("unknown image type", "Image not of any known type, or corrupt");
 	}
-	if (x != nullptr)
+	if (out_x != nullptr)
 	{
-		*x = p.s->img_x;
+		*out_x = p.s->img_x;
 	}
-	if (y != nullptr)
+	if (out_y != nullptr)
 	{
-		*y = p.s->img_y;
+		*out_y = p.s->img_y;
 	}
-	if (comp != nullptr)
+	if (out_comp != nullptr)
 	{
-		*comp = p.s->img_n;
+		*out_comp = p.s->img_n;
 	}
 	return true;
 }
 
-Byte *stbi_load_from_memory(Byte const *buffer, U64 len, U64* x, U64* y, U64* comp, DesiredChannels desired_channels)
+Byte *stbi_load_from_memory(
+	Byte const *buffer,
+	U64 len,
+	U64 *out_x,
+	U64 *out_y,
+	U64 *out_comp)
 {
 	Context s;
 	s.start_mem(buffer, len);
 	ResultInfo ri;
 
 	void* result;
-	auto req_comp = static_cast<U64>(desired_channels);
+	const auto req_comp = 4;
 	{
 		memset(&ri, 0, sizeof(ri)); // make sure it's initialized if we add new fields
 		ri.bits_per_channel = 8; // default is 8 so most paths don't have to be changed
@@ -1993,7 +2003,7 @@ Byte *stbi_load_from_memory(Byte const *buffer, U64 len, U64* x, U64* y, U64* co
 		// or distinctive magic number first)
 
 		{
-			auto r = s.check_png_header();
+			const auto r = s.check_png_header();
 			s.rewind();
 			if (!r)
 			{
@@ -2006,12 +2016,6 @@ Byte *stbi_load_from_memory(Byte const *buffer, U64 len, U64* x, U64* y, U64* co
 		p.s = &s;
 
 		void *result2 = nullptr;
-
-		if (req_comp < 0 || req_comp > 4)
-		{
-			result = stbi__errpuc("bad req_comp", "Internal error");
-			goto ret;
-		}
 		if (stbi_parse_png_file(&p, Scan::Load, req_comp))
 		{
 			if (p.depth <= 8)
@@ -2029,7 +2033,7 @@ Byte *stbi_load_from_memory(Byte const *buffer, U64 len, U64* x, U64* y, U64* co
 			}
 			result2 = p.out;
 			p.out = nullptr;
-			if (req_comp && req_comp != p.s->img_out_n)
+			if (req_comp != p.s->img_out_n)
 			{
 				if (ri.bits_per_channel == 8)
 				{
@@ -2046,11 +2050,17 @@ Byte *stbi_load_from_memory(Byte const *buffer, U64 len, U64* x, U64* y, U64* co
 					goto ret;
 				}
 			}
-			*x = p.s->img_x;
-			*y = p.s->img_y;
-			if (comp != nullptr)
+			if (out_x != nullptr)
 			{
-				*comp = p.s->img_n;
+				*out_x = p.s->img_x;
+			}
+			if (out_y != nullptr)
+			{
+				*out_y = p.s->img_y;
+			}
+			if (out_comp != nullptr)
+			{
+				*out_comp = p.s->img_n;
 			}
 		}
 		STBI_FREE(p.out); p.out = nullptr;
@@ -2072,7 +2082,7 @@ Byte *stbi_load_from_memory(Byte const *buffer, U64 len, U64* x, U64* y, U64* co
 
 	if (ri.bits_per_channel != 8)
 	{
-		const auto img_len = (*x) * (*y) * (req_comp == 0 ? (*comp) : req_comp);
+		const auto img_len = (*out_x) * (*out_y) * (req_comp == 0 ? (*out_comp) : req_comp);
 
 		const auto reduced = static_cast<Byte*>(stbi_malloc(img_len));
 		if (reduced == nullptr)

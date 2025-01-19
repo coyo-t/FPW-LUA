@@ -31,19 +31,18 @@ STBIDEF stbi_image_free(void *retval_from_stbi_load) -> void;
 STBIDEF stbi_load_from_memory (
 	Byte const *buffer,
 	U64 len,
-	U64*x,
-	U64*y,
-	U64 *channels_in_file,
-	DesiredChannels desired_channels
+	U64 *out_x,
+	U64 *out_y,
+	U64 *channels_in_file
 ) -> Byte*;
 
 
 STBIDEF stbi_info_from_memory (
 	Byte const *buffer,
 	U64 len,
-	U64* x,
-	U64* y,
-	U64* comp
+	U64* out_x,
+	U64* out_y,
+	U64* out_comp
 ) -> bool;
 
 
