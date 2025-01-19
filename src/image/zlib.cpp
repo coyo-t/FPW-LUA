@@ -121,7 +121,7 @@ struct ZBuffer
 
 	Zlib::Context* context;
 
-	auto zeof() -> bool
+	auto zeof () const -> bool
 	{
 		return zbuffer >= zbuffer_end;
 	}
@@ -142,55 +142,19 @@ struct ZBuffer
 			num_bits += 8;
 		} while (num_bits <= 24);
 	}
-	auto zreceive(int n) -> unsigned int
+	auto zreceive(int n) -> uint32_t
 	{
-		unsigned int k;
 		if (num_bits < n)
 		{
 			zfill_bits();
 		}
-		k = code_buffer & ((1 << n) - 1);
+		auto k = code_buffer & ((1 << n) - 1);
 		code_buffer >>= n;
 		num_bits -= n;
 		return k;
 	}
 };
 
-
-
-
-
-static int zhuffman_decode_slowpath(ZBuffer *a, ZHuffman *z)
-{
-	int b, s, k;
-	// not resolved by fast table, so compute it the slow way
-	// use jpeg approach, which requires MSbits at top
-	k = bit_reverse(a->code_buffer, 16);
-	for (s = STBI__ZFAST_BITS + 1; ; ++s)
-	{
-		if (k < z->maxcode[s])
-		{
-			break;
-		}
-	}
-	if (s >= 16)
-	{
-		return -1; // invalid code!
-	}
-	// code size is s, so:
-	b = (k >> (16 - s)) - z->firstcode[s] + z->firstsymbol[s];
-	if (b >= STBI__ZNSYMS)
-	{
-		return -1; // some data was corrupt somewhere!
-	}
-	if (z->size[b] != s)
-	{
-		return -1; // was originally an assert, but report failure instead.
-	}
-	a->code_buffer >>= s;
-	a->num_bits -= s;
-	return z->value[b];
-}
 
 static int zhuffman_decode(ZBuffer *a, ZHuffman *z)
 {
@@ -227,7 +191,35 @@ static int zhuffman_decode(ZBuffer *a, ZHuffman *z)
 		a->num_bits -= s;
 		return b & 511;
 	}
-	return zhuffman_decode_slowpath(a, z);
+
+	int s2;
+	// not resolved by fast table, so compute it the slow way
+	// use jpeg approach, which requires MSbits at top
+	int k2 = bit_reverse(a->code_buffer, 16);
+	for (s2 = STBI__ZFAST_BITS + 1; ; ++s2)
+	{
+		if (k2 < z->maxcode[s2])
+		{
+			break;
+		}
+	}
+	if (s2 >= 16)
+	{
+		return -1; // invalid code!
+	}
+	// code size is s, so:
+	int b2 = (k2 >> (16 - s2)) - z->firstcode[s2] + z->firstsymbol[s2];
+	if (b2 >= STBI__ZNSYMS)
+	{
+		return -1; // some data was corrupt somewhere!
+	}
+	if (z->size[b2] != s2)
+	{
+		return -1; // was originally an assert, but report failure instead.
+	}
+	a->code_buffer >>= s2;
+	a->num_bits -= s2;
+	return z->value[b2];
 }
 
 static void zexpand(ZBuffer *z, uint8_t*zout, int n)
