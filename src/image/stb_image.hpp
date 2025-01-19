@@ -18,16 +18,16 @@ enum
 
 extern "C" {
 
-#define STBIDEF extern
+#define STBIDEF extern auto
 
 #define STBI_NO_STDIO
 
 
-STBIDEF auto stbi_failure_reason() -> const char*;
+STBIDEF stbi_failure_reason() -> const char*;
 
-STBIDEF auto stbi_image_free(void *retval_from_stbi_load) -> void;
+STBIDEF stbi_image_free(void *retval_from_stbi_load) -> void;
 
-STBIDEF auto stbi_load_from_memory (
+STBIDEF stbi_load_from_memory (
 	Byte const *buffer,
 	U64 len,
 	U64*x,
@@ -37,7 +37,7 @@ STBIDEF auto stbi_load_from_memory (
 ) -> Byte*;
 
 
-STBIDEF auto stbi_info_from_memory (
+STBIDEF stbi_info_from_memory (
 	Byte const *buffer,
 	U64 len,
 	U64* x,

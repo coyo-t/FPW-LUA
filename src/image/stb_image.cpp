@@ -1940,17 +1940,17 @@ static int stbi_parse_png_file(Png *z, Scan scan, int req_comp)
 	}
 }
 
-STBIDEF const char *stbi_failure_reason()
+const char *stbi_failure_reason()
 {
 	return stbi__g_failure_reason;
 }
 
-STBIDEF void stbi_image_free(void *retval_from_stbi_load)
+void stbi_image_free(void *retval_from_stbi_load)
 {
 	STBI_FREE(retval_from_stbi_load);
 }
 
-STBIDEF bool stbi_info_from_memory(Byte const *buffer, U64 len, U64 * x, U64 * y, U64 * comp)
+bool stbi_info_from_memory(Byte const *buffer, U64 len, U64 * x, U64 * y, U64 * comp)
 {
 	Context s;
 	s.start_mem(buffer, len);
@@ -1976,7 +1976,7 @@ STBIDEF bool stbi_info_from_memory(Byte const *buffer, U64 len, U64 * x, U64 * y
 	return true;
 }
 
-STBIDEF Byte *stbi_load_from_memory(Byte const *buffer, U64 len, U64* x, U64* y, U64* comp, U64 req_comp)
+Byte *stbi_load_from_memory(Byte const *buffer, U64 len, U64* x, U64* y, U64* comp, U64 req_comp)
 {
 	Context s;
 	s.start_mem(buffer, len);
