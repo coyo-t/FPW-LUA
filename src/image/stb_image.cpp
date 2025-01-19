@@ -127,13 +127,13 @@ struct stbi__context
 	std::uint8_t *img_buffer_original, *img_buffer_original_end;
 
 	// initialize a memory-decode context
-	auto stbi__start_mem(std::uint8_t const *buffer, int len) -> void
+	auto start_mem(std::uint8_t const *buffer, int len) -> void
 	{
 		callback_already_read = 0;
 		img_buffer = img_buffer_original = (std::uint8_t *) buffer;
 		img_buffer_end = img_buffer_original_end = (std::uint8_t *) buffer + len;
 	}
-	auto stbi__rewind() -> void
+	auto rewind() -> void
 	{
 		// conceptually rewind SHOULD rewind to the beginning of the stream,
 		// but we just rewind to the beginning of the initial buffer, because
@@ -141,33 +141,33 @@ struct stbi__context
 		this->img_buffer = this->img_buffer_original;
 		this->img_buffer_end = this->img_buffer_original_end;
 	}
-	auto stbi__get8() -> std::uint8_t
+	auto readu8() -> std::uint8_t
 	{
 		if (this->img_buffer < this->img_buffer_end)
 			return *this->img_buffer++;
 		return 0;
 	}
-	auto stbi__get16be () -> int
+	auto readu16be () -> int
 	{
-		int z = stbi__get8();
-		return (z << 8) + stbi__get8();
+		int z = readu8();
+		return (z << 8) + readu8();
 	}
-	auto stbi__get32be () -> std::uint32_t
+	auto readu32be () -> std::uint32_t
 	{
-		auto z = stbi__get16be();
-		return (z << 16) + stbi__get16be();
+		auto z = readu16be();
+		return (z << 16) + readu16be();
 	}
-	auto stbi__check_png_header() -> int
+	auto check_png_header() -> bool
 	{
 		static const std::uint8_t png_sig[8] = {137, 80, 78, 71, 13, 10, 26, 10};
 		for (const auto i : png_sig)
 		{
-			if (stbi__get8() != i)
+			if (readu8() != i)
 			{
 				return stbi__err("bad png sig", "Not a PNG");
 			}
 		}
-		return 1;
+		return true;
 	}
 };
 
@@ -1445,7 +1445,10 @@ static int stbi__compute_transparency16(stbi__png *z, std::uint16_t tc[3], int o
 	return 1;
 }
 
-static int stbi__expand_png_palette(stbi__png *a, std::uint8_t *palette, int len, int pal_img_n)
+static int stbi__expand_png_palette (
+	stbi__png *a,
+	std::uint8_t *palette,
+	int pal_img_n)
 {
 	std::uint32_t i, pixel_count = a->s->img_x * a->s->img_y;
 	std::uint8_t *orig = a->out;
@@ -1454,7 +1457,7 @@ static int stbi__expand_png_palette(stbi__png *a, std::uint8_t *palette, int len
 	if (p == nullptr)
 		return stbi__err("outofmem", "Out of memory");
 
-	// between here and free(out) below, exitting would leak
+	// between here and free(out) below, exiting would leak
 	std::uint8_t *temp_out = p;
 
 	if (pal_img_n == 3)
@@ -1496,21 +1499,24 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 	std::uint8_t has_trans = 0, tc[3] = {0};
 	std::uint16_t tc16[3];
 	std::uint32_t ioff = 0, idata_limit = 0, i, pal_len = 0;
-	int first = 1, k, interlace = 0, color = 0, is_iphone = 0;
+	int first = 1;
+	int k;
+	int interlace = 0;
+	int color = 0;
 	stbi__context *s = z->s;
 
 	z->expanded = nullptr;
 	z->idata = nullptr;
 	z->out = nullptr;
 
-	if (!s->stbi__check_png_header())
+	if (!s->check_png_header())
 		return 0;
 
 	for (;;)
 	{
 		stbi__pngchunk c;
-		c.length = s->stbi__get32be();
-		c.type = s->stbi__get32be();
+		c.length = s->readu32be();
+		c.type = s->readu32be();
 		switch (c.type)
 		{
 			case STBI__PNG_TYPE('I', 'H', 'D', 'R'): {
@@ -1519,16 +1525,16 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				first = 0;
 				if (c.length != 13)
 					return stbi__err("bad IHDR len", "Corrupt PNG");
-				s->img_x = s->stbi__get32be();
-				s->img_y = s->stbi__get32be();
+				s->img_x = s->readu32be();
+				s->img_y = s->readu32be();
 				if (s->img_y > STBI_MAX_DIMENSIONS)
 					return stbi__err("too large", "Very large image (corrupt?)");
 				if (s->img_x > STBI_MAX_DIMENSIONS)
 					return stbi__err("too large", "Very large image (corrupt?)");
-				z->depth = s->stbi__get8();
+				z->depth = s->readu8();
 				if (z->depth != 1 && z->depth != 2 && z->depth != 4 && z->depth != 8 && z->depth != 16)
 					return stbi__err("1/2/4/8/16-bit only", "PNG not supported: 1/2/4/8/16-bit only");
-				color = s->stbi__get8();
+				color = s->readu8();
 				if (color > 6)
 					return stbi__err("bad ctype", "Corrupt PNG");
 				if (color == 3 && z->depth == 16)
@@ -1537,13 +1543,13 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					pal_img_n = 3;
 				else if (color & 1)
 					return stbi__err("bad ctype", "Corrupt PNG");
-				int comp = s->stbi__get8();
+				int comp = s->readu8();
 				if (comp)
 					return stbi__err("bad comp method", "Corrupt PNG");
-				int filter = s->stbi__get8();
+				int filter = s->readu8();
 				if (filter)
 					return stbi__err("bad filter method", "Corrupt PNG");
-				interlace = s->stbi__get8();
+				interlace = s->readu8();
 				if (interlace > 1)
 					return stbi__err("bad interlace method", "Corrupt PNG");
 				if (!s->img_x || !s->img_y)
@@ -1573,9 +1579,9 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				if (pal_len * 3 != c.length) return stbi__err("invalid PLTE", "Corrupt PNG");
 				for (i = 0; i < pal_len; ++i)
 				{
-					palette[i * 4 + 0] = s->stbi__get8();
-					palette[i * 4 + 1] = s->stbi__get8();
-					palette[i * 4 + 2] = s->stbi__get8();
+					palette[i * 4 + 0] = s->readu8();
+					palette[i * 4 + 1] = s->readu8();
+					palette[i * 4 + 2] = s->readu8();
 					palette[i * 4 + 3] = 255;
 				}
 				break;
@@ -1595,7 +1601,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					if (c.length > pal_len) return stbi__err("bad tRNS len", "Corrupt PNG");
 					pal_img_n = 4;
 					for (i = 0; i < c.length; ++i)
-						palette[i * 4 + 3] = s->stbi__get8();
+						palette[i * 4 + 3] = s->readu8();
 				}
 				else
 				{
@@ -1611,12 +1617,12 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					if (z->depth == 16)
 					{
 						for (k = 0; k < s->img_n && k < 3; ++k) // extra loop test to suppress false GCC warning
-							tc16[k] = (std::uint16_t) s->stbi__get16be(); // copy the values as-is
+							tc16[k] = (std::uint16_t) s->readu16be(); // copy the values as-is
 					}
 					else
 					{
 						for (k = 0; k < s->img_n && k < 3; ++k)
-							tc[k] = (std::uint8_t) (s->stbi__get16be() & 255) * stbi__depth_scale_table[z->depth];
+							tc[k] = (std::uint8_t) (s->readu16be() & 255) * stbi__depth_scale_table[z->depth];
 						// non 8-bit images will be larger
 					}
 				}
@@ -1671,7 +1677,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					ioff,
 					raw_len,
 					(int *)&raw_len,
-					!is_iphone
+					true
 				);
 				if (z->expanded == NULL) return 0; // zlib should set error
 				STBI_FREE(z->idata);
@@ -1698,7 +1704,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					s->img_n = pal_img_n; // record the actual colors we had
 					s->img_out_n = pal_img_n;
 					if (req_comp >= 3) s->img_out_n = req_comp;
-					if (!stbi__expand_png_palette(z, palette, pal_len, s->img_out_n))
+					if (!stbi__expand_png_palette(z, palette, s->img_out_n))
 						return 0;
 				}
 				else if (has_trans)
@@ -1709,7 +1715,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				STBI_FREE(z->expanded);
 				z->expanded = nullptr;
 				// end of PNG chunk, read and skip CRC
-				s->stbi__get32be();
+				s->readu32be();
 				return 1;
 			}
 
@@ -1732,7 +1738,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				break;
 		}
 		// end of PNG chunk, read and skip CRC
-		s->stbi__get32be();
+		s->readu32be();
 	}
 }
 
@@ -1757,9 +1763,9 @@ static void *stbi__png_load(stbi__context *s, int *x, int *y, int *comp, int req
 		if (req_comp && req_comp != p.s->img_out_n)
 		{
 			if (ri->bits_per_channel == 8)
-				result = stbi__convert_format((std::uint8_t*) result, p.s->img_out_n, req_comp, p.s->img_x, p.s->img_y);
+				result = stbi__convert_format(static_cast<std::uint8_t *>(result), p.s->img_out_n, req_comp, p.s->img_x, p.s->img_y);
 			else
-				result = stbi__convert_format16((std::uint16_t*) result, p.s->img_out_n, req_comp, p.s->img_x, p.s->img_y);
+				result = stbi__convert_format16(static_cast<std::uint16_t *>(result), p.s->img_out_n, req_comp, p.s->img_x, p.s->img_y);
 			p.s->img_out_n = req_comp;
 			if (result == nullptr) return result;
 		}
@@ -1777,8 +1783,8 @@ static void *stbi__png_load(stbi__context *s, int *x, int *y, int *comp, int req
 
 static int stbi__png_test(stbi__context *s)
 {
-	int r = s->stbi__check_png_header();
-	s->stbi__rewind();
+	int r = s->check_png_header();
+	s->rewind();
 	return r;
 }
 
@@ -1786,12 +1792,12 @@ static int stbi__png_test(stbi__context *s)
 STBIDEF int stbi_info_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *comp)
 {
 	stbi__context s;
-	s.stbi__start_mem(buffer, len);
+	s.start_mem(buffer, len);
 	stbi__png p;
 	p.s = &s;
 	if (!stbi__parse_png_file(&p, STBI__SCAN_header, 0))
 	{
-		p.s->stbi__rewind();
+		p.s->rewind();
 		return stbi__err("unknown image type", "Image not of any known type, or corrupt");
 	}
 	if (x != nullptr)
@@ -1807,7 +1813,7 @@ STBIDEF int stbi_info_from_memory(std::uint8_t const *buffer, int len, int *x, i
 STBIDEF std::uint8_t *stbi_load_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *comp, int req_comp)
 {
 	stbi__context s;
-	s.stbi__start_mem(buffer, len);
+	s.start_mem(buffer, len);
 	return stbi__load_and_postprocess_8bit(&s, x, y, comp, req_comp);
 }
 
