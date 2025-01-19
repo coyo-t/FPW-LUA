@@ -135,16 +135,6 @@ struct Context
 		}
 		return true;
 	}
-	auto getn(Byte* buffer, int n) -> bool
-	{
-		if (img_buffer + n > img_buffer_end)
-		{
-			return false;
-		}
-		memcpy(buffer, img_buffer, n);
-		img_buffer += n;
-		return true;
-	}
 };
 
 struct Png
@@ -1756,9 +1746,23 @@ static int stbi__parse_png_file(Png *z, Scan scan, int req_comp)
 					}
 					z->idata = p;
 				}
-				if (!s->getn(z->idata + ioff, c.length))
 				{
-					return stbi__err("outofdata", "Corrupt PNG");
+					bool res;
+					const auto buffer = z->idata + ioff;
+					if (const auto n = c.length; s->img_buffer + n > s->img_buffer_end)
+					{
+						res = true;
+					}
+					else
+					{
+						memcpy(buffer, s->img_buffer, n);
+						s->img_buffer += n;
+						res = false;
+					}
+					if (res)
+					{
+						return stbi__err("outofdata", "Corrupt PNG");
+					}
 				}
 				ioff += c.length;
 				break;
