@@ -73,8 +73,8 @@ static int zbuild_huffman(ZHuffman *z, const uint8_t *sizelist, int num)
 	for (i = 1; i < 16; ++i)
 	{
 		next_code[i] = code;
-		z->firstcode[i] = (uint16_t) code;
-		z->firstsymbol[i] = (uint16_t) k;
+		z->firstcode[i] = static_cast<uint16_t>(code);
+		z->firstsymbol[i] = static_cast<uint16_t>(k);
 		code = (code + sizes[i]);
 		if (sizes[i])
 		{
@@ -96,9 +96,9 @@ static int zbuild_huffman(ZHuffman *z, const uint8_t *sizelist, int num)
 			continue;
 		}
 		int c = next_code[s] - z->firstcode[s] + z->firstsymbol[s];
-		uint16_t fastv = (uint16_t) ((s << 9) | i);
-		z->size[c] = (uint8_t) s;
-		z->value[c] = (uint16_t) i;
+		auto fastv = static_cast<uint16_t>((s << 9) | i);
+		z->size[c] = static_cast<uint8_t>(s);
+		z->value[c] = static_cast<uint16_t>(i);
 		if (s <= STBI__ZFAST_BITS)
 		{
 			int j = bit_reverse(next_code[s], s);
@@ -130,12 +130,17 @@ struct ZBuffer
 	uint8_t* zout;
 	uint8_t* zout_start;
 	uint8_t* zout_end;
-	int z_expandable;
+	bool z_expandable;
 
 	ZHuffman z_length;
 	ZHuffman z_distance;
 
 	Zlib::Context* context;
+
+	auto error_occured (const char* message) -> bool
+	{
+		return context->error_occured(message);
+	}
 };
 
 static int zeof(ZBuffer *z)
@@ -157,7 +162,7 @@ static void zfill_bits(ZBuffer *z)
 			z->zbuffer = z->zbuffer_end; /* treat this as EOF so we fail. */
 			return;
 		}
-		z->code_buffer |= (unsigned int) zget8(z) << z->num_bits;
+		z->code_buffer |= static_cast<unsigned int>(zget8(z)) << z->num_bits;
 		z->num_bits += 8;
 	} while (z->num_bits <= 24);
 }
@@ -251,19 +256,19 @@ static int zexpand(ZBuffer *z, uint8_t*zout, int n) // need to make room for n b
 	z->zout = zout;
 	if (!z->z_expandable)
 	{
-		return stbi__err("output buffer limit", "Corrupt PNG");
+		return z->error_occured("output buffer limit");
 	}
 	auto cur = (z->zout - z->zout_start);
 	auto limit = old_limit = (z->zout_end - z->zout_start);
 	if (UINT_MAX - cur < n)
 	{
-		return stbi__err("outofmem", "Out of memory");
+		return z->error_occured("outofmem");
 	}
 	while (cur + n > limit)
 	{
 		if (limit > UINT_MAX / 2)
 		{
-			return stbi__err("outofmem", "Out of memory");
+			return z->error_occured("outofmem");
 		}
 		limit *= 2;
 	}
@@ -271,7 +276,7 @@ static int zexpand(ZBuffer *z, uint8_t*zout, int n) // need to make room for n b
 	// STBI_NOTUSED(old_limit);
 	if (q == nullptr)
 	{
-		return stbi__err("outofmem", "Out of memory");
+		return z->error_occured("outofmem");
 	}
 	z->zout_start = q;
 	z->zout = q + cur;
@@ -306,7 +311,8 @@ static int zparse_huffman_block(ZBuffer *a)
 		{
 			if (z < 0)
 			{
-				return stbi__err("bad huffman code", "Corrupt PNG"); // error in huffman codes
+				// error in huffman codes
+				return a->error_occured("bad huffman code");
 			}
 			if (zout >= a->zout_end)
 			{
@@ -330,13 +336,13 @@ static int zparse_huffman_block(ZBuffer *a)
 					// buffer so the decoder can just do its speculative decoding. But if we
 					// actually consumed any of those bits (which is the case when num_bits < 16),
 					// the stream actually read past the end so it is malformed.
-					return stbi__err("unexpected end", "Corrupt PNG");
+					return a->error_occured("unexpected end");
 				}
 				return 1;
 			}
 			if (z >= 286)
 			{
-				return stbi__err("bad huffman code", "Corrupt PNG");
+				return a->error_occured("bad huffman code");
 			}
 			// per DEFLATE, length codes 286 and 287 must not appear in compressed data
 			z -= 257;
@@ -348,7 +354,7 @@ static int zparse_huffman_block(ZBuffer *a)
 			z = zhuffman_decode(a, &a->z_distance);
 			if (z < 0 || z >= 30)
 			{
-				return stbi__err("bad huffman code", "Corrupt PNG");
+				return a->error_occured("bad huffman code");
 			}
 			// per DEFLATE, distance codes 30 and 31 must not appear in compressed data
 			dist = stbi__zdist_base[z];
@@ -358,7 +364,7 @@ static int zparse_huffman_block(ZBuffer *a)
 			}
 			if (zout - a->zout_start < dist)
 			{
-				return stbi__err("bad dist", "Corrupt PNG");
+				return a->error_occured("bad dist");
 			}
 			if (len > a->zout_end - zout)
 			{
@@ -418,7 +424,7 @@ static int zcompute_huffman_codes(ZBuffer *a)
 		int c = zhuffman_decode(a, &z_codelength);
 		if (c < 0 || c >= 19)
 		{
-			return stbi__err("bad codelengths", "Corrupt PNG");
+			return a->error_occured("bad codelengths");
 		}
 		if (c < 16)
 		{
@@ -432,7 +438,7 @@ static int zcompute_huffman_codes(ZBuffer *a)
 				c = zreceive(a, 2) + 3;
 				if (n == 0)
 				{
-					return stbi__err("bad codelengths", "Corrupt PNG");
+					return a->error_occured("bad codelengths");
 				}
 				fill = lencodes[n - 1];
 			}
@@ -446,11 +452,11 @@ static int zcompute_huffman_codes(ZBuffer *a)
 			}
 			else
 			{
-				return stbi__err("bad codelengths", "Corrupt PNG");
+				return a->error_occured("bad codelengths");
 			}
 			if (ntot - n < c)
 			{
-				return stbi__err("bad codelengths", "Corrupt PNG");
+				return a->error_occured("bad codelengths");
 			}
 			std::memset(lencodes + n, fill, c);
 			n += c;
@@ -458,7 +464,7 @@ static int zcompute_huffman_codes(ZBuffer *a)
 	}
 	if (n != ntot)
 	{
-		return stbi__err("bad codelengths", "Corrupt PNG");
+		return a->error_occured("bad codelengths");
 	}
 	if (!zbuild_huffman(&a->z_length, lencodes, hlit))
 	{
@@ -489,7 +495,7 @@ static int zparse_uncompressed_block(ZBuffer *a)
 	}
 	if (a->num_bits < 0)
 	{
-		return stbi__err("zlib corrupt", "Corrupt PNG");
+		return a->error_occured("zlib corrupt");
 	}
 	// now fill header the normal way
 	while (k < 4)
@@ -500,11 +506,11 @@ static int zparse_uncompressed_block(ZBuffer *a)
 	nlen = header[3] * 256 + header[2];
 	if (nlen != (len ^ 0xffff))
 	{
-		return stbi__err("zlib corrupt", "Corrupt PNG");
+		return a->error_occured("zlib corrupt");
 	}
 	if (a->zbuffer + len > a->zbuffer_end)
 	{
-		return stbi__err("read past buffer", "Corrupt PNG");
+		return a->error_occured("read past buffer");
 	}
 	if (a->zout + len > a->zout_end)
 	{
@@ -527,19 +533,19 @@ static int zparse_zlib_header(ZBuffer *a)
 	int flg = zget8(a);
 	if (zeof(a))
 	{
-		return stbi__err("bad zlib header", "Corrupt PNG"); // zlib spec
+		return a->error_occured("bad zlib header"); // zlib spec
 	}
 	if ((cmf * 256 + flg) % 31 != 0)
 	{
-		return stbi__err("bad zlib header", "Corrupt PNG"); // zlib spec
+		return a->error_occured("bad zlib header"); // zlib spec
 	}
 	if (flg & 32)
 	{
-		return stbi__err("no preset dict", "Corrupt PNG"); // preset dictionary not allowed in png
+		return a->error_occured("no preset dict"); // preset dictionary not allowed in png
 	}
 	if (cm != 8)
 	{
-		return stbi__err("bad compression", "Corrupt PNG"); // DEFLATE required for png
+		return a->error_occured("bad compression"); // DEFLATE required for png
 	}
 	// window = 1 << (8 + cinfo)... but who cares, we fully buffer output
 	return 1;
@@ -574,14 +580,14 @@ Init algorithm:
 }
 */
 
-static int zparse_zlib(ZBuffer *a, int parse_header)
+static bool zparse_zlib(ZBuffer *a, bool parse_header)
 {
 	int final, type;
 	if (parse_header)
 	{
 		if (!zparse_zlib_header(a))
 		{
-			return 0;
+			return false;
 		}
 	}
 	a->num_bits = 0;
@@ -595,12 +601,12 @@ static int zparse_zlib(ZBuffer *a, int parse_header)
 		{
 			if (!zparse_uncompressed_block(a))
 			{
-				return 0;
+				return false;
 			}
 		}
 		else if (type == 3)
 		{
-			return 0;
+			return false;
 		}
 		else
 		{
@@ -609,30 +615,30 @@ static int zparse_zlib(ZBuffer *a, int parse_header)
 				// use fixed code lengths
 				if (!zbuild_huffman(&a->z_length, zdefault_length, STBI__ZNSYMS))
 				{
-					return 0;
+					return false;
 				}
 				if (!zbuild_huffman(&a->z_distance, zdefault_distance, 32))
 				{
-					return 0;
+					return false;
 				}
 			}
 			else
 			{
 				if (!zcompute_huffman_codes(a))
 				{
-					return 0;
+					return false;
 				}
 			}
 			if (!zparse_huffman_block(a))
 			{
-				return 0;
+				return false;
 			}
 		}
 	} while (!final);
-	return 1;
+	return true;
 }
 
-static int zdo_zlib(ZBuffer *a, uint8_t* obuf, int olen, int exp, int parse_header)
+static int zdo_zlib(ZBuffer *a, uint8_t* obuf, size_t olen, bool exp, bool parse_header)
 {
 	a->zout_start = obuf;
 	a->zout = obuf;
@@ -643,7 +649,7 @@ static int zdo_zlib(ZBuffer *a, uint8_t* obuf, int olen, int exp, int parse_head
 }
 
 
-auto Zlib::Context::decode_malloc_guesssize_headerflag() -> uint8_t *
+auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 {
 	const auto p = this->malloc_t<uint8_t>(this->initial_size);
 	if (p == nullptr)
@@ -653,7 +659,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag() -> uint8_t *
 	ZBuffer a;
 	a.zbuffer = this->buffer;
 	a.zbuffer_end = this->buffer + this->len;
-	if (zdo_zlib(&a, p, this->initial_size, 1, this->parse_header))
+	if (zdo_zlib(&a, p, this->initial_size, true, this->parse_header))
 	{
 		this->out_len = a.zout - a.zout_start;
 		return a.zout_start;

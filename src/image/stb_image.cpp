@@ -1430,9 +1430,9 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 
 				raw_len = zctx.out_len;
 
-				if (z->expanded == nullptr)
+				if (z->expanded == nullptr || zctx.error != nullptr)
 				{
-					return 0; // zlib should set error
+					return stbi__err(zctx.error, "");
 				}
 				STBI_FREE(z->idata);
 				z->idata = nullptr;

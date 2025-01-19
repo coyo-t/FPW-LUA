@@ -34,6 +34,14 @@ namespace Zlib {
 		size_t initial_size = 0;
 		size_t out_len = 0;
 
+		const char* error = nullptr;
+
+		auto error_occured (const char* msg) -> bool
+		{
+			error = msg;
+			return false;
+		}
+
 		template<typename T>
 		auto free_t (T* p)
 		{
