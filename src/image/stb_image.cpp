@@ -14,6 +14,9 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "coyote/zlib.hpp"
+using Coyote::Huffman;
+
 #ifndef STBI_ASSERT
 #include <cassert>
 #define STBI_ASSERT(x) assert(x)
@@ -223,13 +226,6 @@ static T* stbi_malloc_fma3(int a, int b, int c, int add)
 
 
 
-// fast-way is faster to check than jpeg huffman, but slow way is slower
-// accelerate all cases in default tables
-static constexpr auto FAST_BITS =  9;
-static constexpr auto FAST_MASK =  ((1 << FAST_BITS) - 1);
-
-// number of symbols in literal/length alphabet
-static constexpr auto NSYMS = 288;
 
 
 static constexpr auto LENGTH_BASE[31] = {
@@ -275,6 +271,7 @@ Init algorithm:
 }
 */
 
+static constexpr auto NSYMS = 288;
 static constexpr Byte DEFAULT_LENGTH[NSYMS] = {
 	8, 8, 8, 8, 8, 8, 8, 8,
 	8, 8, 8, 8, 8, 8, 8, 8,
@@ -336,75 +333,7 @@ static int bit_reverse(const int v, const int bits)
 
 
 
-// zlib-style huffman encoding
-// (jpegs packs from left, zlib from right, so can't share code)
-struct Huffman {
-	U16 fast[1 << FAST_BITS];
-	U16 firstcode[16];
-	int maxcode[17];
-	U16 firstsymbol[16];
-	Byte size[NSYMS];
-	U16 value[NSYMS];
 
-	auto zbuild_huffman(const Byte *sizelist, int num) -> bool
-	{
-		int i;
-		int k = 0;
-		int next_code[16];
-		int sizes[17] = {};
-
-		memset(fast, 0, sizeof(fast));
-		for (i = 0; i < num; ++i)
-		{
-			++sizes[sizelist[i]];
-		}
-		sizes[0] = 0;
-		for (i = 1; i < 16; ++i)
-		{
-			if (sizes[i] > (1 << i))
-			{
-				return stbi__err("bad sizes", "Corrupt PNG");
-			}
-		}
-		int code = 0;
-		for (i = 1; i < 16; ++i)
-		{
-			next_code[i] = code;
-			firstcode[i] = static_cast<U16>(code);
-			firstsymbol[i] = static_cast<U16>(k);
-			code = (code + sizes[i]);
-			if (sizes[i] && (code - 1 >= 1 << i))
-			{
-				return stbi__err("bad codelengths", "Corrupt PNG");
-			}
-			maxcode[i] = code << (16 - i); // preshift for inner loop
-			code <<= 1;
-			k += sizes[i];
-		}
-		this->maxcode[16] = 0x10000; // sentinel
-		for (i = 0; i < num; ++i)
-		{
-			if (const int s = sizelist[i])
-			{
-				const int c = next_code[s] - firstcode[s] + firstsymbol[s];
-				auto fastv = static_cast<U16>((s << 9) | i);
-				this->size[c] = static_cast<Byte>(s);
-				this->value[c] = static_cast<U16>(i);
-				if (s <= FAST_BITS)
-				{
-					int j = bit_reverse(next_code[s], s);
-					while (j < (1 << FAST_BITS))
-					{
-						fast[j] = fastv;
-						j += (1 << s);
-					}
-				}
-				++next_code[s];
-			}
-		}
-		return true;
-	}
-};
 
 
 
@@ -486,7 +415,7 @@ struct Buffer {
 				fill_bits();
 			}
 		}
-		if (const int b = z->fast[code_buffer & FAST_MASK])
+		if (const int b = z->fast[code_buffer & Coyote::FAST_MASK])
 		{
 			const int s = b >> 9;
 			code_buffer >>= s;
@@ -499,7 +428,7 @@ struct Buffer {
 		// use jpeg approach, which requires MSbits at top
 		const int k = bit_reverse(code_buffer, 16);
 		int s;
-		for (s = FAST_BITS + 1; ; ++s)
+		for (s = Coyote::FAST_BITS + 1; ; ++s)
 		{
 			if (k < z->maxcode[s])
 			{
@@ -1974,15 +1903,15 @@ void coyote_stbi_image_free(void *retval_from_stbi_load)
 	STBI_FREE(retval_from_stbi_load);
 }
 
-bool coyote_stbi_info_from_memory(
+U64 coyote_stbi_info_from_memory(
 	Byte const *source_buffer,
-	U64 len,
+	U64 source_buffer_size,
 	U64* out_x,
 	U64* out_y,
 	U64* channels_in_file)
 {
 	Context s;
-	s.start_mem(source_buffer, len);
+	s.start_mem(source_buffer, source_buffer_size);
 	Png p;
 	p.s = &s;
 	if (!stbi_parse_png_file(&p, Scan::Header, 0))
@@ -2007,13 +1936,13 @@ bool coyote_stbi_info_from_memory(
 
 Byte *coyote_stbi_load_from_memory(
 	Byte const *source_buffer,
-	U64 len,
+	U64 source_buffer_size,
 	U64 *out_x,
 	U64 *out_y,
 	U64 *out_comp)
 {
 	Context s;
-	s.start_mem(source_buffer, len);
+	s.start_mem(source_buffer, source_buffer_size);
 	ResultInfo ri;
 
 	void* result;
