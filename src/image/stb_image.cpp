@@ -97,8 +97,6 @@ static int stbi__png_test(stbi__context *s);
 
 static void *stbi__png_load(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri);
 
-static int stbi__png_info(stbi__context *s, int *x, int *y, int *comp);
-
 static
 const char *stbi__g_failure_reason;
 
@@ -201,7 +199,10 @@ static void *stbi__load_main(stbi__context *s, int *x, int *y, int *comp, int re
 
 	// test the formats with a very explicit header first (at least a FOURCC
 	// or distinctive magic number first)
-	if (stbi__png_test(s)) return stbi__png_load(s, x, y, comp, req_comp, ri);
+	if (stbi__png_test(s))
+	{
+		return stbi__png_load(s, x, y, comp, req_comp, ri);
+	}
 	return stbi__errpuc("unknown image type", "Image not of any known type, or corrupt");
 }
 
@@ -226,9 +227,9 @@ static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, 
 	stbi__result_info ri;
 	void *result = stbi__load_main(s, x, y, comp, req_comp, &ri, 8);
 
-	if (result == NULL)
+	if (result == nullptr)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	// it is the responsibility of the loaders to make sure we get either 8 or 16 bit.
@@ -250,13 +251,6 @@ STBIDEF stbi_uc *stbi_load_from_memory(stbi_uc const *buffer, int len, int *x, i
 	stbi__start_mem(&s, buffer, len);
 	return stbi__load_and_postprocess_8bit(&s, x, y, comp, req_comp);
 }
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// Common code used by all image loaders
-//
 
 enum
 {
@@ -643,7 +637,6 @@ static int stbi__create_png_image_raw(stbi__png *a, stbi_uc *raw, stbi__uint32 r
 	stbi__context *s = a->s;
 	stbi__uint32 i, j, stride = x * out_n * bytes;
 	stbi__uint32 img_len, img_width_bytes;
-	stbi_uc *filter_buf;
 	int all_ok = 1;
 	int k;
 	int img_n = s->img_n; // copy it into a local for later
@@ -654,23 +647,38 @@ static int stbi__create_png_image_raw(stbi__png *a, stbi_uc *raw, stbi__uint32 r
 
 	STBI_ASSERT(out_n == s->img_n || out_n == s->img_n+1);
 	a->out = (stbi_uc *) stbi__malloc_mad3(x, y, output_bytes, 0); // extra bytes to write off the end into
-	if (!a->out) return stbi__err("outofmem", "Out of memory");
+	if (!a->out)
+	{
+		return stbi__err("outofmem", "Out of memory");
+	}
 
 	// note: error exits here don't need to clean up a->out individually,
 	// stbi__do_png always does on error.
-	if (!stbi__mad3sizes_valid(img_n, x, depth, 7)) return stbi__err("too large", "Corrupt PNG");
+	if (!stbi__mad3sizes_valid(img_n, x, depth, 7))
+	{
+		return stbi__err("too large", "Corrupt PNG");
+	}
 	img_width_bytes = (((img_n * x * depth) + 7) >> 3);
-	if (!stbi__mad2sizes_valid(img_width_bytes, y, img_width_bytes)) return stbi__err("too large", "Corrupt PNG");
+	if (!stbi__mad2sizes_valid(img_width_bytes, y, img_width_bytes))
+	{
+		return stbi__err("too large", "Corrupt PNG");
+	}
 	img_len = (img_width_bytes + 1) * y;
 
 	// we used to check for exact match between raw_len and img_len on non-interlaced PNGs,
 	// but issue #276 reported a PNG in the wild that had extra data at the end (all zeros),
 	// so just check for raw_len < img_len always.
-	if (raw_len < img_len) return stbi__err("not enough pixels", "Corrupt PNG");
+	if (raw_len < img_len)
+	{
+		return stbi__err("not enough pixels", "Corrupt PNG");
+	}
 
 	// Allocate two scan lines worth of filter workspace buffer.
-	filter_buf = (stbi_uc *) stbi__malloc_mad2(img_width_bytes, 2, 0);
-	if (!filter_buf) return stbi__err("outofmem", "Out of memory");
+	stbi_uc *filter_buf = (stbi_uc *) stbi__malloc_mad2(img_width_bytes, 2, 0);
+	if (!filter_buf)
+	{
+		return stbi__err("outofmem", "Out of memory");
+	}
 
 	// Filtering for low-bit-depth images
 	if (depth < 8)
@@ -832,24 +840,27 @@ static int stbi__create_png_image(stbi__png *a, stbi_uc *image_data, stbi__uint3
 {
 	int bytes = (depth == 16 ? 2 : 1);
 	int out_bytes = out_n * bytes;
-	stbi_uc *final;
 	int p;
 	if (!interlaced)
+	{
 		return stbi__create_png_image_raw(a, image_data, image_data_len, out_n, a->s->img_x, a->s->img_y, depth, color);
+	}
 
 	// de-interlacing
-	final = (stbi_uc *) stbi__malloc_mad3(a->s->img_x, a->s->img_y, out_bytes, 0);
-	if (!final) return stbi__err("outofmem", "Out of memory");
+	auto *final = (stbi_uc *) stbi__malloc_mad3(a->s->img_x, a->s->img_y, out_bytes, 0);
+	if (!final)
+	{
+		return stbi__err("outofmem", "Out of memory");
+	}
 	for (p = 0; p < 7; ++p)
 	{
 		int xorig[] = {0, 4, 0, 2, 0, 1, 0};
 		int yorig[] = {0, 0, 4, 0, 2, 0, 1};
 		int xspc[] = {8, 8, 4, 4, 2, 2, 1};
 		int yspc[] = {8, 8, 8, 4, 4, 2, 2};
-		int i, j, x, y;
 		// pass1_x[4] = 0, pass1_x[5] = 1, pass1_x[12] = 1
-		x = (a->s->img_x - xorig[p] + xspc[p] - 1) / xspc[p];
-		y = (a->s->img_y - yorig[p] + yspc[p] - 1) / yspc[p];
+		int x = (a->s->img_x - xorig[p] + xspc[p] - 1) / xspc[p];
+		int y = (a->s->img_y - yorig[p] + yspc[p] - 1) / yspc[p];
 		if (x && y)
 		{
 			stbi__uint32 img_len = ((((a->s->img_n * x * depth) + 7) >> 3) + 1) * y;
@@ -858,13 +869,13 @@ static int stbi__create_png_image(stbi__png *a, stbi_uc *image_data, stbi__uint3
 				STBI_FREE(final);
 				return 0;
 			}
-			for (j = 0; j < y; ++j)
+			for (int j = 0; j < y; ++j)
 			{
-				for (i = 0; i < x; ++i)
+				for (int i = 0; i < x; ++i)
 				{
 					int out_y = j * yspc[p] + yorig[p];
 					int out_x = i * xspc[p] + xorig[p];
-					memcpy(final + out_y * a->s->img_x * out_bytes + out_x * out_bytes,
+					std::memcpy(final + out_y * a->s->img_x * out_bytes + out_x * out_bytes,
 					       a->out + (j * x + i) * out_bytes, out_bytes);
 				}
 			}
@@ -943,13 +954,16 @@ static int stbi__compute_transparency16(stbi__png *z, stbi__uint16 tc[3], int ou
 static int stbi__expand_png_palette(stbi__png *a, stbi_uc *palette, int len, int pal_img_n)
 {
 	stbi__uint32 i, pixel_count = a->s->img_x * a->s->img_y;
-	stbi_uc *p, *temp_out, *orig = a->out;
+	stbi_uc *orig = a->out;
 
-	p = (stbi_uc *) stbi__malloc_mad2(pixel_count, pal_img_n, 0);
-	if (p == NULL) return stbi__err("outofmem", "Out of memory");
+	auto *p = (stbi_uc *) stbi__malloc_mad2(pixel_count, pal_img_n, 0);
+	if (p == nullptr)
+	{
+		return stbi__err("outofmem", "Out of memory");
+	}
 
 	// between here and free(out) below, exitting would leak
-	temp_out = p;
+	stbi_uc *temp_out = p;
 
 	if (pal_img_n == 3)
 	{
@@ -1022,10 +1036,11 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 		stbi__pngchunk c = stbi__get_chunk_header(s);
 		switch (c.type)
 		{
-			case STBI__PNG_TYPE('C', 'g', 'B', 'I'):
+			case STBI__PNG_TYPE('C', 'g', 'B', 'I'): {
 				is_iphone = 1;
 				stbi__skip(s, c.length);
 				break;
+			}
 			case STBI__PNG_TYPE('I', 'H', 'D', 'R'): {
 				int comp, filter;
 				if (!first)
@@ -1347,7 +1362,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				return 1;
 			}
 
-			default:
+			default: {
 				// if critical, fail
 				if (first)
 				{
@@ -1367,6 +1382,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				}
 				stbi__skip(s, c.length);
 				break;
+			}
 		}
 		// end of PNG chunk, read and skip CRC
 		stbi__get32be(s);
@@ -1446,54 +1462,31 @@ static int stbi__png_test(stbi__context *s)
 	return r;
 }
 
-static int stbi__png_info_raw(stbi__png *p, int *x, int *y, int *comp)
-{
-	if (!stbi__parse_png_file(p, STBI__SCAN_header, 0))
-	{
-		stbi__rewind(p->s);
-		return 0;
-	}
-	if (x)
-	{
-		*x = p->s->img_x;
-	}
-	if (y)
-	{
-		*y = p->s->img_y;
-	}
-	if (comp)
-	{
-		*comp = p->s->img_n;
-	}
-	return 1;
-}
-
-static int stbi__png_info(stbi__context *s, int *x, int *y, int *comp)
-{
-	stbi__png p;
-	p.s = s;
-	return stbi__png_info_raw(&p, x, y, comp);
-}
-
-
-
-static int stbi__info_main(stbi__context *s, int *x, int *y, int *comp)
-{
-
-	if (stbi__png_info(s, x, y, comp))
-	{
-		return 1;
-	}
-
-
-	return stbi__err("unknown image type", "Image not of any known type, or corrupt");
-}
-
-
 
 STBIDEF int stbi_info_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *comp)
 {
 	stbi__context s;
 	stbi__start_mem(&s, buffer, len);
-	return stbi__info_main(&s, x, y, comp);
+
+	stbi__png p;
+	p.s = &s;
+
+	if (stbi__parse_png_file(&p, STBI__SCAN_header, 0))
+	{
+		if (x)
+		{
+			*x = p.s->img_x;
+		}
+		if (y)
+		{
+			*y = p.s->img_y;
+		}
+		if (comp)
+		{
+			*comp = p.s->img_n;
+		}
+		return 1;
+	}
+	stbi__rewind(p.s);
+	return stbi__err("unknown image type", "Image not of any known type, or corrupt");
 }
