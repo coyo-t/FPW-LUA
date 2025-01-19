@@ -9,7 +9,11 @@ struct ZlibContext
 {
 	using MallocCallback = auto (std::size_t size) -> void*;
 	using FreeCallback = auto (void* addr) -> void;
-	using ReallocCallback = auto (void* addr, std::size_t new_size) -> void*;
+	using ReallocCallback = auto (
+		void* addr,
+		std::size_t old_size,
+		std::size_t new_size
+	) -> void*;
 
 	MallocCallback*
 	malloc = nullptr;
@@ -20,7 +24,11 @@ struct ZlibContext
 	ReallocCallback*
 	realloc = nullptr;
 
+	std::uint8_t* buffer = nullptr;
+	std::size_t len = 0;
+	std::size_t initial_size = 0;
 	std::size_t out_len = 0;
+	std::uint8_t parse_header = false;
 };
 
 

@@ -1400,17 +1400,48 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 
 			case STBI__PNG_TYPE('I', 'E', 'N', 'D'): {
 				stbi__uint32 raw_len, bpl;
-				if (first) return stbi__err("first not IHDR", "Corrupt PNG");
-				if (scan != STBI__SCAN_load) return 1;
-				if (z->idata == NULL) return stbi__err("no IDAT", "Corrupt PNG");
+				if (first)
+				{
+					return stbi__err("first not IHDR", "Corrupt PNG");
+				}
+				if (scan != STBI__SCAN_load)
+				{
+					return 1;
+				}
+				if (z->idata == NULL)
+				{
+					return stbi__err("no IDAT", "Corrupt PNG");
+				}
 				// initial guess for decoded data size to avoid unnecessary reallocs
 				bpl = (s->img_x * z->depth + 7) / 8; // bytes per line, per component
 				raw_len = bpl * s->img_y * s->img_n /* pixels */ + s->img_y /* filter mode per row */;
-				z->expanded = (stbi_uc *) stbi_zlib_decode_malloc_guesssize_headerflag(
-					(char *) z->idata, ioff, raw_len, (int *) &raw_len, !is_iphone);
-				if (z->expanded == NULL) return 0; // zlib should set error
+
+				auto zctx = ZlibContext();
+				zctx.buffer = z->idata;
+				zctx.len = ioff;
+				zctx.initial_size = raw_len;
+				zctx.parse_header = !is_iphone;
+
+				zctx.malloc  = &stbi__malloc;
+				zctx.free    = [](void* p) { STBI_FREE(p); };
+				zctx.realloc = [](void* p, size_t olds, size_t news) { return STBI_REALLOC_SIZED(p, olds, news); };
+
+				z->expanded = (stbi_uc *)stbi_zlib_decode_malloc_guesssize_headerflag(
+					(char *) z->idata,
+					ioff,
+					raw_len,
+					(int *) &raw_len,
+					!is_iphone
+				);
+
+				raw_len = zctx.out_len;
+
+				if (z->expanded == nullptr)
+				{
+					return 0; // zlib should set error
+				}
 				STBI_FREE(z->idata);
-				z->idata = NULL;
+				z->idata = nullptr;
 				if ((req_comp == s->img_n + 1 && req_comp != 3 && !pal_img_n) || has_trans)
 					s->img_out_n = s->img_n + 1;
 				else
