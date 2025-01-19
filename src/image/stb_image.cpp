@@ -199,22 +199,6 @@ STBIDEF void stbi_image_free(void *retval_from_stbi_load)
 	STBI_FREE(retval_from_stbi_load);
 }
 
-static void *stbi__load_main(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri, int bpc)
-{
-	memset(ri, 0, sizeof(*ri)); // make sure it's initialized if we add new fields
-	ri->bits_per_channel = 8; // default is 8 so most paths don't have to be changed
-	ri->num_channels = 0;
-
-	// test the formats with a very explicit header first (at least a FOURCC
-	// or distinctive magic number first)
-	if (s->stbi__png_test())
-	{
-		return stbi__png_load(s, x, y, comp, req_comp, ri);
-	}
-
-	return stbi__errpuc("unknown image type", "Image not of any known type, or corrupt");
-}
-
 static std::uint8_t *stbi__convert_16_to_8(std::uint16_t *orig, int w, int h, int channels)
 {
 	int img_len = w * h * channels;
@@ -233,27 +217,6 @@ static std::uint8_t *stbi__convert_16_to_8(std::uint16_t *orig, int w, int h, in
 
 	STBI_FREE(orig);
 	return reduced;
-}
-
-
-static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, int *y, int *comp, int req_comp)
-{
-	stbi__result_info ri;
-	void *result = stbi__load_main(s, x, y, comp, req_comp, &ri, 8);
-
-	if (result == nullptr)
-		return nullptr;
-
-	// it is the responsibility of the loaders to make sure we get either 8 or 16 bit.
-	STBI_ASSERT(ri.bits_per_channel == 8 || ri.bits_per_channel == 16);
-
-	if (ri.bits_per_channel != 8)
-	{
-		result = stbi__convert_16_to_8((std::uint16_t *) result, *x, *y, req_comp == 0 ? *comp : req_comp);
-		ri.bits_per_channel = 8;
-	}
-
-	return static_cast<unsigned char *>(result);
 }
 
 
@@ -1894,13 +1857,6 @@ static void *stbi__png_load(stbi__context *s, int *x, int *y, int *comp, int req
 	return result;
 }
 
-static int stbi__png_test(stbi__context *s)
-{
-	int r = s->check_png_header();
-	s->rewind();
-	return r;
-}
-
 
 STBIDEF int stbi_info_from_memory(std::uint8_t const *buffer, int len, int *x, int *y, int *comp)
 {
@@ -1927,7 +1883,97 @@ STBIDEF std::uint8_t *stbi_load_from_memory(std::uint8_t const *buffer, int len,
 {
 	stbi__context s;
 	s.start_mem(buffer, len);
-	return stbi__load_and_postprocess_8bit(&s, x, y, comp, req_comp);
+	stbi__result_info ri;
+
+	void* result;
+	// void *result = stbi__load_main(&s, x, y, comp, req_comp, &ri, 8);
+	{
+		memset(&ri, 0, sizeof(ri)); // make sure it's initialized if we add new fields
+		ri.bits_per_channel = 8; // default is 8 so most paths don't have to be changed
+		ri.num_channels = 0;
+
+		// test the formats with a very explicit header first (at least a FOURCC
+		// or distinctive magic number first)
+		if (!s.stbi__png_test())
+		{
+			result = stbi__errpuc("unknown image type", "Image not of any known type, or corrupt");
+			goto ret;
+		}
+
+		// result = static_cast<std::uint8_t*>(stbi__png_load(&s, x, y, comp, req_comp, &ri));
+		stbi__png p;
+		p.s = &s;
+
+		void *result2 = nullptr;
+		if (req_comp < 0 || req_comp > 4)
+		{
+			result = stbi__errpuc("bad req_comp", "Internal error");
+			goto ret;
+		}
+		if (stbi__parse_png_file(&p, Scan::Load, req_comp))
+		{
+			if (p.depth <= 8)
+			{
+				ri.bits_per_channel = 8;
+			}
+			else if (p.depth == 16)
+			{
+				ri.bits_per_channel = 16;
+			}
+			else
+			{
+				result = stbi__errpuc("bad bits_per_channel", "PNG not supported: unsupported color depth");
+				goto ret;
+			}
+			result2 = p.out;
+			p.out = nullptr;
+			if (req_comp && req_comp != p.s->img_out_n)
+			{
+				if (ri.bits_per_channel == 8)
+				{
+					result2 = stbi__convert_format(static_cast<std::uint8_t *>(result2), p.s->img_out_n, req_comp, p.s->img_x, p.s->img_y);
+				}
+				else
+				{
+					result2 = stbi__convert_format16(static_cast<std::uint16_t *>(result2), p.s->img_out_n, req_comp, p.s->img_x, p.s->img_y);
+				}
+				p.s->img_out_n = req_comp;
+				if (result2 == nullptr)
+				{
+					result = result2;
+					goto ret;
+				}
+			}
+			*x = p.s->img_x;
+			*y = p.s->img_y;
+			if (comp != nullptr)
+			{
+				*comp = p.s->img_n;
+			}
+		}
+		STBI_FREE(p.out); p.out = nullptr;
+		STBI_FREE(p.expanded); p.expanded = nullptr;
+		STBI_FREE(p.idata); p.idata = nullptr;
+
+		result = result2;
+		ret:
+	}
+
+
+	if (result == nullptr)
+		return nullptr;
+
+	// it is the responsibility of the loaders to make sure we get either 8 or 16 bit.
+	STBI_ASSERT(ri.bits_per_channel == 8 || ri.bits_per_channel == 16);
+
+	if (ri.bits_per_channel != 8)
+	{
+		result = stbi__convert_16_to_8(static_cast<std::uint16_t*>(result), *x, *y, req_comp == 0 ? *comp : req_comp);
+		ri.bits_per_channel = 8;
+	}
+
+	return static_cast<std::uint8_t*>(result);
+	// return stbi__load_and_postprocess_8bit(&s, x, y, comp, req_comp);
 }
 
 STBIDEF const char *stbi_failure_reason(void)
