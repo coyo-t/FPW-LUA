@@ -108,15 +108,6 @@ STBIDEF stbi_us *stbi_load_from_file_16(FILE *f, int *x, int *y, int *channels_i
    STBIDEF void   stbi_ldr_to_hdr_scale(float scale);
 #endif // STBI_NO_LINEAR
 
-// stbi_is_hdr is always defined, but always returns false if STBI_NO_HDR
-STBIDEF int    stbi_is_hdr_from_callbacks(stbi_io_callbacks const *clbk, void *user);
-STBIDEF int    stbi_is_hdr_from_memory(stbi_uc const *buffer, int len);
-#ifndef STBI_NO_STDIO
-STBIDEF int      stbi_is_hdr          (char const *filename);
-STBIDEF int      stbi_is_hdr_from_file(FILE *f);
-#endif // STBI_NO_STDIO
-
-
 // get a VERY brief reason for failure
 // on most compilers (and ALL modern mainstream compilers) this is threadsafe
 STBIDEF const char *stbi_failure_reason  (void);
