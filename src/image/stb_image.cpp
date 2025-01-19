@@ -113,15 +113,15 @@ struct stbi__context
 		}
 		return 0;
 	}
-	auto readu16be () -> int
+	auto readu16be () -> U16
 	{
-		int z = readu8();
-		return (z << 8) + readu8();
+		int z = static_cast<U16>(readu8());
+		return (z << 8) + static_cast<U16>(readu8());
 	}
 	auto readu32be () -> U32
 	{
-		auto z = readu16be();
-		return (z << 16) + readu16be();
+		auto z = static_cast<U32>(readu16be());
+		return (z << 16) + static_cast<U32>(readu16be());
 	}
 	auto check_png_header() -> bool
 	{
@@ -942,15 +942,14 @@ static Byte stbi__compute_y(int r, int g, int b)
 	return static_cast<Byte>(((r * 77) + (g * 150) + (29 * b)) >> 8);
 }
 
-static unsigned char *stbi__convert_format(unsigned char *data, int img_n, int req_comp, unsigned int x, unsigned int y)
+static Byte* stbi__convert_format(Byte* data, int img_n, int req_comp, unsigned int x, unsigned int y)
 {
 	int i, j;
-	unsigned char *good;
 
 	if (req_comp == img_n) return data;
 	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
 
-	good = stbi__malloc_fma3<unsigned char>(req_comp, x, y, 0);
+	const auto good = stbi__malloc_fma3<Byte>(req_comp, x, y, 0);
 	if (good == nullptr)
 	{
 		STBI_FREE(data);
@@ -959,8 +958,8 @@ static unsigned char *stbi__convert_format(unsigned char *data, int img_n, int r
 
 	for (j = 0; j < (int) y; ++j)
 	{
-		unsigned char *src = data + j * x * img_n;
-		unsigned char *dest = good + j * x * req_comp;
+		auto src = data + j * x * img_n;
+		auto dest = good + j * x * req_comp;
 
 #define STBI__COMBO(a,b)  ((a)*8+(b))
 #define STBI__CASE(a,b)   case STBI__COMBO(a,b): for(i=x-1; i >= 0; --i, src += a, dest += b)
@@ -1045,19 +1044,19 @@ static U16 stbi__compute_y_16(int r, int g, int b)
 
 static U16 *stbi__convert_format16(U16*data, int img_n, int req_comp, unsigned int x, unsigned int y)
 {
-	int i, j;
 
 	if (req_comp == img_n) return data;
 	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
 
-	U16 *good = static_cast<U16 *>(stbi__malloc(req_comp * x * y * 2));
+	const auto good = static_cast<U16 *>(stbi__malloc(req_comp * x * y * 2));
 	if (good == nullptr)
 	{
 		STBI_FREE(data);
 		return (U16*)stbi__errpuc("outofmem", "Out of memory");
 	}
 
-	for (j = 0; j < static_cast<int>(y); ++j)
+	int i;
+	for (int j = 0; j < static_cast<int>(y); ++j)
 	{
 		auto* src = data + j * x * img_n;
 		auto* dest = good + j * x * req_comp;
@@ -1693,14 +1692,14 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 						for (k = 0; k < s->img_n && k < 3; ++k)
 						{
 							// copy the values as-is
-							tc16[k] = (U16) s->readu16be();
+							tc16[k] = s->readu16be();
 						}
 					}
 					else
 					{
 						for (k = 0; k < s->img_n && k < 3; ++k)
 						{
-							tc[k] = (Byte)(s->readu16be() & 255) * stbi__depth_scale_table[z->depth];
+							tc[k] = static_cast<Byte>(s->readu16be() & 255) * stbi__depth_scale_table[z->depth];
 						}
 						// non 8-bit images will be larger
 					}
@@ -2083,33 +2082,32 @@ STBIDEF Byte *stbi_load_from_memory(Byte const *buffer, int len, int *x, int *y,
 
 
 	if (result == nullptr)
+	{
 		return nullptr;
+	}
 
 	// it is the responsibility of the loaders to make sure we get either 8 or 16 bit.
 	STBI_ASSERT(ri.bits_per_channel == 8 || ri.bits_per_channel == 16);
 
 	if (ri.bits_per_channel != 8)
 	{
-		// result = stbi__convert_16_to_8(static_cast<std::uint16_t*>(result), *x, *y, req_comp == 0 ? *comp : req_comp);
+		int img_len = (*x) * (*y) * (req_comp == 0 ? (*comp) : req_comp);
+
+		const auto reduced = static_cast<Byte*>(stbi__malloc(img_len));
+		if (reduced == nullptr)
 		{
-			int img_len = *x * *y * (req_comp == 0 ? *comp : req_comp);
-
-			auto *reduced = static_cast<Byte*>(stbi__malloc(img_len));
-			if (reduced == nullptr)
-			{
-				return stbi__errpuc("outofmem", "Out of memory");
-			}
-
-			auto* orig = static_cast<U16*>(result);
-			for (int i = 0; i < img_len; ++i)
-			{
-				// top half of each byte is sufficient approx of 16->8 bit scaling
-				reduced[i] = static_cast<Byte>((orig[i] >> 8) & 0xFF);
-			}
-
-			STBI_FREE(orig);
-			result = reduced;
+			return stbi__errpuc("outofmem", "Out of memory");
 		}
+
+		const auto orig = static_cast<U16*>(result);
+		for (int i = 0; i < img_len; ++i)
+		{
+			// top half of each byte is sufficient approx of 16->8 bit scaling
+			reduced[i] = static_cast<Byte>((orig[i] >> 8) & 0xFF);
+		}
+
+		STBI_FREE(orig);
+		result = reduced;
 
 		ri.bits_per_channel = 8;
 	}
