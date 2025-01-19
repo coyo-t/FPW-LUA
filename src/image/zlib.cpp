@@ -124,17 +124,20 @@ static int zbuild_huffman(ZHuffman *z, const stbi_uc *sizelist, int num)
 
 struct ZBuffer
 {
-	stbi_uc *zbuffer, *zbuffer_end;
+	std::uint8_t * zbuffer;
+	std::uint8_t *zbuffer_end;
 	int num_bits;
 	int hit_zeof_once;
 	stbi__uint32 code_buffer;
 
-	char *zout;
-	char *zout_start;
-	char *zout_end;
+	std::uint8_t* zout;
+	std::uint8_t* zout_start;
+	std::uint8_t* zout_end;
 	int z_expandable;
 
 	ZHuffman z_length, z_distance;
+
+	ZlibContext* context;
 };
 
 static int zeof(ZBuffer *z)
@@ -244,18 +247,17 @@ static int zhuffman_decode(ZBuffer *a, ZHuffman *z)
 	return zhuffman_decode_slowpath(a, z);
 }
 
-static int zexpand(ZBuffer *z, char *zout, int n) // need to make room for n bytes
+static int zexpand(ZBuffer *z, std::uint8_t*zout, int n) // need to make room for n bytes
 {
-	char *q;
-	unsigned int cur, limit, old_limit;
+	unsigned int old_limit;
 	z->zout = zout;
 	if (!z->z_expandable)
 	{
 		return stbi__err("output buffer limit", "Corrupt PNG");
 	}
-	cur = (unsigned int) (z->zout - z->zout_start);
-	limit = old_limit = (unsigned) (z->zout_end - z->zout_start);
-	if (UINT_MAX - cur < (unsigned) n)
+	auto cur = (z->zout - z->zout_start);
+	auto limit = old_limit = (z->zout_end - z->zout_start);
+	if (UINT_MAX - cur < n)
 	{
 		return stbi__err("outofmem", "Out of memory");
 	}
@@ -267,8 +269,8 @@ static int zexpand(ZBuffer *z, char *zout, int n) // need to make room for n byt
 		}
 		limit *= 2;
 	}
-	q = (char *) STBI_REALLOC_SIZED(z->zout_start, old_limit, limit);
-	STBI_NOTUSED(old_limit);
+	auto q = z->context->realloc_t(z->zout_start, old_limit, limit);
+	// STBI_NOTUSED(old_limit);
 	if (q == nullptr)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -298,7 +300,7 @@ static const int stbi__zdist_extra[32] =
 
 static int zparse_huffman_block(ZBuffer *a)
 {
-	char *zout = a->zout;
+	auto zout = a->zout;
 	for (;;)
 	{
 		int z = zhuffman_decode(a, &a->z_length);
@@ -368,11 +370,11 @@ static int zparse_huffman_block(ZBuffer *a)
 				}
 				zout = a->zout;
 			}
-			stbi_uc *p = (stbi_uc *) (zout - dist);
+			auto p = zout - dist;
 			if (dist == 1)
 			{
 				// run of one byte; common in images.
-				stbi_uc v = *p;
+				auto v = *p;
 				if (len)
 				{
 					do *zout++ = v; while (--len);
@@ -633,7 +635,7 @@ static int zparse_zlib(ZBuffer *a, int parse_header)
 	return 1;
 }
 
-static int zdo_zlib(ZBuffer *a, char *obuf, int olen, int exp, int parse_header)
+static int zdo_zlib(ZBuffer *a, std::uint8_t* obuf, int olen, int exp, int parse_header)
 {
 	a->zout_start = obuf;
 	a->zout = obuf;
@@ -644,30 +646,22 @@ static int zdo_zlib(ZBuffer *a, char *obuf, int olen, int exp, int parse_header)
 }
 
 
-char *stbi_zlib_decode_malloc_guesssize_headerflag(
-	const char *buffer,
-	int len,
-	int initial_size,
-	int *outlen,
-	int parse_header)
+std::uint8_t *stbi_zlib_decode_malloc_guesssize_headerflag(ZlibContext *context)
 {
-	ZBuffer a;
-	auto p = (char *) stbi__malloc(initial_size);
+	const auto p = context->malloc_t<std::uint8_t>(context->initial_size);
 	if (p == nullptr)
 	{
 		return nullptr;
 	}
-	a.zbuffer = (stbi_uc *) buffer;
-	a.zbuffer_end = (stbi_uc *) buffer + len;
-	if (zdo_zlib(&a, p, initial_size, 1, parse_header))
+	ZBuffer a;
+	a.zbuffer = context->buffer;
+	a.zbuffer_end = context->buffer +context->len;
+	if (zdo_zlib(&a, p,context->initial_size, 1, context->parse_header))
 	{
-		if (outlen != nullptr)
-		{
-			*outlen = (int) (a.zout - a.zout_start);
-		}
+		context->out_len = a.zout - a.zout_start;
 		return a.zout_start;
 	}
-	STBI_FREE(a.zout_start);
+	context->free(a.zout_start);
 	return nullptr;
 }
 

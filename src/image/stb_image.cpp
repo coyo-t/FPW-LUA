@@ -1426,13 +1426,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				zctx.free    = [](void* p) { STBI_FREE(p); };
 				zctx.realloc = [](void* p, size_t olds, size_t news) { return STBI_REALLOC_SIZED(p, olds, news); };
 
-				z->expanded = (stbi_uc *)stbi_zlib_decode_malloc_guesssize_headerflag(
-					(char *) z->idata,
-					ioff,
-					raw_len,
-					(int *) &raw_len,
-					!is_iphone
-				);
+				z->expanded = stbi_zlib_decode_malloc_guesssize_headerflag(&zctx);
 
 				raw_len = zctx.out_len;
 
