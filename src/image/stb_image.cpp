@@ -102,14 +102,14 @@ struct Context
 		// conceptually rewind SHOULD rewind to the beginning of the stream,
 		// but we just rewind to the beginning of the initial buffer, because
 		// we only use it after doing 'test', which only ever looks at at most 92 bytes
-		this->img_buffer = this->img_buffer_original;
-		this->img_buffer_end = this->img_buffer_original_end;
+		img_buffer = img_buffer_original;
+		img_buffer_end = img_buffer_original_end;
 	}
 	auto readu8() -> Byte
 	{
-		if (this->img_buffer < this->img_buffer_end)
+		if (img_buffer < img_buffer_end)
 		{
-			return *this->img_buffer++;
+			return *img_buffer++;
 		}
 		return 0;
 	}
@@ -147,7 +147,7 @@ struct Png
 };
 
 
-static void *stbi__malloc(size_t size)
+static void *stbi_malloc(size_t size)
 {
 	return STBI_MALLOC(size);
 }
@@ -164,7 +164,7 @@ static void *stbi__malloc(size_t size)
 
 // return 1 if the sum is valid, 0 on overflow.
 // negative terms are considered invalid.
-static bool stbi__addsizes_valid(int a, int b)
+static bool stbi_addsizes_valid(int a, int b)
 {
 	if (b < 0)
 	{
@@ -179,7 +179,7 @@ static bool stbi__addsizes_valid(int a, int b)
 
 // returns 1 if the product is valid, 0 on overflow.
 // negative factors are considered invalid.
-static bool stbi__mul2sizes_valid(int a, int b)
+static bool stbi_mul2sizes_valid(int a, int b)
 {
 	if (a < 0 || b < 0)
 	{
@@ -195,34 +195,34 @@ static bool stbi__mul2sizes_valid(int a, int b)
 }
 
 // returns 1 if "a*b + add" has no negative terms/factors and doesn't overflow
-static bool stbi__mad2sizes_valid(int a, int b, int add)
+static bool stbi_mad2sizes_valid(int a, int b, int add)
 {
-	return stbi__mul2sizes_valid(a, b) && stbi__addsizes_valid(a * b, add);
+	return stbi_mul2sizes_valid(a, b) && stbi_addsizes_valid(a * b, add);
 }
 
 // returns 1 if "a*b*c + add" has no negative terms/factors and doesn't overflow
-static bool stbi__mad3sizes_valid(int a, int b, int c, int add)
+static bool stbi_mad3sizes_valid(int a, int b, int c, int add)
 {
-	return stbi__mul2sizes_valid(a, b) &&
-		stbi__mul2sizes_valid(a * b, c) &&
-		stbi__addsizes_valid(a * b * c, add);
+	return stbi_mul2sizes_valid(a, b) &&
+		stbi_mul2sizes_valid(a * b, c) &&
+		stbi_addsizes_valid(a * b * c, add);
 }
 
 // mallocs with size overflow checking
 template<typename T>
-static T*stbi__malloc_fma2(int a, int b, int add)
+static T*stbi_malloc_fma2(int a, int b, int add)
 {
-	if (!stbi__mad2sizes_valid(a, b, add))
+	if (!stbi_mad2sizes_valid(a, b, add))
 		return nullptr;
-	return static_cast<T*>(stbi__malloc(a * b + add));
+	return static_cast<T*>(stbi_malloc(a * b + add));
 }
 
 template<typename T>
-static T* stbi__malloc_fma3(int a, int b, int c, int add)
+static T* stbi_malloc_fma3(int a, int b, int c, int add)
 {
-	if (!stbi__mad3sizes_valid(a, b, c, add))
+	if (!stbi_mad3sizes_valid(a, b, c, add))
 		return nullptr;
-	return static_cast<T*>(stbi__malloc(a * b * c + add));
+	return static_cast<T*>(stbi_malloc(a * b * c + add));
 }
 
 
@@ -824,7 +824,7 @@ struct Buffer {
 		int *outlen,
 		int parse_header) -> Byte*
 	{
-		auto p = (Byte*)stbi__malloc(initial_size);
+		auto p = (Byte*)stbi_malloc(initial_size);
 		if (p == nullptr)
 		{
 			return nullptr;
@@ -923,7 +923,7 @@ static Byte* stbi__convert_format (
 	}
 	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
 
-	const auto good = stbi__malloc_fma3<Byte>(req_comp, x, y, 0);
+	const auto good = stbi_malloc_fma3<Byte>(req_comp, x, y, 0);
 	if (good == nullptr)
 	{
 		STBI_FREE(data);
@@ -1023,7 +1023,7 @@ static U16 *stbi__convert_format16(U16*data, int img_n, int req_comp, unsigned i
 	}
 	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
 
-	const auto good = static_cast<U16*>(stbi__malloc(req_comp * x * y * 2));
+	const auto good = static_cast<U16*>(stbi_malloc(req_comp * x * y * 2));
 	if (good == nullptr)
 	{
 		STBI_FREE(data);
@@ -1199,7 +1199,7 @@ static int stbi__create_png_image_raw(Png *a, Byte* raw, U32 raw_len, int out_n,
 
 	STBI_ASSERT(out_n == s->img_n || out_n == s->img_n+1);
 	// extra bytes to write off the end into
-	a->out = stbi__malloc_fma3<Byte>(x, y, output_bytes, 0);
+	a->out = stbi_malloc_fma3<Byte>(x, y, output_bytes, 0);
 	if (a->out == nullptr)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -1207,12 +1207,12 @@ static int stbi__create_png_image_raw(Png *a, Byte* raw, U32 raw_len, int out_n,
 
 	// note: error exits here don't need to clean up a->out individually,
 	// stbi__do_png always does on error.
-	if (!stbi__mad3sizes_valid(img_n, x, depth, 7))
+	if (!stbi_mad3sizes_valid(img_n, x, depth, 7))
 	{
 		return stbi__err("too large", "Corrupt PNG");
 	}
 	U32 img_width_bytes = (((img_n * x * depth) + 7) >> 3);
-	if (!stbi__mad2sizes_valid(img_width_bytes, y, img_width_bytes))
+	if (!stbi_mad2sizes_valid(img_width_bytes, y, img_width_bytes))
 	{
 		return stbi__err("too large", "Corrupt PNG");
 	}
@@ -1227,7 +1227,7 @@ static int stbi__create_png_image_raw(Png *a, Byte* raw, U32 raw_len, int out_n,
 	}
 
 	// Allocate two scan lines worth of filter workspace buffer.
-	auto *filter_buf = stbi__malloc_fma2<Byte>(img_width_bytes, 2, 0);
+	auto *filter_buf = stbi_malloc_fma2<Byte>(img_width_bytes, 2, 0);
 	if (!filter_buf)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -1447,7 +1447,7 @@ static int stbi__create_png_image(Png *a, Byte*image_data, U32 image_data_len, i
 	}
 
 	// de-interlacing
-	const auto final = stbi__malloc_fma3<Byte>(a->s->img_x, a->s->img_y, out_bytes, 0);
+	const auto final = stbi_malloc_fma3<Byte>(a->s->img_x, a->s->img_y, out_bytes, 0);
 	if (!final)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -1899,7 +1899,7 @@ static int stbi__parse_png_file(Png *z, Scan scan, int req_comp)
 						U32 pc = a->s->img_x * a->s->img_y;
 						const auto *orig1 = a->out;
 
-						auto *temp_out = stbi__malloc_fma2<Byte>(pc, palimgn, 0);
+						auto *temp_out = stbi_malloc_fma2<Byte>(pc, palimgn, 0);
 						if (temp_out == nullptr)
 						{
 							res = stbi__err("outofmem", "Out of memory");
@@ -2116,7 +2116,7 @@ STBIDEF Byte *stbi_load_from_memory(Byte const *buffer, int len, int *x, int *y,
 	{
 		int img_len = (*x) * (*y) * (req_comp == 0 ? (*comp) : req_comp);
 
-		const auto reduced = static_cast<Byte*>(stbi__malloc(img_len));
+		const auto reduced = static_cast<Byte*>(stbi_malloc(img_len));
 		if (reduced == nullptr)
 		{
 			return stbi__errpuc("outofmem", "Out of memory");
