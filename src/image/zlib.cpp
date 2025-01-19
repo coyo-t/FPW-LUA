@@ -186,74 +186,74 @@ struct ZBuffer
 		this->zout = q + cur;
 		this->zout_end = q + limit;
 	}
-};
-
-
-static int zhuffman_decode(ZBuffer *a, ZHuffman *z)
-{
-	int b, s;
-	if (a->num_bits < 16)
+	auto zhuffman_decode(ZHuffman *z) -> int
 	{
-		if (a->zeof())
+		int b, s;
+		if (this->num_bits < 16)
 		{
-			if (!a->hit_zeof_once)
+			if (this->zeof())
 			{
-				// This is the first time we hit eof, insert 16 extra padding btis
-				// to allow us to keep going; if we actually consume any of them
-				// though, that is invalid data. This is caught later.
-				a->hit_zeof_once = 1;
-				a->num_bits += 16; // add 16 implicit zero bits
+				if (!this->hit_zeof_once)
+				{
+					// This is the first time we hit eof, insert 16 extra padding btis
+					// to allow us to keep going; if we actually consume any of them
+					// though, that is invalid data. This is caught later.
+					this->hit_zeof_once = 1;
+					this->num_bits += 16; // add 16 implicit zero bits
+				}
+				else
+				{
+					// We already inserted our extra 16 padding bits and are again
+					// out, this stream is actually prematurely terminated.
+					return -1;
+				}
 			}
 			else
 			{
-				// We already inserted our extra 16 padding bits and are again
-				// out, this stream is actually prematurely terminated.
-				return -1;
+				this->zfill_bits();
 			}
 		}
-		else
+		b = z->fast[this->code_buffer & STBI__ZFAST_MASK];
+		if (b)
 		{
-			a->zfill_bits();
+			s = b >> 9;
+			this->code_buffer >>= s;
+			this->num_bits -= s;
+			return b & 511;
 		}
-	}
-	b = z->fast[a->code_buffer & STBI__ZFAST_MASK];
-	if (b)
-	{
-		s = b >> 9;
-		a->code_buffer >>= s;
-		a->num_bits -= s;
-		return b & 511;
-	}
 
-	int s2;
-	// not resolved by fast table, so compute it the slow way
-	// use jpeg approach, which requires MSbits at top
-	int k2 = bit_reverse(a->code_buffer, 16);
-	for (s2 = STBI__ZFAST_BITS + 1; ; ++s2)
-	{
-		if (k2 < z->maxcode[s2])
+		int s2;
+		// not resolved by fast table, so compute it the slow way
+		// use jpeg approach, which requires MSbits at top
+		int k2 = bit_reverse(this->code_buffer, 16);
+		for (s2 = STBI__ZFAST_BITS + 1; ; ++s2)
 		{
-			break;
+			if (k2 < z->maxcode[s2])
+			{
+				break;
+			}
 		}
+		if (s2 >= 16)
+		{
+			return -1; // invalid code!
+		}
+		// code size is s, so:
+		int b2 = (k2 >> (16 - s2)) - z->firstcode[s2] + z->firstsymbol[s2];
+		if (b2 >= STBI__ZNSYMS)
+		{
+			return -1; // some data was corrupt somewhere!
+		}
+		if (z->size[b2] != s2)
+		{
+			return -1; // was originally an assert, but report failure instead.
+		}
+		this->code_buffer >>= s2;
+		this->num_bits -= s2;
+		return z->value[b2];
 	}
-	if (s2 >= 16)
-	{
-		return -1; // invalid code!
-	}
-	// code size is s, so:
-	int b2 = (k2 >> (16 - s2)) - z->firstcode[s2] + z->firstsymbol[s2];
-	if (b2 >= STBI__ZNSYMS)
-	{
-		return -1; // some data was corrupt somewhere!
-	}
-	if (z->size[b2] != s2)
-	{
-		return -1; // was originally an assert, but report failure instead.
-	}
-	a->code_buffer >>= s2;
-	a->num_bits -= s2;
-	return z->value[b2];
-}
+};
+
+
 
 static void zbuild_huffman(ZHuffman *z, const uint8_t *sizelist, int num)
 {
@@ -452,7 +452,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 					int n = 0;
 					while (n < ntot)
 					{
-						int c = zhuffman_decode(&a, &z_codelength);
+						int c = a.zhuffman_decode(&z_codelength);
 						if (c < 0 || c >= 19)
 						{
 							throw Zlib::Er("bad codelengths");
@@ -505,8 +505,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 				auto zout = a.zout;
 				for (;;)
 				{
-					int z = zhuffman_decode(&a, &a.z_length);
-					if (z < 256)
+					if (int z = a.zhuffman_decode(&a.z_length); z < 256)
 					{
 						if (z < 0)
 						{
@@ -522,7 +521,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 					}
 					else
 					{
-						int len, dist;
+						int dist;
 						if (z == 256)
 						{
 							a.zout = zout;
@@ -543,12 +542,12 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 							}
 							// per DEFLATE, length codes 286 and 287 must not appear in compressed data
 							z -= 257;
-							len = ZLENGTH_BASE[z];
+							int len = ZLENGTH_BASE[z];
 							if (stbi__zlength_extra[z])
 							{
 								len += a.zreceive(stbi__zlength_extra[z]);
 							}
-							z = zhuffman_decode(&a, &a.z_distance);
+							z = a.zhuffman_decode(&a.z_distance);
 							if (z < 0 || z >= 30)
 							{
 								throw Zlib::Er("bad huffman code");
@@ -568,11 +567,11 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 								a.zexpand(zout, len);
 								zout = a.zout;
 							}
-							auto p = zout - dist;
+							auto p2 = zout - dist;
 							if (dist == 1)
 							{
 								// run of one byte; common in images.
-								auto v = *p;
+								auto v = *p2;
 								if (len)
 								{
 									do *zout++ = v; while (--len);
@@ -582,7 +581,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 							{
 								if (len)
 								{
-									do *zout++ = *p++; while (--len);
+									do *zout++ = *p2++; while (--len);
 								}
 							}
 						}
