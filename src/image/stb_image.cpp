@@ -1495,7 +1495,17 @@ static int stbi__create_png_image(stbi__png *a, Byte*image_data, U32 image_data_
 }
 
 
-#define STBI__PNG_TYPE(a,b,c,d)  (((unsigned) (a) << 24) + ((unsigned) (b) << 16) + ((unsigned) (c) << 8) + (unsigned) (d))
+// #define STBI__PNG_TYPE(a,b,c,d)  (((unsigned) (a) << 24) + ((unsigned) (b) << 16) + ((unsigned) (c) << 8) + (unsigned) (d))
+
+static constexpr auto FOURCC (char a, char b, char c, char d) -> U32
+{
+	return (
+		(static_cast<U32>(a) << 24) |
+		(static_cast<U32>(b) << 16) |
+		(static_cast<U32>(c) << 8) |
+		static_cast<U32>(d)
+	);
+}
 
 static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 {
@@ -1530,7 +1540,7 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 		c.type = s->readu32be();
 		switch (c.type)
 		{
-			case STBI__PNG_TYPE('I', 'H', 'D', 'R'): {
+			case FOURCC('I', 'H', 'D', 'R'): {
 				if (!first)
 				{
 					return stbi__err("multiple IHDR", "Corrupt PNG");
@@ -1609,7 +1619,7 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 				break;
 			}
 
-			case STBI__PNG_TYPE('P', 'L', 'T', 'E'): {
+			case FOURCC('P', 'L', 'T', 'E'): {
 				if (first)
 				{
 					return stbi__err("first not IHDR", "Corrupt PNG");
@@ -1633,7 +1643,7 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 				break;
 			}
 
-			case STBI__PNG_TYPE('t', 'R', 'N', 'S'): {
+			case FOURCC('t', 'R', 'N', 'S'): {
 				if (first)
 				{
 					return stbi__err("first not IHDR", "Corrupt PNG");
@@ -1701,7 +1711,7 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 				break;
 			}
 
-			case STBI__PNG_TYPE('I', 'D', 'A', 'T'): {
+			case FOURCC('I', 'D', 'A', 'T'): {
 				if (first)
 				{
 					return stbi__err("first not IHDR", "Corrupt PNG");
@@ -1752,7 +1762,7 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 				break;
 			}
 
-			case STBI__PNG_TYPE('I', 'E', 'N', 'D'): {
+			case FOURCC('I', 'E', 'N', 'D'): {
 				U32 raw_len;
 				if (first)
 				{
