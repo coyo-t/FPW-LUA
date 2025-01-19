@@ -1038,7 +1038,7 @@ static unsigned char *stbi__convert_format(unsigned char *data, int img_n, int r
 
 static U16 stbi__compute_y_16(int r, int g, int b)
 {
-	return (U16) (((r * 77) + (g * 150) + (29 * b)) >> 8);
+	return static_cast<U16>(((r * 77) + (g * 150) + (29 * b)) >> 8);
 }
 
 
@@ -1493,9 +1493,6 @@ static int stbi__create_png_image(stbi__png *a, Byte*image_data, U32 image_data_
 
 	return 1;
 }
-
-
-// #define STBI__PNG_TYPE(a,b,c,d)  (((unsigned) (a) << 24) + ((unsigned) (b) << 16) + ((unsigned) (c) << 8) + (unsigned) (d))
 
 static constexpr auto FOURCC (char a, char b, char c, char d) -> U32
 {
@@ -1952,7 +1949,10 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 
 			default:
 				// if critical, fail
-				if (first) return stbi__err("first not IHDR", "Corrupt PNG");
+				if (first)
+				{
+					return stbi__err("first not IHDR", "Corrupt PNG");
+				}
 				if ((c.type & (1 << 29)) == 0)
 				{
 #ifndef STBI_NO_FAILURE_STRINGS
@@ -1986,11 +1986,17 @@ STBIDEF int stbi_info_from_memory(Byte const *buffer, int len, int *x, int *y, i
 		return stbi__err("unknown image type", "Image not of any known type, or corrupt");
 	}
 	if (x != nullptr)
+	{
 		*x = p.s->img_x;
+	}
 	if (y != nullptr)
+	{
 		*y = p.s->img_y;
+	}
 	if (comp != nullptr)
+	{
 		*comp = p.s->img_n;
+	}
 	return true;
 }
 
