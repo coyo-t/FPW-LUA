@@ -525,7 +525,7 @@ static int zparse_uncompressed_block(ZBuffer *a)
 	return 1;
 }
 
-static int zparse_zlib_header(ZBuffer *a)
+static bool zparse_zlib_header(ZBuffer *a)
 {
 	int cmf = zget8(a);
 	int cm = cmf & 15;
@@ -548,7 +548,7 @@ static int zparse_zlib_header(ZBuffer *a)
 		return a->error_occured("bad compression"); // DEFLATE required for png
 	}
 	// window = 1 << (8 + cinfo)... but who cares, we fully buffer output
-	return 1;
+	return true;
 }
 
 static const uint8_t zdefault_length[STBI__ZNSYMS] =
@@ -580,64 +580,6 @@ Init algorithm:
 }
 */
 
-static bool zparse_zlib(ZBuffer *a, bool parse_header)
-{
-	int final, type;
-	if (parse_header)
-	{
-		if (!zparse_zlib_header(a))
-		{
-			return false;
-		}
-	}
-	a->num_bits = 0;
-	a->code_buffer = 0;
-	a->hit_zeof_once = 0;
-	do
-	{
-		final = zreceive(a, 1);
-		type = zreceive(a, 2);
-		if (type == 0)
-		{
-			if (!zparse_uncompressed_block(a))
-			{
-				return false;
-			}
-		}
-		else if (type == 3)
-		{
-			return false;
-		}
-		else
-		{
-			if (type == 1)
-			{
-				// use fixed code lengths
-				if (!zbuild_huffman(&a->z_length, zdefault_length, STBI__ZNSYMS))
-				{
-					return false;
-				}
-				if (!zbuild_huffman(&a->z_distance, zdefault_distance, 32))
-				{
-					return false;
-				}
-			}
-			else
-			{
-				if (!zcompute_huffman_codes(a))
-				{
-					return false;
-				}
-			}
-			if (!zparse_huffman_block(a))
-			{
-				return false;
-			}
-		}
-	} while (!final);
-	return true;
-}
-
 static int zdo_zlib(ZBuffer *a, uint8_t* obuf, size_t olen, bool exp, bool parse_header)
 {
 	a->zout_start = obuf;
@@ -645,7 +587,67 @@ static int zdo_zlib(ZBuffer *a, uint8_t* obuf, size_t olen, bool exp, bool parse
 	a->zout_end = obuf + olen;
 	a->z_expandable = exp;
 
-	return zparse_zlib(a, parse_header);
+	bool result = false;
+	{
+		if (parse_header)
+		{
+			if (!zparse_zlib_header(a))
+			{
+				goto endl;
+			}
+		}
+		a->num_bits = 0;
+		a->code_buffer = 0;
+		a->hit_zeof_once = 0;
+		int final;
+		do
+		{
+			final = zreceive(a, 1);
+			int type = zreceive(a, 2);
+			if (type == 0)
+			{
+				if (!zparse_uncompressed_block(a))
+				{
+					goto endl;
+				}
+			}
+			else if (type == 3)
+			{
+				goto endl;
+			}
+			else
+			{
+				if (type == 1)
+				{
+					// use fixed code lengths
+					if (!zbuild_huffman(&a->z_length, zdefault_length, STBI__ZNSYMS))
+					{
+						goto endl;
+					}
+					if (!zbuild_huffman(&a->z_distance, zdefault_distance, 32))
+					{
+						goto endl;
+					}
+				}
+				else
+				{
+					if (!zcompute_huffman_codes(a))
+					{
+						goto endl;
+					}
+				}
+				if (!zparse_huffman_block(a))
+				{
+					goto endl;
+				}
+			}
+		} while (!final);
+
+		result = true;
+		endl:
+	}
+
+	return result;
 }
 
 
