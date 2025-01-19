@@ -417,7 +417,7 @@ struct Huffman {
 	std::uint8_t size[NSYMS];
 	std::uint16_t value[NSYMS];
 
-	auto stbi__zbuild_huffman(const std::uint8_t *sizelist, int num) -> int
+	auto zbuild_huffman(const std::uint8_t *sizelist, int num) -> int
 	{
 		int i, k = 0;
 		int next_code[16];
@@ -683,29 +683,33 @@ struct Buffer {
 	{
 		static constexpr std::uint8_t length_dezigzag[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 		Huffman z_codelength;
-		std::uint8_t lencodes[286 + 32 + 137]; //padding for maximum single op
-		std::uint8_t codelength_sizes[19];
+		//padding for maximum single op
+		std::uint8_t lencodes[286 + 32 + 137];
+		std::uint8_t codelength_sizes[19] = {};
 
 		int hlit = recieve(5) + 257;
 		int hdist = recieve(5) + 1;
 		int hclen = recieve(4) + 4;
 		int ntot = hlit + hdist;
 
-		memset(codelength_sizes, 0, sizeof(codelength_sizes));
 		for (int i = 0; i < hclen; ++i)
 		{
-			int s = recieve(3);
-			codelength_sizes[length_dezigzag[i]] = (std::uint8_t)s;
+			codelength_sizes[length_dezigzag[i]] = static_cast<std::uint8_t>(recieve(3));
 		}
-		if (!z_codelength.stbi__zbuild_huffman(codelength_sizes, 19)) return 0;
+		if (!z_codelength.zbuild_huffman(codelength_sizes, 19)) return 0;
 
 		int n = 0;
 		while (n < ntot)
 		{
 			int c = this->zhuffman_decode(&z_codelength);
-			if (c < 0 || c >= 19) return stbi__err("bad codelengths", "Corrupt PNG");
+			if (c < 0 || c >= 19)
+			{
+				return stbi__err("bad codelengths", "Corrupt PNG");
+			}
 			if (c < 16)
-				lencodes[n++] = (std::uint8_t) c;
+			{
+				lencodes[n++] = static_cast<std::uint8_t>(c);
+			}
 			else
 			{
 				std::uint8_t fill = 0;
@@ -736,45 +740,59 @@ struct Buffer {
 			}
 		}
 		if (n != ntot) return stbi__err("bad codelengths", "Corrupt PNG");
-		if (!this->z_length.stbi__zbuild_huffman(lencodes, hlit)) return 0;
-		if (!this->z_distance.stbi__zbuild_huffman(lencodes + hlit, hdist)) return 0;
+		if (!this->z_length.zbuild_huffman(lencodes, hlit)) return 0;
+		if (!this->z_distance.zbuild_huffman(lencodes + hlit, hdist)) return 0;
 		return 1;
 	}
 	auto parse_uncompressed_block() -> int
 	{
 		std::uint8_t header[4];
-		int len, nlen, k;
-		if (this->num_bits & 7)
-			this->recieve(this->num_bits & 7); // discard
-		// drain the bit-packed data into header
-		k = 0;
-		while (this->num_bits > 0)
+		if (num_bits & 7)
 		{
-			header[k++] = (std::uint8_t) (this->code_buffer & 255); // suppress MSVC run-time check
-			this->code_buffer >>= 8;
-			this->num_bits -= 8;
+			// discard
+			recieve(num_bits & 7);
 		}
-		if (this->num_bits < 0) return stbi__err("zlib corrupt", "Corrupt PNG");
+		// drain the bit-packed data into header
+		int k = 0;
+		while (num_bits > 0)
+		{
+			// suppress MSVC run-time check
+			header[k++] = static_cast<std::uint8_t>(code_buffer & 255);
+			code_buffer >>= 8;
+			num_bits -= 8;
+		}
+		if (num_bits < 0)
+		{
+			return stbi__err("zlib corrupt", "Corrupt PNG");
+		}
 		// now fill header the normal way
 		while (k < 4)
-			header[k++] = this->get8();
-		len = header[1] * 256 + header[0];
-		nlen = header[3] * 256 + header[2];
-		if (nlen != (len ^ 0xffff)) return stbi__err("zlib corrupt", "Corrupt PNG");
-		if (this->zbuffer + len > this->zbuffer_end) return stbi__err("read past buffer", "Corrupt PNG");
-		if (this->zout + len > this->zout_end)
-			if (!this->zexpand(this->zout, len)) return 0;
-		memcpy(this->zout, this->zbuffer, len);
-		this->zbuffer += len;
-		this->zout += len;
-		return 1;
+		{
+			header[k++] = get8();
+		}
+		const int len = header[1] * 256 + header[0];
+		if (const int nlen = header[3] * 256 + header[2]; nlen != (len ^ 0xffff))
+		{
+			return stbi__err("zlib corrupt", "Corrupt PNG");
+		}
+		if (this->zbuffer + len > this->zbuffer_end)
+		{
+			return stbi__err("read past buffer", "Corrupt PNG");
+		}
+		if (zout + len > zout_end && !zexpand(zout, len))
+		{
+			return false;
+		}
+		memcpy(zout, zbuffer, len);
+		zbuffer += len;
+		zout += len;
+		return true;
 	}
 	auto parse_zlib_header() -> int
 	{
-		int cmf = this->get8();
-		int cm = cmf & 15;
+		const int cmf = get8();
 		/* int cinfo = cmf >> 4; */
-		int flg = this->get8();
+		const int flg = get8();
 		// zlib spec
 		if (this->eof())
 			return stbi__err("bad zlib header", "Corrupt PNG");
@@ -785,7 +803,7 @@ struct Buffer {
 		if (flg & 32)
 			return stbi__err("no preset dict", "Corrupt PNG");
 		// DEFLATE required for png
-		if (cm != 8)
+		if (const int cm = cmf & 15; cm != 8)
 			return stbi__err("bad compression", "Corrupt PNG");
 		// window = 1 << (8 + cinfo)... but who cares, we fully buffer output
 		return 1;
@@ -793,18 +811,20 @@ struct Buffer {
 	auto parse_zlib(int parse_header) -> int
 	{
 		int final;
-		if (parse_header)
-			if (!this->parse_zlib_header()) return 0;
+		if (parse_header && !parse_zlib_header())
+		{
+			return 0;
+		}
 		this->num_bits = 0;
 		this->code_buffer = 0;
 		this->hit_zeof_once = 0;
 		do
 		{
-			final = this->recieve(1);
-			int type = this->recieve(2);
+			final = recieve(1);
+			int type = recieve(2);
 			if (type == 0)
 			{
-				if (!this->parse_uncompressed_block()) return 0;
+				if (!parse_uncompressed_block()) return 0;
 			}
 			else if (type == 3)
 			{
@@ -815,8 +835,14 @@ struct Buffer {
 				if (type == 1)
 				{
 					// use fixed code lengths
-					if (!this->z_length.stbi__zbuild_huffman(DEFAULT_LENGTH, NSYMS)) return 0;
-					if (!this->z_distance.stbi__zbuild_huffman(DEFAULT_DISTANCE, 32)) return 0;
+					if (!z_length.zbuild_huffman(DEFAULT_LENGTH, NSYMS))
+					{
+						return 0;
+					}
+					if (!z_distance.zbuild_huffman(DEFAULT_DISTANCE, 32))
+					{
+						return 0;
+					}
 				}
 				else
 				{
@@ -847,12 +873,15 @@ struct Buffer {
 
 		if (a.parse_zlib(parse_header))
 		{
-			if (outlen) *outlen = (int) (a.zout - a.zout_start);
+			if (outlen != nullptr)
+			{
+				*outlen = static_cast<int>(a.zout - a.zout_start);
+			}
 			return a.zout_start;
 		}
 
 		STBI_FREE(a.zout_start);
-		// delete[] p;
+
 		return nullptr;
 	}
 };
