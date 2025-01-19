@@ -4,10 +4,18 @@
 #define ZLIB_HPP
 
 #include<cstdint>
+#include<stdexcept>
 
 namespace Zlib {
 	using std::uint8_t;
 	using std::size_t;
+
+	struct Er final : std::exception
+	{
+		const char* reason;
+
+		explicit Er(const char * str);
+	};
 
 	struct Context
 	{
@@ -47,13 +55,18 @@ namespace Zlib {
 		{
 			if (free != nullptr)
 			{
-				free(p);
+				if (p != nullptr)
+				{
+					free(p);
+				}
 			}
 		}
 
 		template<typename T>
 		auto realloc_t (T* p, size_t olds, size_t news) -> T*
 		{
+			if (p == nullptr)
+				return nullptr;
 			return realloc != nullptr ? static_cast<T*>(realloc(p, olds, news)) : nullptr;
 		}
 

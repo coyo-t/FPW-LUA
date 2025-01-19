@@ -1426,11 +1426,18 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				zctx.free    = [](void* p) { STBI_FREE(p); };
 				zctx.realloc = [](void* p, size_t olds, size_t news) { return STBI_REALLOC_SIZED(p, olds, news); };
 
-				z->expanded = zctx.decode_malloc_guesssize_headerflag();
+				try
+				{
+					z->expanded = zctx.decode_malloc_guesssize_headerflag();
+				}
+				catch (Zlib::Er er)
+				{
+					return stbi__err(er.reason, "");
+				}
 
 				raw_len = zctx.out_len;
 
-				if (z->expanded == nullptr || zctx.error != nullptr)
+				if (z->expanded == nullptr)
 				{
 					return stbi__err(zctx.error, "");
 				}

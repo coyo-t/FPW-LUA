@@ -654,7 +654,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 	const auto p = this->malloc_t<uint8_t>(this->initial_size);
 	if (p == nullptr)
 	{
-		return nullptr;
+		throw Zlib::Er("Out of memory");
 	}
 	ZBuffer a;
 	a.zbuffer = this->buffer;
