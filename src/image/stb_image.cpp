@@ -918,14 +918,6 @@ enum class Scan
 };
 
 
-
-
-
-
-
-
-
-
 #define STBI__BYTECAST(x)  ((std::uint8_t) ((x) & 255))  // truncate int to byte without warnings
 
 
@@ -1226,27 +1218,37 @@ static int stbi__create_png_image_raw(stbi__png *a, std::uint8_t *raw, std::uint
 	// extra bytes to write off the end into
 	a->out = stbi__malloc_fma3<std::uint8_t>(x, y, output_bytes, 0);
 	if (a->out == nullptr)
+	{
 		return stbi__err("outofmem", "Out of memory");
+	}
 
 	// note: error exits here don't need to clean up a->out individually,
 	// stbi__do_png always does on error.
 	if (!stbi__mad3sizes_valid(img_n, x, depth, 7))
+	{
 		return stbi__err("too large", "Corrupt PNG");
+	}
 	std::uint32_t img_width_bytes = (((img_n * x * depth) + 7) >> 3);
 	if (!stbi__mad2sizes_valid(img_width_bytes, y, img_width_bytes))
+	{
 		return stbi__err("too large", "Corrupt PNG");
+	}
 	std::uint32_t img_len = (img_width_bytes + 1) * y;
 
 	// we used to check for exact match between raw_len and img_len on non-interlaced PNGs,
 	// but issue #276 reported a PNG in the wild that had extra data at the end (all zeros),
 	// so just check for raw_len < img_len always.
 	if (raw_len < img_len)
+	{
 		return stbi__err("not enough pixels", "Corrupt PNG");
+	}
 
 	// Allocate two scan lines worth of filter workspace buffer.
 	auto *filter_buf = stbi__malloc_fma2<std::uint8_t>(img_width_bytes, 2, 0);
 	if (!filter_buf)
+	{
 		return stbi__err("outofmem", "Out of memory");
+	}
 
 	// Filtering for low-bit-depth images
 	if (depth < 8)
@@ -1283,28 +1285,42 @@ static int stbi__create_png_image_raw(stbi__png *a, std::uint8_t *raw, std::uint
 			case STBI__F_sub:
 				memcpy(cur, raw, filter_bytes);
 				for (k = filter_bytes; k < nk; ++k)
+				{
 					cur[k] = STBI__BYTECAST(raw[k] + cur[k-filter_bytes]);
+				}
 				break;
 			case STBI__F_up:
 				for (k = 0; k < nk; ++k)
+				{
 					cur[k] = STBI__BYTECAST(raw[k] + prior[k]);
+				}
 				break;
 			case STBI__F_avg:
 				for (k = 0; k < filter_bytes; ++k)
+				{
 					cur[k] = STBI__BYTECAST(raw[k] + (prior[k]>>1));
+				}
 				for (k = filter_bytes; k < nk; ++k)
+				{
 					cur[k] = STBI__BYTECAST(raw[k] + ((prior[k] + cur[k-filter_bytes])>>1));
+				}
 				break;
 			case STBI__F_paeth:
 				for (k = 0; k < filter_bytes; ++k)
+				{
 					cur[k] = STBI__BYTECAST(raw[k] + prior[k]); // prior[k] == stbi__paeth(0,prior[k],0)
+				}
 				for (k = filter_bytes; k < nk; ++k)
+				{
 					cur[k] = STBI__BYTECAST(raw[k] + stbi__paeth(cur[k-filter_bytes], prior[k], prior[k-filter_bytes]));
+				}
 				break;
 			case STBI__F_avg_first:
 				memcpy(cur, raw, filter_bytes);
 				for (k = filter_bytes; k < nk; ++k)
+				{
 					cur[k] = STBI__BYTECAST(raw[k] + (cur[k-filter_bytes] >> 1));
+				}
 				break;
 		}
 
@@ -1324,7 +1340,10 @@ static int stbi__create_png_image_raw(stbi__png *a, std::uint8_t *raw, std::uint
 			{
 				for (i = 0; i < nsmp; ++i)
 				{
-					if ((i & 1) == 0) inb = *in++;
+					if ((i & 1) == 0)
+					{
+						inb = *in++;
+					}
 					*out++ = scale * (inb >> 4);
 					inb <<= 4;
 				}
@@ -1333,7 +1352,10 @@ static int stbi__create_png_image_raw(stbi__png *a, std::uint8_t *raw, std::uint
 			{
 				for (i = 0; i < nsmp; ++i)
 				{
-					if ((i & 3) == 0) inb = *in++;
+					if ((i & 3) == 0)
+					{
+						inb = *in++;
+					}
 					*out++ = scale * (inb >> 6);
 					inb <<= 2;
 				}
@@ -1343,7 +1365,10 @@ static int stbi__create_png_image_raw(stbi__png *a, std::uint8_t *raw, std::uint
 				STBI_ASSERT(depth == 1);
 				for (i = 0; i < nsmp; ++i)
 				{
-					if ((i & 7) == 0) inb = *in++;
+					if ((i & 7) == 0)
+					{
+						inb = *in++;
+					}
 					*out++ = scale * (inb >> 7);
 					inb <<= 1;
 				}
@@ -1409,7 +1434,18 @@ static int stbi__create_png_image(stbi__png *a, std::uint8_t *image_data, std::u
 	int bytes = (depth == 16 ? 2 : 1);
 	int out_bytes = out_n * bytes;
 	if (!interlaced)
-		return stbi__create_png_image_raw(a, image_data, image_data_len, out_n, a->s->img_x, a->s->img_y, depth, color);
+	{
+		return stbi__create_png_image_raw(
+			a,
+			image_data,
+			image_data_len,
+			out_n,
+			a->s->img_x,
+			a->s->img_y,
+			depth,
+			color
+		);
+	}
 
 	// de-interlacing
 	auto final = stbi__malloc_fma3<std::uint8_t>(a->s->img_x, a->s->img_y, out_bytes, 0);
@@ -1453,73 +1489,6 @@ static int stbi__create_png_image(stbi__png *a, std::uint8_t *image_data, std::u
 	a->out = final;
 
 	return 1;
-}
-
-static bool stbi__compute_transparency(stbi__png *z, std::uint8_t tc[3], int out_n)
-{
-	stbi__context *s = z->s;
-	std::uint32_t i, pixel_count = s->img_x * s->img_y;
-	std::uint8_t *p = z->out;
-
-	// compute color-based transparency, assuming we've
-	// already got 255 as the alpha value in the output
-
-	if (out_n == 2)
-	{
-		for (i = 0; i < pixel_count; ++i)
-		{
-			p[1] = (p[0] == tc[0] ? 0 : 255);
-			p += 2;
-		}
-	}
-	else if (out_n == 4)
-	{
-		for (i = 0; i < pixel_count; ++i)
-		{
-			if (p[0] == tc[0] && p[1] == tc[1] && p[2] == tc[2])
-				p[3] = 0;
-			p += 4;
-		}
-	}
-	else
-	{
-		return false;
-	}
-	return true;
-}
-
-static bool stbi__compute_transparency16(stbi__png *z, std::uint16_t tc[3], int out_n)
-{
-	stbi__context *s = z->s;
-	std::uint32_t i, pixel_count = s->img_x * s->img_y;
-	auto *p = reinterpret_cast<std::uint16_t *>(z->out);
-
-	// compute color-based transparency, assuming we've
-	// already got 65535 as the alpha value in the output
-	if (out_n == 2)
-	{
-		for (i = 0; i < pixel_count; ++i)
-		{
-			p[1] = (p[0] == tc[0] ? 0 : 65535);
-			p += 2;
-		}
-	}
-	else if (out_n == 4)
-	{
-		for (i = 0; i < pixel_count; ++i)
-		{
-			if (p[0] == tc[0] && p[1] == tc[1] && p[2] == tc[2])
-			{
-				p[3] = 0;
-			}
-			p += 4;
-		}
-	}
-	else
-	{
-		return false;
-	}
-	return true;
 }
 
 
@@ -1823,14 +1792,65 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 				{
 					if (z->depth == 16)
 					{
-						if (!stbi__compute_transparency16(z, tc16, s->img_out_n))
+						stbi__context *s2 = z->s;
+						std::uint32_t i2, pc2 = s2->img_x * s2->img_y;
+						auto *p = reinterpret_cast<std::uint16_t *>(z->out);
+						auto out_n = s2->img_out_n;
+
+						// compute color-based transparency, assuming we've
+						// already got 65535 as the alpha value in the output
+						if (out_n == 2)
+						{
+							for (i2 = 0; i2 < pc2; ++i2)
+							{
+								p[1] = (p[0] == tc[0] ? 0 : 65535);
+								p += 2;
+							}
+						}
+						else if (out_n == 4)
+						{
+							for (i2 = 0; i2 < pc2; ++i2)
+							{
+								if (p[0] == tc[0] && p[1] == tc[1] && p[2] == tc[2])
+								{
+									p[3] = 0;
+								}
+								p += 4;
+							}
+						}
+						else
 						{
 							return false;
 						}
 					}
 					else
 					{
-						if (!stbi__compute_transparency(z, tc, s->img_out_n))
+						stbi__context *s2 = z->s;
+						std::uint32_t i2, pc2 = s2->img_x * s2->img_y;
+						std::uint8_t *p = z->out;
+						auto out_n = s2->img_out_n;
+
+						// compute color-based transparency, assuming we've
+						// already got 255 as the alpha value in the output
+
+						if (out_n == 2)
+						{
+							for (i2 = 0; i2 < pc2; ++i2)
+							{
+								p[1] = (p[0] == tc[0] ? 0 : 255);
+								p += 2;
+							}
+						}
+						else if (out_n == 4)
+						{
+							for (i2 = 0; i2 < pc2; ++i2)
+							{
+								if (p[0] == tc[0] && p[1] == tc[1] && p[2] == tc[2])
+									p[3] = 0;
+								p += 4;
+							}
+						}
+						else
 						{
 							return false;
 						}
