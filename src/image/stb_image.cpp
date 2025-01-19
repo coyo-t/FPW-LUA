@@ -1216,9 +1216,15 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 	z->idata = NULL;
 	z->out = NULL;
 
-	if (!stbi__check_png_header(s)) return 0;
+	if (!stbi__check_png_header(s))
+	{
+		return 0;
+	}
 
-	if (scan == STBI__SCAN_type) return 1;
+	if (scan == STBI__SCAN_type)
+	{
+		return 1;
+	}
 
 	for (;;)
 	{
@@ -1231,40 +1237,76 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				break;
 			case STBI__PNG_TYPE('I', 'H', 'D', 'R'): {
 				int comp, filter;
-				if (!first) return stbi__err("multiple IHDR", "Corrupt PNG");
+				if (!first)
+				{
+					return stbi__err("multiple IHDR", "Corrupt PNG");
+				}
 				first = 0;
 				if (c.length != 13) return stbi__err("bad IHDR len", "Corrupt PNG");
 				s->img_x = stbi__get32be(s);
 				s->img_y = stbi__get32be(s);
-				if (s->img_y > STBI_MAX_DIMENSIONS) return stbi__err("too large", "Very large image (corrupt?)");
-				if (s->img_x > STBI_MAX_DIMENSIONS) return stbi__err("too large", "Very large image (corrupt?)");
-				z->depth = stbi__get8(s);
-				if (z->depth != 1 && z->depth != 2 && z->depth != 4 && z->depth != 8 && z->depth != 16) return stbi__err(
-					"1/2/4/8/16-bit only", "PNG not supported: 1/2/4/8/16-bit only");
-				color = stbi__get8(s);
-				if (color > 6) return stbi__err("bad ctype", "Corrupt PNG");
-				if (color == 3 && z->depth == 16) return stbi__err("bad ctype", "Corrupt PNG");
-				if (color == 3) pal_img_n = 3;
-				else if (color & 1) return stbi__err("bad ctype", "Corrupt PNG");
-				comp = stbi__get8(s);
-				if (comp) return stbi__err("bad comp method", "Corrupt PNG");
-				filter = stbi__get8(s);
-				if (filter) return stbi__err("bad filter method", "Corrupt PNG");
-				interlace = stbi__get8(s);
-				if (interlace > 1) return stbi__err("bad interlace method", "Corrupt PNG");
-				if (!s->img_x || !s->img_y) return stbi__err("0-pixel image", "Corrupt PNG");
-				if (!pal_img_n)
+				if (s->img_y > STBI_MAX_DIMENSIONS)
 				{
-					s->img_n = (color & 2 ? 3 : 1) + (color & 4 ? 1 : 0);
-					if ((1 << 30) / s->img_x / s->img_n < s->img_y) return stbi__err(
-						"too large", "Image too large to decode");
+					return stbi__err("too large", "Very large image (corrupt?)");
 				}
-				else
+				if (s->img_x > STBI_MAX_DIMENSIONS)
+				{
+					return stbi__err("too large", "Very large image (corrupt?)");
+				}
+				z->depth = stbi__get8(s);
+				if (z->depth != 1 && z->depth != 2 && z->depth != 4 && z->depth != 8 && z->depth != 16)
+				{
+					return stbi__err(
+						"1/2/4/8/16-bit only", "PNG not supported: 1/2/4/8/16-bit only");
+				}
+				color = stbi__get8(s);
+				if (color > 6)
+				{
+					return stbi__err("bad ctype", "Corrupt PNG");
+				}
+				if (color == 3 && z->depth == 16)
+				{
+					return stbi__err("bad ctype", "Corrupt PNG");
+				}
+				if (color == 3)
+				{
+					pal_img_n = 3;
+				}
+				else if (color & 1)
+				{
+					return stbi__err("bad ctype", "Corrupt PNG");
+				}
+				comp = stbi__get8(s);
+				if (comp)
+				{
+					return stbi__err("bad comp method", "Corrupt PNG");
+				}
+				filter = stbi__get8(s);
+				if (filter)
+				{
+					return stbi__err("bad filter method", "Corrupt PNG");
+				}
+				interlace = stbi__get8(s);
+				if (interlace > 1)
+				{
+					return stbi__err("bad interlace method", "Corrupt PNG");
+				}
+				if (!s->img_x || !s->img_y)
+				{
+					return stbi__err("0-pixel image", "Corrupt PNG");
+				}
+				if (pal_img_n)
 				{
 					// if paletted, then pal_n is our final components, and
 					// img_n is # components to decompress/filter.
 					s->img_n = 1;
 					if ((1 << 30) / s->img_x / 4 < s->img_y) return stbi__err("too large", "Corrupt PNG");
+				}
+				else
+				{
+					s->img_n = (color & 2 ? 3 : 1) + (color & 4 ? 1 : 0);
+					if ((1 << 30) / s->img_x / s->img_n < s->img_y) return stbi__err(
+						"too large", "Image too large to decode");
 				}
 				// even with SCAN_header, have to scan to see if we have a tRNS
 				break;

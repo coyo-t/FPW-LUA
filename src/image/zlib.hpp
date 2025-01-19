@@ -3,18 +3,36 @@
 #ifndef ZLIB_HPP
 #define ZLIB_HPP
 
-extern char *stbi_zlib_decode_malloc_guesssize(const char *buffer, int len, int initial_size, int *outlen);
+#include<cstdint>
 
-extern char *stbi_zlib_decode_malloc_guesssize_headerflag(const char *buffer, int len, int initial_size, int *outlen,
-																			  int parse_header);
+struct ZlibContext
+{
+	using MallocCallback = auto (std::size_t size) -> void*;
+	using FreeCallback = auto (void* addr) -> void;
+	using ReallocCallback = auto (void* addr, std::size_t new_size) -> void*;
 
-extern char *stbi_zlib_decode_malloc(const char *buffer, int len, int *outlen);
+	MallocCallback*
+	malloc = nullptr;
 
-extern int stbi_zlib_decode_buffer(char *obuffer, int olen, const char *ibuffer, int ilen);
+	FreeCallback*
+	free = nullptr;
 
-extern char *stbi_zlib_decode_noheader_malloc(const char *buffer, int len, int *outlen);
+	ReallocCallback*
+	realloc = nullptr;
 
-extern int stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const char *ibuffer, int ilen);
+	std::size_t out_len = 0;
+};
+
+
+extern char *stbi_zlib_decode_malloc_guesssize_headerflag(
+	const char *buffer,
+	int len,
+	int initial_size,
+	int *outlen,
+	int parse_header
+);
+
+
 
 
 #endif //ZLIB_HPP

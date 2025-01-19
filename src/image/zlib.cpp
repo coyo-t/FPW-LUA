@@ -17,13 +17,15 @@ using stbi_uc = std::uint8_t;
 //      - fast huffman
 
 // fast-way is faster to check than jpeg huffman, but slow way is slower
-#define STBI__ZFAST_BITS  9 // accelerate all cases in default tables
-#define STBI__ZFAST_MASK  ((1 << STBI__ZFAST_BITS) - 1)
-#define STBI__ZNSYMS 288 // number of symbols in literal/length alphabet
+// accelerate all cases in default tables
+static constexpr auto STBI__ZFAST_BITS = 9;
+static constexpr auto STBI__ZFAST_MASK = ((1 << STBI__ZFAST_BITS) - 1);
+// number of symbols in literal/length alphabet
+static constexpr auto STBI__ZNSYMS = 288;
 
 // zlib-style huffman encoding
 // (jpegs packs from left, zlib from right, so can't share code)
-typedef struct
+struct ZHuffman
 {
 	stbi__uint16 fast[1 << STBI__ZFAST_BITS];
 	stbi__uint16 firstcode[16];
@@ -31,9 +33,9 @@ typedef struct
 	stbi__uint16 firstsymbol[16];
 	stbi_uc size[STBI__ZNSYMS];
 	stbi__uint16 value[STBI__ZNSYMS];
-} stbi__zhuffman;
+};
 
-static int stbi__bitreverse16(int n)
+static int bitreverse16(int n)
 {
 	n = ((n & 0xAAAA) >> 1) | ((n & 0x5555) << 1);
 	n = ((n & 0xCCCC) >> 2) | ((n & 0x3333) << 2);
@@ -42,18 +44,18 @@ static int stbi__bitreverse16(int n)
 	return n;
 }
 
-static int stbi__bit_reverse(int v, int bits)
+static int bit_reverse(int v, int bits)
 {
 	// STBI_ASSERT(bits <= 16);
 	// to bit reverse n bits, reverse 16 and shift
 	// e.g. 11 bits, bit reverse and shift away 5
-	return stbi__bitreverse16(v) >> (16 - bits);
+	return bitreverse16(v) >> (16 - bits);
 }
 
-static int stbi__zbuild_huffman(stbi__zhuffman *z, const stbi_uc *sizelist, int num)
+static int zbuild_huffman(ZHuffman *z, const stbi_uc *sizelist, int num)
 {
 	int i, k = 0;
-	int code, next_code[16], sizes[17];
+	int next_code[16], sizes[17];
 
 	// DEFLATE spec for generating codes
 	memset(sizes, 0, sizeof(sizes));
@@ -70,7 +72,7 @@ static int stbi__zbuild_huffman(stbi__zhuffman *z, const stbi_uc *sizelist, int 
 			return stbi__err("bad sizes", "Corrupt PNG");
 		}
 	}
-	code = 0;
+	int code = 0;
 	for (i = 1; i < 16; ++i)
 	{
 		next_code[i] = code;
@@ -102,7 +104,7 @@ static int stbi__zbuild_huffman(stbi__zhuffman *z, const stbi_uc *sizelist, int 
 		z->value[c] = (stbi__uint16) i;
 		if (s <= STBI__ZFAST_BITS)
 		{
-			int j = stbi__bit_reverse(next_code[s], s);
+			int j = bit_reverse(next_code[s], s);
 			while (j < (1 << STBI__ZFAST_BITS))
 			{
 				z->fast[j] = fastv;
@@ -120,7 +122,7 @@ static int stbi__zbuild_huffman(stbi__zhuffman *z, const stbi_uc *sizelist, int 
 //    we require PNG read all the IDATs and combine them into a single
 //    memory buffer
 
-typedef struct
+struct ZBuffer
 {
 	stbi_uc *zbuffer, *zbuffer_end;
 	int num_bits;
@@ -132,20 +134,20 @@ typedef struct
 	char *zout_end;
 	int z_expandable;
 
-	stbi__zhuffman z_length, z_distance;
-} stbi__zbuf;
+	ZHuffman z_length, z_distance;
+};
 
-static int stbi__zeof(stbi__zbuf *z)
+static int zeof(ZBuffer *z)
 {
 	return (z->zbuffer >= z->zbuffer_end);
 }
 
-static stbi_uc stbi__zget8(stbi__zbuf *z)
+static stbi_uc zget8(ZBuffer *z)
 {
-	return stbi__zeof(z) ? 0 : *z->zbuffer++;
+	return zeof(z) ? 0 : *z->zbuffer++;
 }
 
-static void stbi__fill_bits(stbi__zbuf *z)
+static void zfill_bits(ZBuffer *z)
 {
 	do
 	{
@@ -154,17 +156,17 @@ static void stbi__fill_bits(stbi__zbuf *z)
 			z->zbuffer = z->zbuffer_end; /* treat this as EOF so we fail. */
 			return;
 		}
-		z->code_buffer |= (unsigned int) stbi__zget8(z) << z->num_bits;
+		z->code_buffer |= (unsigned int) zget8(z) << z->num_bits;
 		z->num_bits += 8;
 	} while (z->num_bits <= 24);
 }
 
-static unsigned int stbi__zreceive(stbi__zbuf *z, int n)
+static unsigned int zreceive(ZBuffer *z, int n)
 {
 	unsigned int k;
 	if (z->num_bits < n)
 	{
-		stbi__fill_bits(z);
+		zfill_bits(z);
 	}
 	k = z->code_buffer & ((1 << n) - 1);
 	z->code_buffer >>= n;
@@ -172,12 +174,12 @@ static unsigned int stbi__zreceive(stbi__zbuf *z, int n)
 	return k;
 }
 
-static int stbi__zhuffman_decode_slowpath(stbi__zbuf *a, stbi__zhuffman *z)
+static int zhuffman_decode_slowpath(ZBuffer *a, ZHuffman *z)
 {
 	int b, s, k;
 	// not resolved by fast table, so compute it the slow way
 	// use jpeg approach, which requires MSbits at top
-	k = stbi__bit_reverse(a->code_buffer, 16);
+	k = bit_reverse(a->code_buffer, 16);
 	for (s = STBI__ZFAST_BITS + 1; ; ++s)
 	{
 		if (k < z->maxcode[s])
@@ -204,12 +206,12 @@ static int stbi__zhuffman_decode_slowpath(stbi__zbuf *a, stbi__zhuffman *z)
 	return z->value[b];
 }
 
-static int stbi__zhuffman_decode(stbi__zbuf *a, stbi__zhuffman *z)
+static int zhuffman_decode(ZBuffer *a, ZHuffman *z)
 {
 	int b, s;
 	if (a->num_bits < 16)
 	{
-		if (stbi__zeof(a))
+		if (zeof(a))
 		{
 			if (!a->hit_zeof_once)
 			{
@@ -228,7 +230,7 @@ static int stbi__zhuffman_decode(stbi__zbuf *a, stbi__zhuffman *z)
 		}
 		else
 		{
-			stbi__fill_bits(a);
+			zfill_bits(a);
 		}
 	}
 	b = z->fast[a->code_buffer & STBI__ZFAST_MASK];
@@ -239,10 +241,10 @@ static int stbi__zhuffman_decode(stbi__zbuf *a, stbi__zhuffman *z)
 		a->num_bits -= s;
 		return b & 511;
 	}
-	return stbi__zhuffman_decode_slowpath(a, z);
+	return zhuffman_decode_slowpath(a, z);
 }
 
-static int stbi__zexpand(stbi__zbuf *z, char *zout, int n) // need to make room for n bytes
+static int zexpand(ZBuffer *z, char *zout, int n) // need to make room for n bytes
 {
 	char *q;
 	unsigned int cur, limit, old_limit;
@@ -294,12 +296,12 @@ static const int stbi__zdist_base[32] = {
 static const int stbi__zdist_extra[32] =
 		{0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13};
 
-static int stbi__parse_huffman_block(stbi__zbuf *a)
+static int zparse_huffman_block(ZBuffer *a)
 {
 	char *zout = a->zout;
 	for (;;)
 	{
-		int z = stbi__zhuffman_decode(a, &a->z_length);
+		int z = zhuffman_decode(a, &a->z_length);
 		if (z < 256)
 		{
 			if (z < 0)
@@ -308,7 +310,7 @@ static int stbi__parse_huffman_block(stbi__zbuf *a)
 			}
 			if (zout >= a->zout_end)
 			{
-				if (!stbi__zexpand(a, zout, 1))
+				if (!zexpand(a, zout, 1))
 				{
 					return 0;
 				}
@@ -318,7 +320,6 @@ static int stbi__parse_huffman_block(stbi__zbuf *a)
 		}
 		else
 		{
-			stbi_uc *p;
 			int len, dist;
 			if (z == 256)
 			{
@@ -342,9 +343,9 @@ static int stbi__parse_huffman_block(stbi__zbuf *a)
 			len = stbi__zlength_base[z];
 			if (stbi__zlength_extra[z])
 			{
-				len += stbi__zreceive(a, stbi__zlength_extra[z]);
+				len += zreceive(a, stbi__zlength_extra[z]);
 			}
-			z = stbi__zhuffman_decode(a, &a->z_distance);
+			z = zhuffman_decode(a, &a->z_distance);
 			if (z < 0 || z >= 30)
 			{
 				return stbi__err("bad huffman code", "Corrupt PNG");
@@ -353,7 +354,7 @@ static int stbi__parse_huffman_block(stbi__zbuf *a)
 			dist = stbi__zdist_base[z];
 			if (stbi__zdist_extra[z])
 			{
-				dist += stbi__zreceive(a, stbi__zdist_extra[z]);
+				dist += zreceive(a, stbi__zdist_extra[z]);
 			}
 			if (zout - a->zout_start < dist)
 			{
@@ -361,13 +362,13 @@ static int stbi__parse_huffman_block(stbi__zbuf *a)
 			}
 			if (len > a->zout_end - zout)
 			{
-				if (!stbi__zexpand(a, zout, len))
+				if (!zexpand(a, zout, len))
 				{
 					return 0;
 				}
 				zout = a->zout;
 			}
-			p = (stbi_uc *) (zout - dist);
+			stbi_uc *p = (stbi_uc *) (zout - dist);
 			if (dist == 1)
 			{
 				// run of one byte; common in images.
@@ -388,26 +389,26 @@ static int stbi__parse_huffman_block(stbi__zbuf *a)
 	}
 }
 
-static int stbi__compute_huffman_codes(stbi__zbuf *a)
+static int zcompute_huffman_codes(ZBuffer *a)
 {
 	static const stbi_uc length_dezigzag[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
-	stbi__zhuffman z_codelength;
+	ZHuffman z_codelength;
 	stbi_uc lencodes[286 + 32 + 137]; //padding for maximum single op
 	stbi_uc codelength_sizes[19];
 	int i, n;
 
-	int hlit = stbi__zreceive(a, 5) + 257;
-	int hdist = stbi__zreceive(a, 5) + 1;
-	int hclen = stbi__zreceive(a, 4) + 4;
+	int hlit = zreceive(a, 5) + 257;
+	int hdist = zreceive(a, 5) + 1;
+	int hclen = zreceive(a, 4) + 4;
 	int ntot = hlit + hdist;
 
 	memset(codelength_sizes, 0, sizeof(codelength_sizes));
 	for (i = 0; i < hclen; ++i)
 	{
-		int s = stbi__zreceive(a, 3);
+		int s = zreceive(a, 3);
 		codelength_sizes[length_dezigzag[i]] = (stbi_uc) s;
 	}
-	if (!stbi__zbuild_huffman(&z_codelength, codelength_sizes, 19))
+	if (!zbuild_huffman(&z_codelength, codelength_sizes, 19))
 	{
 		return 0;
 	}
@@ -415,7 +416,7 @@ static int stbi__compute_huffman_codes(stbi__zbuf *a)
 	n = 0;
 	while (n < ntot)
 	{
-		int c = stbi__zhuffman_decode(a, &z_codelength);
+		int c = zhuffman_decode(a, &z_codelength);
 		if (c < 0 || c >= 19)
 		{
 			return stbi__err("bad codelengths", "Corrupt PNG");
@@ -429,7 +430,7 @@ static int stbi__compute_huffman_codes(stbi__zbuf *a)
 			stbi_uc fill = 0;
 			if (c == 16)
 			{
-				c = stbi__zreceive(a, 2) + 3;
+				c = zreceive(a, 2) + 3;
 				if (n == 0)
 				{
 					return stbi__err("bad codelengths", "Corrupt PNG");
@@ -438,11 +439,11 @@ static int stbi__compute_huffman_codes(stbi__zbuf *a)
 			}
 			else if (c == 17)
 			{
-				c = stbi__zreceive(a, 3) + 3;
+				c = zreceive(a, 3) + 3;
 			}
 			else if (c == 18)
 			{
-				c = stbi__zreceive(a, 7) + 11;
+				c = zreceive(a, 7) + 11;
 			}
 			else
 			{
@@ -460,24 +461,24 @@ static int stbi__compute_huffman_codes(stbi__zbuf *a)
 	{
 		return stbi__err("bad codelengths", "Corrupt PNG");
 	}
-	if (!stbi__zbuild_huffman(&a->z_length, lencodes, hlit))
+	if (!zbuild_huffman(&a->z_length, lencodes, hlit))
 	{
 		return 0;
 	}
-	if (!stbi__zbuild_huffman(&a->z_distance, lencodes + hlit, hdist))
+	if (!zbuild_huffman(&a->z_distance, lencodes + hlit, hdist))
 	{
 		return 0;
 	}
 	return 1;
 }
 
-static int stbi__parse_uncompressed_block(stbi__zbuf *a)
+static int zparse_uncompressed_block(ZBuffer *a)
 {
 	stbi_uc header[4];
 	int len, nlen, k;
 	if (a->num_bits & 7)
 	{
-		stbi__zreceive(a, a->num_bits & 7); // discard
+		zreceive(a, a->num_bits & 7); // discard
 	}
 	// drain the bit-packed data into header
 	k = 0;
@@ -494,7 +495,7 @@ static int stbi__parse_uncompressed_block(stbi__zbuf *a)
 	// now fill header the normal way
 	while (k < 4)
 	{
-		header[k++] = stbi__zget8(a);
+		header[k++] = zget8(a);
 	}
 	len = header[1] * 256 + header[0];
 	nlen = header[3] * 256 + header[2];
@@ -508,7 +509,7 @@ static int stbi__parse_uncompressed_block(stbi__zbuf *a)
 	}
 	if (a->zout + len > a->zout_end)
 	{
-		if (!stbi__zexpand(a, a->zout, len))
+		if (!zexpand(a, a->zout, len))
 		{
 			return 0;
 		}
@@ -519,13 +520,13 @@ static int stbi__parse_uncompressed_block(stbi__zbuf *a)
 	return 1;
 }
 
-static int stbi__parse_zlib_header(stbi__zbuf *a)
+static int zparse_zlib_header(ZBuffer *a)
 {
-	int cmf = stbi__zget8(a);
+	int cmf = zget8(a);
 	int cm = cmf & 15;
 	/* int cinfo = cmf >> 4; */
-	int flg = stbi__zget8(a);
-	if (stbi__zeof(a))
+	int flg = zget8(a);
+	if (zeof(a))
 	{
 		return stbi__err("bad zlib header", "Corrupt PNG"); // zlib spec
 	}
@@ -545,7 +546,7 @@ static int stbi__parse_zlib_header(stbi__zbuf *a)
 	return 1;
 }
 
-static const stbi_uc stbi__zdefault_length[STBI__ZNSYMS] =
+static const stbi_uc zdefault_length[STBI__ZNSYMS] =
 {
 	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
 	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
@@ -557,7 +558,7 @@ static const stbi_uc stbi__zdefault_length[STBI__ZNSYMS] =
 	9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
 	7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8
 };
-static const stbi_uc stbi__zdefault_distance[32] =
+static const stbi_uc zdefault_distance[32] =
 {
 	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
 };
@@ -574,12 +575,12 @@ Init algorithm:
 }
 */
 
-static int stbi__parse_zlib(stbi__zbuf *a, int parse_header)
+static int zparse_zlib(ZBuffer *a, int parse_header)
 {
 	int final, type;
 	if (parse_header)
 	{
-		if (!stbi__parse_zlib_header(a))
+		if (!zparse_zlib_header(a))
 		{
 			return 0;
 		}
@@ -589,11 +590,11 @@ static int stbi__parse_zlib(stbi__zbuf *a, int parse_header)
 	a->hit_zeof_once = 0;
 	do
 	{
-		final = stbi__zreceive(a, 1);
-		type = stbi__zreceive(a, 2);
+		final = zreceive(a, 1);
+		type = zreceive(a, 2);
 		if (type == 0)
 		{
-			if (!stbi__parse_uncompressed_block(a))
+			if (!zparse_uncompressed_block(a))
 			{
 				return 0;
 			}
@@ -607,23 +608,23 @@ static int stbi__parse_zlib(stbi__zbuf *a, int parse_header)
 			if (type == 1)
 			{
 				// use fixed code lengths
-				if (!stbi__zbuild_huffman(&a->z_length, stbi__zdefault_length, STBI__ZNSYMS))
+				if (!zbuild_huffman(&a->z_length, zdefault_length, STBI__ZNSYMS))
 				{
 					return 0;
 				}
-				if (!stbi__zbuild_huffman(&a->z_distance, stbi__zdefault_distance, 32))
+				if (!zbuild_huffman(&a->z_distance, zdefault_distance, 32))
 				{
 					return 0;
 				}
 			}
 			else
 			{
-				if (!stbi__compute_huffman_codes(a))
+				if (!zcompute_huffman_codes(a))
 				{
 					return 0;
 				}
 			}
-			if (!stbi__parse_huffman_block(a))
+			if (!zparse_huffman_block(a))
 			{
 				return 0;
 			}
@@ -632,97 +633,41 @@ static int stbi__parse_zlib(stbi__zbuf *a, int parse_header)
 	return 1;
 }
 
-static int stbi__do_zlib(stbi__zbuf *a, char *obuf, int olen, int exp, int parse_header)
+static int zdo_zlib(ZBuffer *a, char *obuf, int olen, int exp, int parse_header)
 {
 	a->zout_start = obuf;
 	a->zout = obuf;
 	a->zout_end = obuf + olen;
 	a->z_expandable = exp;
 
-	return stbi__parse_zlib(a, parse_header);
+	return zparse_zlib(a, parse_header);
 }
 
-char *stbi_zlib_decode_malloc_guesssize(const char *buffer, int len, int initial_size, int *outlen)
+
+char *stbi_zlib_decode_malloc_guesssize_headerflag(
+	const char *buffer,
+	int len,
+	int initial_size,
+	int *outlen,
+	int parse_header)
 {
-	stbi__zbuf a;
-	char *p = (char *) stbi__malloc(initial_size);
+	ZBuffer a;
+	auto p = (char *) stbi__malloc(initial_size);
 	if (p == nullptr)
 	{
 		return nullptr;
 	}
 	a.zbuffer = (stbi_uc *) buffer;
 	a.zbuffer_end = (stbi_uc *) buffer + len;
-	if (stbi__do_zlib(&a, p, initial_size, 1, 1))
+	if (zdo_zlib(&a, p, initial_size, 1, parse_header))
 	{
-		if (outlen) *outlen = (int) (a.zout - a.zout_start);
+		if (outlen != nullptr)
+		{
+			*outlen = (int) (a.zout - a.zout_start);
+		}
 		return a.zout_start;
 	}
 	STBI_FREE(a.zout_start);
 	return nullptr;
 }
 
-char *stbi_zlib_decode_malloc(char const *buffer, int len, int *outlen)
-{
-	return stbi_zlib_decode_malloc_guesssize(buffer, len, 16384, outlen);
-}
-
-char *stbi_zlib_decode_malloc_guesssize_headerflag(const char *buffer, int len, int initial_size, int *outlen,
-                                                           int parse_header)
-{
-	stbi__zbuf a;
-	char *p = (char *) stbi__malloc(initial_size);
-	if (p == nullptr)
-	{
-		return nullptr;
-	}
-	a.zbuffer = (stbi_uc *) buffer;
-	a.zbuffer_end = (stbi_uc *) buffer + len;
-	if (stbi__do_zlib(&a, p, initial_size, 1, parse_header))
-	{
-		if (outlen) *outlen = (int) (a.zout - a.zout_start);
-		return a.zout_start;
-	}
-	STBI_FREE(a.zout_start);
-	return nullptr;
-}
-
-int stbi_zlib_decode_buffer(char *obuffer, int olen, char const *ibuffer, int ilen)
-{
-	stbi__zbuf a;
-	a.zbuffer = (stbi_uc *) ibuffer;
-	a.zbuffer_end = (stbi_uc *) ibuffer + ilen;
-	if (stbi__do_zlib(&a, obuffer, olen, 0, 1))
-		return (int) (a.zout - a.zout_start);
-	return -1;
-}
-
-char *stbi_zlib_decode_noheader_malloc(char const *buffer, int len, int *outlen)
-{
-	stbi__zbuf a;
-	char *p = (char *) stbi__malloc(16384);
-	if (p == nullptr)
-	{
-		return nullptr;
-	}
-	a.zbuffer = (stbi_uc *) buffer;
-	a.zbuffer_end = (stbi_uc *) buffer + len;
-	if (stbi__do_zlib(&a, p, 16384, 1, 0))
-	{
-		if (outlen) *outlen = (int) (a.zout - a.zout_start);
-		return a.zout_start;
-	}
-	STBI_FREE(a.zout_start);
-	return nullptr;
-}
-
-int stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const char *ibuffer, int ilen)
-{
-	stbi__zbuf a;
-	a.zbuffer = (stbi_uc *) ibuffer;
-	a.zbuffer_end = (stbi_uc *) ibuffer + ilen;
-	if (stbi__do_zlib(&a, obuffer, olen, 0, 0))
-	{
-		return (int) (a.zout - a.zout_start);
-	}
-	return -1;
-}
