@@ -419,11 +419,12 @@ struct Huffman {
 
 	auto zbuild_huffman(const std::uint8_t *sizelist, int num) -> int
 	{
-		int i, k = 0;
+		int i;
+		int k = 0;
 		int next_code[16];
 		int sizes[17] = {};
 
-		memset(this->fast, 0, sizeof(this->fast));
+		memset(fast, 0, sizeof(fast));
 		for (i = 0; i < num; ++i)
 		{
 			++sizes[sizelist[i]];
@@ -440,23 +441,23 @@ struct Huffman {
 		for (i = 1; i < 16; ++i)
 		{
 			next_code[i] = code;
-			this->firstcode[i] = static_cast<std::uint16_t>(code);
-			this->firstsymbol[i] = static_cast<std::uint16_t>(k);
+			firstcode[i] = static_cast<std::uint16_t>(code);
+			firstsymbol[i] = static_cast<std::uint16_t>(k);
 			code = (code + sizes[i]);
 			if (sizes[i] && (code - 1 >= 1 << i))
 			{
 				return stbi__err("bad codelengths", "Corrupt PNG");
 			}
-			this->maxcode[i] = code << (16 - i); // preshift for inner loop
+			maxcode[i] = code << (16 - i); // preshift for inner loop
 			code <<= 1;
 			k += sizes[i];
 		}
 		this->maxcode[16] = 0x10000; // sentinel
 		for (i = 0; i < num; ++i)
 		{
-			if (int s = sizelist[i])
+			if (const int s = sizelist[i])
 			{
-				int c = next_code[s] - this->firstcode[s] + this->firstsymbol[s];
+				const int c = next_code[s] - firstcode[s] + firstsymbol[s];
 				auto fastv = static_cast<std::uint16_t>((s << 9) | i);
 				this->size[c] = static_cast<std::uint8_t>(s);
 				this->value[c] = static_cast<std::uint16_t>(i);
@@ -465,7 +466,7 @@ struct Huffman {
 					int j = bit_reverse(next_code[s], s);
 					while (j < (1 << FAST_BITS))
 					{
-						this->fast[j] = fastv;
+						fast[j] = fastv;
 						j += (1 << s);
 					}
 				}
@@ -526,32 +527,47 @@ struct Buffer {
 		{
 			fill_bits();
 		}
-		std::uint32_t k = code_buffer & ((1 << bitcount) - 1);
+		const std::uint32_t k = code_buffer & ((1 << bitcount) - 1);
 		code_buffer >>= bitcount;
 		num_bits -= bitcount;
 		return k;
 	}
 	auto zhuffman_decode_slowpath (Huffman* z) -> int
 	{
-		int b, s, k;
+		int s;
 		// not resolved by fast table, so compute it the slow way
 		// use jpeg approach, which requires MSbits at top
-		k = bit_reverse(code_buffer, 16);
+		const int k = bit_reverse(code_buffer, 16);
 		for (s = FAST_BITS + 1; ; ++s)
+		{
 			if (k < z->maxcode[s])
+			{
 				break;
-		if (s >= 16) return -1; // invalid code!
+			}
+		}
+		if (s >= 16)
+		{
+			// invalid code!
+			return -1;
+		}
 		// code size is s, so:
-		b = (k >> (16 - s)) - z->firstcode[s] + z->firstsymbol[s];
-		if (b >= NSYMS) return -1; // some data was corrupt somewhere!
-		if (z->size[b] != s) return -1; // was originally an assert, but report failure instead.
+		const int b = (k >> (16 - s)) - z->firstcode[s] + z->firstsymbol[s];
+		if (b >= NSYMS)
+		{
+			// some data was corrupt somewhere!
+			return -1;
+		}
+		if (z->size[b] != s)
+		{
+			// was originally an assert, but report failure instead.
+			return -1;
+		}
 		code_buffer >>= s;
 		num_bits -= s;
 		return z->value[b];
 	}
 	auto zhuffman_decode(Huffman *z) -> int
 	{
-		int b, s;
 		if (num_bits < 16)
 		{
 			if (eof())
@@ -576,10 +592,9 @@ struct Buffer {
 				fill_bits();
 			}
 		}
-		b = z->fast[code_buffer & FAST_MASK];
-		if (b)
+		if (const int b = z->fast[code_buffer & FAST_MASK])
 		{
-			s = b >> 9;
+			const int s = b >> 9;
 			code_buffer >>= s;
 			num_bits -= s;
 			return b & 511;
@@ -589,23 +604,30 @@ struct Buffer {
 	// need to make room for n bytes
 	auto zexpand (std::uint8_t* zout, int n) -> int
 	{
-		std::uint8_t *q;
 		this->zout = zout;
 		if (!this->z_expandable)
+		{
 			return stbi__err("output buffer limit", "Corrupt PNG");
-		auto cur = static_cast<unsigned int>(this->zout - this->zout_start);
+		}
+		const auto cur = static_cast<unsigned int>(this->zout - this->zout_start);
 		auto limit = static_cast<unsigned>(this->zout_end - this->zout_start);
 		if (UINT_MAX - cur < static_cast<unsigned>(n))
+		{
 			return stbi__err("outofmem", "Out of memory");
+		}
 		while (cur + n > limit)
 		{
 			if (limit > UINT_MAX / 2)
+			{
 				return stbi__err("outofmem", "Out of memory");
+			}
 			limit *= 2;
 		}
-		q = static_cast<std::uint8_t *>(STBI_REALLOC_SIZED(this->zout_start, old_limit, limit));
+		auto *q = static_cast<std::uint8_t *>(STBI_REALLOC_SIZED(this->zout_start, old_limit, limit));
 		if (q == nullptr)
+		{
 			return stbi__err("outofmem", "Out of memory");
+		}
 		this->zout_start = q;
 		this->zout = q + cur;
 		this->zout_end = q + limit;
@@ -613,26 +635,30 @@ struct Buffer {
 	}
 	auto parse_huffman_block() -> int
 	{
-		auto* zout = this->zout;
-		for (;;)
+		auto* zoutl = this->zout;
+		while (true)
 		{
-			int z = this->zhuffman_decode(&this->z_length);
+			int z = zhuffman_decode(&z_length);
 			if (z < 256)
 			{
-				if (z < 0) return stbi__err("bad huffman code", "Corrupt PNG"); // error in huffman codes
-				if (zout >= this->zout_end)
+				if (z < 0)
 				{
-					if (!this->zexpand(zout, 1)) return 0;
-					zout = this->zout;
+					// error in huffman codes
+					return stbi__err("bad huffman code", "Corrupt PNG");
 				}
-				*zout++ = static_cast<std::uint8_t>(z);
+				if (zoutl >= zout_end)
+				{
+					if (!zexpand(zoutl, 1)) return 0;
+					zoutl = this->zout;
+				}
+				*zoutl++ = static_cast<std::uint8_t>(z);
 			}
 			else
 			{
 				if (z == 256)
 				{
-					this->zout = zout;
-					if (this->hit_zeof_once && this->num_bits < 16)
+					this->zout = zoutl;
+					if (hit_zeof_once && num_bits < 16)
 					{
 						// The first time we hit zeof, we inserted 16 extra zero bits into our bit
 						// buffer so the decoder can just do its speculative decoding. But if we
@@ -640,40 +666,52 @@ struct Buffer {
 						// the stream actually read past the end so it is malformed.
 						return stbi__err("unexpected end", "Corrupt PNG");
 					}
-					return 1;
+					return true;
 				}
-				if (z >= 286) return stbi__err("bad huffman code", "Corrupt PNG");
+				if (z >= 286)
+				{
+					return stbi__err("bad huffman code", "Corrupt PNG");
+				}
 				// per DEFLATE, length codes 286 and 287 must not appear in compressed data
 				z -= 257;
 				int len = LENGTH_BASE[z];
-				if (LENGTH_EXTRA[z]) len += this->recieve(LENGTH_EXTRA[z]);
-				z = this->zhuffman_decode(&this->z_distance);
-				if (z < 0 || z >= 30) return stbi__err("bad huffman code", "Corrupt PNG");
+				if (LENGTH_EXTRA[z]) len += recieve(LENGTH_EXTRA[z]);
+				z = zhuffman_decode(&z_distance);
+				if (z < 0 || z >= 30)
+				{
+					return stbi__err("bad huffman code", "Corrupt PNG");
+				}
 				// per DEFLATE, distance codes 30 and 31 must not appear in compressed data
 				int dist = DIST_BASE[z];
-				if (DIST_EXTRA[z]) dist += this->recieve(DIST_EXTRA[z]);
-				if (zout - this->zout_start < dist) return stbi__err("bad dist", "Corrupt PNG");
-				if (len > this->zout_end - zout)
+				if (DIST_EXTRA[z])
 				{
-					if (!this->zexpand(zout, len))
-						return 0;
-					zout = this->zout;
+					dist += recieve(DIST_EXTRA[z]);
 				}
-				std::uint8_t *p = zout - dist;
+				if (zoutl - zout_start < dist)
+				{
+					return stbi__err("bad dist", "Corrupt PNG");
+				}
+				if (len > zout_end - zoutl)
+				{
+					if (!zexpand(zoutl, len))
+						return false;
+					zoutl = this->zout;
+				}
+				std::uint8_t *p = zoutl - dist;
 				if (dist == 1)
 				{
 					// run of one byte; common in images.
 					std::uint8_t v = *p;
 					if (len)
 					{
-						do *zout++ = v; while (--len);
+						do *zoutl++ = v; while (--len);
 					}
 				}
 				else
 				{
 					if (len)
 					{
-						do *zout++ = *p++; while (--len);
+						do *zoutl++ = *p++; while (--len);
 					}
 				}
 			}
