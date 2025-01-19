@@ -1408,14 +1408,16 @@ static int stbi__create_png_image(stbi__png *a, std::uint8_t *image_data, std::u
 {
 	int bytes = (depth == 16 ? 2 : 1);
 	int out_bytes = out_n * bytes;
-	int p;
 	if (!interlaced)
 		return stbi__create_png_image_raw(a, image_data, image_data_len, out_n, a->s->img_x, a->s->img_y, depth, color);
 
 	// de-interlacing
-	std::uint8_t *final = stbi__malloc_fma3<std::uint8_t>(a->s->img_x, a->s->img_y, out_bytes, 0);
-	if (!final) return stbi__err("outofmem", "Out of memory");
-	for (p = 0; p < 7; ++p)
+	auto final = stbi__malloc_fma3<std::uint8_t>(a->s->img_x, a->s->img_y, out_bytes, 0);
+	if (!final)
+	{
+		return stbi__err("outofmem", "Out of memory");
+	}
+	for (int p = 0; p < 7; ++p)
 	{
 		const int xorig[] = {0, 4, 0, 2, 0, 1, 0};
 		const int yorig[] = {0, 0, 4, 0, 2, 0, 1};
@@ -1453,7 +1455,7 @@ static int stbi__create_png_image(stbi__png *a, std::uint8_t *image_data, std::u
 	return 1;
 }
 
-static int stbi__compute_transparency(stbi__png *z, std::uint8_t tc[3], int out_n)
+static bool stbi__compute_transparency(stbi__png *z, std::uint8_t tc[3], int out_n)
 {
 	stbi__context *s = z->s;
 	std::uint32_t i, pixel_count = s->img_x * s->img_y;
@@ -1481,12 +1483,12 @@ static int stbi__compute_transparency(stbi__png *z, std::uint8_t tc[3], int out_
 	}
 	else
 	{
-		return 0;
+		return false;
 	}
-	return 1;
+	return true;
 }
 
-static int stbi__compute_transparency16(stbi__png *z, std::uint16_t tc[3], int out_n)
+static bool stbi__compute_transparency16(stbi__png *z, std::uint16_t tc[3], int out_n)
 {
 	stbi__context *s = z->s;
 	std::uint32_t i, pixel_count = s->img_x * s->img_y;
@@ -1507,15 +1509,17 @@ static int stbi__compute_transparency16(stbi__png *z, std::uint16_t tc[3], int o
 		for (i = 0; i < pixel_count; ++i)
 		{
 			if (p[0] == tc[0] && p[1] == tc[1] && p[2] == tc[2])
+			{
 				p[3] = 0;
+			}
 			p += 4;
 		}
 	}
 	else
 	{
-		return 0;
+		return false;
 	}
-	return 1;
+	return true;
 }
 
 
