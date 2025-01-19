@@ -297,13 +297,13 @@ enum
 
 static int stbi__getn(stbi__context *s, stbi_uc *buffer, int n)
 {
-	if (s->img_buffer + n <= s->img_buffer_end)
+	if (s->img_buffer + n > s->img_buffer_end)
 	{
-		memcpy(buffer, s->img_buffer, n);
-		s->img_buffer += n;
-		return 1;
+		return 0;
 	}
-	return 0;
+	memcpy(buffer, s->img_buffer, n);
+	s->img_buffer += n;
+	return 1;
 }
 
 
@@ -546,10 +546,10 @@ static stbi__pngchunk stbi__get_chunk_header(stbi__context *s)
 	c.type = s->stbi__get32be();
 	return c;
 }
+static const uint8_t png_sig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 
 static int stbi__check_png_header(stbi__context *s)
 {
-	static const stbi_uc png_sig[8] = {137, 80, 78, 71, 13, 10, 26, 10};
 	for (const auto i : png_sig)
 	{
 		if (s->stbi__get8() != i)
@@ -587,19 +587,6 @@ static stbi_uc first_row_filter[5] =
 	STBI__F_avg_first,
 	STBI__F_sub // Paeth with b=c=0 turns out to be equivalent to sub
 };
-
-static int stbi__paeth(int a, int b, int c)
-{
-	// This formulation looks very different from the reference in the PNG spec, but is
-	// actually equivalent and has favorable data dependencies and admits straightforward
-	// generation of branch-free code, which helps performance significantly.
-	int thresh = c * 3 - (a + b);
-	int lo = a < b ? a : b;
-	int hi = a < b ? b : a;
-	int t0 = (hi <= thresh) ? lo : c;
-	int t1 = (thresh <= lo) ? hi : t0;
-	return t1;
-}
 
 static const stbi_uc stbi__depth_scale_table[9] = {0, 0xff, 0x55, 0, 0x11, 0, 0, 0, 0x01};
 
@@ -689,6 +676,17 @@ static int stbi__create_png_image_raw(stbi__png *a, stbi_uc *raw, stbi__uint32 r
 		width = img_width_bytes;
 	}
 
+	static auto paeth = [](int a, int b, int c) {
+		// This formulation looks very different from the reference in the PNG spec, but is
+		// actually equivalent and has favorable data dependencies and admits straightforward
+		// generation of branch-free code, which helps performance significantly.
+		int thresh = c * 3 - (a + b);
+		int lo = a < b ? a : b;
+		int hi = a < b ? b : a;
+		int t0 = (hi <= thresh) ? lo : c;
+		return thresh <= lo ? hi : t0;
+	};
+
 	for (j = 0; j < y; ++j)
 	{
 		// cur/prior filter buffers alternate
@@ -733,7 +731,7 @@ static int stbi__create_png_image_raw(stbi__png *a, stbi_uc *raw, stbi__uint32 r
 				for (k = 0; k < filter_bytes; ++k)
 					cur[k] = STBI__BYTECAST(raw[k] + prior[k]); // prior[k] == stbi__paeth(0,prior[k],0)
 				for (k = filter_bytes; k < nk; ++k)
-					cur[k] = STBI__BYTECAST(raw[k] + stbi__paeth(cur[k-filter_bytes], prior[k], prior[k-filter_bytes]));
+					cur[k] = STBI__BYTECAST(raw[k] + paeth(cur[k-filter_bytes], prior[k], prior[k-filter_bytes]));
 				break;
 			case STBI__F_avg_first:
 				memcpy(cur, raw, filter_bytes);
@@ -1261,9 +1259,15 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					}
 					z->idata = p;
 				}
-				if (!stbi__getn(s, z->idata + ioff, c.length))
 				{
-					return stbi__err("outofdata", "Corrupt PNG");
+					const auto n = c.length;
+					const auto buffer = z->idata + ioff;
+					if (s->img_buffer + n > s->img_buffer_end)
+					{
+						return stbi__err("outofdata", "Corrupt PNG");
+					}
+					std::memcpy(buffer, s->img_buffer, n);
+					s->img_buffer += n;
 				}
 				ioff += c.length;
 				break;
@@ -1348,9 +1352,15 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					// pal_img_n == 3 or 4
 					s->img_n = pal_img_n; // record the actual colors we had
 					s->img_out_n = pal_img_n;
-					if (req_comp >= 3) s->img_out_n = req_comp;
+					if (req_comp >= 3)
+					{
+						s->img_out_n = req_comp;
+					}
+
 					if (!stbi__expand_png_palette(z, palette, pal_len, s->img_out_n))
+					{
 						return 0;
+					}
 				}
 				else if (has_trans)
 				{
