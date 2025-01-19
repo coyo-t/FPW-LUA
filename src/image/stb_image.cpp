@@ -33,11 +33,6 @@
       #define STBI_THREAD_LOCAL       _Thread_local
 #endif
 
-#ifndef STBI_THREAD_LOCAL
-#if defined(__GNUC__)
-        #define STBI_THREAD_LOCAL       __thread
-#endif
-#endif
 #endif
 
 
@@ -116,20 +111,19 @@ struct stbi__pngchunk
 // contains all the IO context, plus some basic image information
 struct stbi__context
 {
-	std::uint32_t img_x, img_y;
-	int img_n, img_out_n;
+	std::uint32_t img_x;
+	std::uint32_t img_y;
+	int img_n;
+	int img_out_n;
 
-	int buflen;
-	std::uint8_t buffer_start[128];
-	int callback_already_read;
-
-	std::uint8_t *img_buffer, *img_buffer_end;
-	std::uint8_t *img_buffer_original, *img_buffer_original_end;
+	std::uint8_t *img_buffer;
+	std::uint8_t *img_buffer_end;
+	std::uint8_t *img_buffer_original;
+	std::uint8_t *img_buffer_original_end;
 
 	// initialize a memory-decode context
 	auto start_mem(std::uint8_t const *buffer, int len) -> void
 	{
-		callback_already_read = 0;
 		img_buffer = img_buffer_original = (std::uint8_t *) buffer;
 		img_buffer_end = img_buffer_original_end = (std::uint8_t *) buffer + len;
 	}
@@ -144,7 +138,9 @@ struct stbi__context
 	auto readu8() -> std::uint8_t
 	{
 		if (this->img_buffer < this->img_buffer_end)
+		{
 			return *this->img_buffer++;
+		}
 		return 0;
 	}
 	auto readu16be () -> int
@@ -204,11 +200,11 @@ struct stbi__context
 struct stbi__png
 {
 	stbi__context *s;
-	std::uint8_t *idata, *expanded, *out;
+	std::uint8_t *idata;
+	std::uint8_t *expanded;
+	std::uint8_t *out;
 	int depth;
 };
-
-static void *stbi__png_load(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri);
 
 
 static void *stbi__malloc(size_t size)
@@ -220,26 +216,6 @@ static void *stbi__malloc(size_t size)
 STBIDEF void stbi_image_free(void *retval_from_stbi_load)
 {
 	STBI_FREE(retval_from_stbi_load);
-}
-
-static std::uint8_t *stbi__convert_16_to_8(std::uint16_t *orig, int w, int h, int channels)
-{
-	int img_len = w * h * channels;
-
-	std::uint8_t *reduced = static_cast<std::uint8_t *>(stbi__malloc(img_len));
-	if (reduced == nullptr)
-	{
-		return stbi__errpuc("outofmem", "Out of memory");
-	}
-
-	for (int i = 0; i < img_len; ++i)
-	{
-		// top half of each byte is sufficient approx of 16->8 bit scaling
-		reduced[i] = static_cast<std::uint8_t>((orig[i] >> 8) & 0xFF);
-	}
-
-	STBI_FREE(orig);
-	return reduced;
 }
 
 
@@ -2064,12 +2040,31 @@ STBIDEF std::uint8_t *stbi_load_from_memory(std::uint8_t const *buffer, int len,
 
 	if (ri.bits_per_channel != 8)
 	{
-		result = stbi__convert_16_to_8(static_cast<std::uint16_t*>(result), *x, *y, req_comp == 0 ? *comp : req_comp);
+		// result = stbi__convert_16_to_8(static_cast<std::uint16_t*>(result), *x, *y, req_comp == 0 ? *comp : req_comp);
+		{
+			int img_len = *x * *y * (req_comp == 0 ? *comp : req_comp);
+
+			auto *reduced = static_cast<std::uint8_t *>(stbi__malloc(img_len));
+			if (reduced == nullptr)
+			{
+				return stbi__errpuc("outofmem", "Out of memory");
+			}
+
+			auto* orig = static_cast<std::uint16_t*>(result);
+			for (int i = 0; i < img_len; ++i)
+			{
+				// top half of each byte is sufficient approx of 16->8 bit scaling
+				reduced[i] = static_cast<std::uint8_t>((orig[i] >> 8) & 0xFF);
+			}
+
+			STBI_FREE(orig);
+			result = reduced;
+		}
+
 		ri.bits_per_channel = 8;
 	}
 
 	return static_cast<std::uint8_t*>(result);
-	// return stbi__load_and_postprocess_8bit(&s, x, y, comp, req_comp);
 }
 
 STBIDEF const char *stbi_failure_reason()
