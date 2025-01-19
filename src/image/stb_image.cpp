@@ -463,11 +463,11 @@ struct Buffer {
 
 	auto eof () const -> bool
 	{
-		return this->zbuffer >= this->zbuffer_end;
+		return zbuffer >= zbuffer_end;
 	}
 	auto get8 () -> std::uint8_t
 	{
-		return eof() ? 0 : *this->zbuffer++;
+		return eof() ? 0 : *zbuffer++;
 	}
 	auto fill_bits () -> void
 	{
@@ -739,10 +739,19 @@ struct Buffer {
 				n += c;
 			}
 		}
-		if (n != ntot) return stbi__err("bad codelengths", "Corrupt PNG");
-		if (!this->z_length.zbuild_huffman(lencodes, hlit)) return 0;
-		if (!this->z_distance.zbuild_huffman(lencodes + hlit, hdist)) return 0;
-		return 1;
+		if (n != ntot)
+		{
+			return stbi__err("bad codelengths", "Corrupt PNG");
+		}
+		if (!z_length.zbuild_huffman(lencodes, hlit))
+		{
+			return false;
+		}
+		if (!z_distance.zbuild_huffman(lencodes + hlit, hdist))
+		{
+			return false;
+		}
+		return true;
 	}
 	auto parse_uncompressed_block() -> int
 	{
@@ -810,25 +819,28 @@ struct Buffer {
 	}
 	auto parse_zlib(int parse_header) -> int
 	{
-		int final;
 		if (parse_header && !parse_zlib_header())
 		{
-			return 0;
+			return false;
 		}
 		this->num_bits = 0;
 		this->code_buffer = 0;
 		this->hit_zeof_once = 0;
+		int final;
 		do
 		{
 			final = recieve(1);
 			int type = recieve(2);
 			if (type == 0)
 			{
-				if (!parse_uncompressed_block()) return 0;
+				if (!parse_uncompressed_block())
+				{
+					return false;
+				}
 			}
 			else if (type == 3)
 			{
-				return 0;
+				return false;
 			}
 			else
 			{
@@ -837,18 +849,24 @@ struct Buffer {
 					// use fixed code lengths
 					if (!z_length.zbuild_huffman(DEFAULT_LENGTH, NSYMS))
 					{
-						return 0;
+						return false;
 					}
 					if (!z_distance.zbuild_huffman(DEFAULT_DISTANCE, 32))
 					{
-						return 0;
+						return false;
 					}
 				}
 				else
 				{
-					if (!this->compute_huffman_codes()) return 0;
+					if (!compute_huffman_codes())
+					{
+						return false;
+					}
 				}
-				if (!this->parse_huffman_block()) return 0;
+				if (!parse_huffman_block())
+				{
+					return false;
+				}
 			}
 		} while (!final);
 		return 1;
