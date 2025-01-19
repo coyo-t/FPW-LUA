@@ -59,14 +59,14 @@ static int stbi__err(const char *str)
 static constexpr auto STBI_MAX_DIMENSIONS = 1 << 24;
 
 
-struct stbi__result_info
+struct ResultInfo
 {
 	int bits_per_channel;
 	int num_channels;
 	int channel_order;
 };
 
-struct stbi__pngchunk
+struct PngChunk
 {
 	U32 length;
 	U32 type;
@@ -79,7 +79,7 @@ struct stbi__pngchunk
 
 // stbi__context structure is our basic context used by all images, so it
 // contains all the IO context, plus some basic image information
-struct stbi__context
+struct Context
 {
 	U32 img_x;
 	U32 img_y;
@@ -159,9 +159,9 @@ struct stbi__context
 	}
 };
 
-struct stbi__png
+struct Png
 {
-	stbi__context *s;
+	Context *s;
 	Byte* idata;
 	Byte* expanded;
 	Byte* out;
@@ -173,13 +173,6 @@ static void *stbi__malloc(size_t size)
 {
 	return STBI_MALLOC(size);
 }
-
-
-STBIDEF void stbi_image_free(void *retval_from_stbi_load)
-{
-	STBI_FREE(retval_from_stbi_load);
-}
-
 
 // stb_image uses ints pervasively, including for offset calculations.
 // therefore the largest decoded image size we can support with the
@@ -1212,10 +1205,10 @@ static void stbi__create_png_alpha_expand8(Byte*dest, Byte*src, U32 x, int img_n
 }
 
 // create the png data from post-deflated data
-static int stbi__create_png_image_raw(stbi__png *a, Byte* raw, U32 raw_len, int out_n, U32 x, U32 y, int depth, int color)
+static int stbi__create_png_image_raw(Png *a, Byte* raw, U32 raw_len, int out_n, U32 x, U32 y, int depth, int color)
 {
 	int bytes = (depth == 16 ? 2 : 1);
-	stbi__context *s = a->s;
+	Context *s = a->s;
 	U32 i;
 	const U32 stride = x * out_n * bytes;
 	int all_ok = 1;
@@ -1457,7 +1450,7 @@ static int stbi__create_png_image_raw(stbi__png *a, Byte* raw, U32 raw_len, int 
 	return 1;
 }
 
-static int stbi__create_png_image(stbi__png *a, Byte*image_data, U32 image_data_len, int out_n, int depth, int color, int interlaced)
+static int stbi__create_png_image(Png *a, Byte*image_data, U32 image_data_len, int out_n, int depth, int color, int interlaced)
 {
 	int bytes = (depth == 16 ? 2 : 1);
 	int out_bytes = out_n * bytes;
@@ -1519,7 +1512,7 @@ static int stbi__create_png_image(stbi__png *a, Byte*image_data, U32 image_data_
 	return 1;
 }
 
-static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
+static int stbi__parse_png_file(Png *z, Scan scan, int req_comp)
 {
 	static constexpr auto FOURCC = [](char a, char b, char c, char d) -> U32
 	{
@@ -1543,7 +1536,7 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 	int k;
 	int interlace = 0;
 	int color = 0;
-	stbi__context *s = z->s;
+	Context *s = z->s;
 
 	z->expanded = nullptr;
 	z->idata = nullptr;
@@ -1556,7 +1549,7 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 
 	while (true)
 	{
-		stbi__pngchunk c;
+		PngChunk c;
 		c.length = s->readu32be();
 		c.type = s->readu32be();
 		switch (c.type)
@@ -1831,7 +1824,7 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 				{
 					if (z->depth == 16)
 					{
-						stbi__context *s2 = z->s;
+						Context *s2 = z->s;
 						U32 i2, pc2 = s2->img_x * s2->img_y;
 						auto *p = reinterpret_cast<U16*>(z->out);
 						auto out_n = s2->img_out_n;
@@ -1864,7 +1857,7 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 					}
 					else
 					{
-						stbi__context *s2 = z->s;
+						Context *s2 = z->s;
 						U32 i2;
 						U32 pc2 = s2->img_x * s2->img_y;
 						auto* p = z->out;
@@ -1992,12 +1985,16 @@ static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 	}
 }
 
+STBIDEF void stbi_image_free(void *retval_from_stbi_load)
+{
+	STBI_FREE(retval_from_stbi_load);
+}
 
 STBIDEF int stbi_info_from_memory(Byte const *buffer, int len, int *x, int *y, int *comp)
 {
-	stbi__context s;
+	Context s;
 	s.start_mem(buffer, len);
-	stbi__png p;
+	Png p;
 	p.s = &s;
 	if (!stbi__parse_png_file(&p, Scan::Header, 0))
 	{
@@ -2021,9 +2018,9 @@ STBIDEF int stbi_info_from_memory(Byte const *buffer, int len, int *x, int *y, i
 
 STBIDEF Byte *stbi_load_from_memory(Byte const *buffer, int len, int *x, int *y, int *comp, int req_comp)
 {
-	stbi__context s;
+	Context s;
 	s.start_mem(buffer, len);
-	stbi__result_info ri;
+	ResultInfo ri;
 
 	void* result;
 	{
@@ -2044,7 +2041,7 @@ STBIDEF Byte *stbi_load_from_memory(Byte const *buffer, int len, int *x, int *y,
 			}
 		}
 
-		stbi__png p;
+		Png p;
 		p.s = &s;
 
 		void *result2 = nullptr;
