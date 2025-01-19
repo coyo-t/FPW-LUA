@@ -485,7 +485,8 @@ struct Huffman {
 //    memory buffer
 
 struct Buffer {
-	std::uint8_t *zbuffer, *zbuffer_end;
+	std::uint8_t *zbuffer;
+	std::uint8_t *zbuffer_end;
 	int num_bits;
 	int hit_zeof_once;
 	std::uint32_t code_buffer;
@@ -493,7 +494,7 @@ struct Buffer {
 	std::uint8_t* zout;
 	std::uint8_t* zout_start;
 	std::uint8_t* zout_end;
-	int z_expandable;
+	bool z_expandable;
 
 	Huffman z_length, z_distance;
 
@@ -514,17 +515,20 @@ struct Buffer {
 				zbuffer = zbuffer_end; /* treat this as EOF so we fail. */
 				return;
 			}
-			code_buffer |= static_cast<unsigned int>(get8()) << num_bits;
+			code_buffer |= static_cast<std::uint32_t>(get8()) << num_bits;
 			num_bits += 8;
 		} while (num_bits <= 24);
 
 	}
-	auto recieve (int n) -> unsigned int
+	auto recieve (int bitcount) -> std::uint32_t
 	{
-		if (num_bits < n) fill_bits();
-		unsigned int k = code_buffer & ((1 << n) - 1);
-		code_buffer >>= n;
-		num_bits -= n;
+		if (num_bits < bitcount)
+		{
+			fill_bits();
+		}
+		std::uint32_t k = code_buffer & ((1 << bitcount) - 1);
+		code_buffer >>= bitcount;
+		num_bits -= bitcount;
 		return k;
 	}
 	auto zhuffman_decode_slowpath (Huffman* z) -> int
@@ -587,7 +591,8 @@ struct Buffer {
 	{
 		std::uint8_t *q;
 		this->zout = zout;
-		if (!this->z_expandable) return stbi__err("output buffer limit", "Corrupt PNG");
+		if (!this->z_expandable)
+			return stbi__err("output buffer limit", "Corrupt PNG");
 		auto cur = static_cast<unsigned int>(this->zout - this->zout_start);
 		auto limit = static_cast<unsigned>(this->zout_end - this->zout_start);
 		if (UINT_MAX - cur < static_cast<unsigned>(n))
@@ -676,26 +681,25 @@ struct Buffer {
 	}
 	auto compute_huffman_codes() -> int
 	{
-		static const std::uint8_t length_dezigzag[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
+		static constexpr std::uint8_t length_dezigzag[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 		Huffman z_codelength;
 		std::uint8_t lencodes[286 + 32 + 137]; //padding for maximum single op
 		std::uint8_t codelength_sizes[19];
-		int i, n;
 
-		int hlit = this->recieve(5) + 257;
-		int hdist = this->recieve(5) + 1;
-		int hclen = this->recieve(4) + 4;
+		int hlit = recieve(5) + 257;
+		int hdist = recieve(5) + 1;
+		int hclen = recieve(4) + 4;
 		int ntot = hlit + hdist;
 
 		memset(codelength_sizes, 0, sizeof(codelength_sizes));
-		for (i = 0; i < hclen; ++i)
+		for (int i = 0; i < hclen; ++i)
 		{
-			int s = this->recieve(3);
-			codelength_sizes[length_dezigzag[i]] = (std::uint8_t) s;
+			int s = recieve(3);
+			codelength_sizes[length_dezigzag[i]] = (std::uint8_t)s;
 		}
 		if (!z_codelength.stbi__zbuild_huffman(codelength_sizes, 19)) return 0;
 
-		n = 0;
+		int n = 0;
 		while (n < ntot)
 		{
 			int c = this->zhuffman_decode(&z_codelength);
@@ -707,17 +711,20 @@ struct Buffer {
 				std::uint8_t fill = 0;
 				if (c == 16)
 				{
-					c = this->recieve(2) + 3;
-					if (n == 0) return stbi__err("bad codelengths", "Corrupt PNG");
+					c = recieve(2) + 3;
+					if (n == 0)
+					{
+						return stbi__err("bad codelengths", "Corrupt PNG");
+					}
 					fill = lencodes[n - 1];
 				}
 				else if (c == 17)
 				{
-					c = this->recieve(3) + 3;
+					c = recieve(3) + 3;
 				}
 				else if (c == 18)
 				{
-					c = this->recieve(7) + 11;
+					c = recieve(7) + 11;
 				}
 				else
 				{
@@ -850,11 +857,11 @@ struct Buffer {
 	}
 };
 
-enum
+enum class Scan
 {
-	STBI__SCAN_load = 0,
-	STBI__SCAN_type,
-	STBI__SCAN_header
+	Load,
+	Type,
+	Header,
 };
 
 
@@ -1526,7 +1533,7 @@ static int stbi__expand_png_palette (
 
 #define STBI__PNG_TYPE(a,b,c,d)  (((unsigned) (a) << 24) + ((unsigned) (b) << 16) + ((unsigned) (c) << 8) + (unsigned) (d))
 
-static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
+static int stbi__parse_png_file(stbi__png *z, Scan scan, int req_comp)
 {
 	std::uint8_t palette[1024], pal_img_n = 0;
 	std::uint8_t has_trans = 0, tc[3] = {0};
@@ -1625,7 +1632,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				if (z->idata) return stbi__err("tRNS after IDAT", "Corrupt PNG");
 				if (pal_img_n)
 				{
-					if (scan == STBI__SCAN_header)
+					if (scan == Scan::Header)
 					{
 						s->img_n = 4;
 						return 1;
@@ -1642,7 +1649,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					if (c.length != (std::uint32_t) s->img_n * 2) return stbi__err("bad tRNS len", "Corrupt PNG");
 					has_trans = 1;
 					// non-paletted with tRNS = constant alpha. if header-scanning, we can stop now.
-					if (scan == STBI__SCAN_header)
+					if (scan == Scan::Header)
 					{
 						++s->img_n;
 						return 1;
@@ -1667,7 +1674,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					return stbi__err("first not IHDR", "Corrupt PNG");
 				if (pal_img_n && !pal_len)
 					return stbi__err("no PLTE", "Corrupt PNG");
-				if (scan == STBI__SCAN_header)
+				if (scan == Scan::Header)
 				{
 					// header scan definitely stops at first IDAT
 					if (pal_img_n)
@@ -1697,9 +1704,9 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				std::uint32_t raw_len;
 				if (first)
 					return stbi__err("first not IHDR", "Corrupt PNG");
-				if (scan != STBI__SCAN_load)
+				if (scan != Scan::Load)
 					return 1;
-				if (z->idata == NULL)
+				if (z->idata == nullptr)
 					return stbi__err("no IDAT", "Corrupt PNG");
 				// initial guess for decoded data size to avoid unnecessary reallocs
 				// bytes per line, per component
@@ -1789,7 +1796,7 @@ static void *stbi__png_load(stbi__context *s, int *x, int *y, int *comp, int req
 	void *result = nullptr;
 	if (req_comp < 0 || req_comp > 4)
 		return stbi__errpuc("bad req_comp", "Internal error");
-	if (stbi__parse_png_file(&p, STBI__SCAN_load, req_comp))
+	if (stbi__parse_png_file(&p, Scan::Load, req_comp))
 	{
 		if (p.depth <= 8)
 			ri->bits_per_channel = 8;
@@ -1834,7 +1841,7 @@ STBIDEF int stbi_info_from_memory(std::uint8_t const *buffer, int len, int *x, i
 	s.start_mem(buffer, len);
 	stbi__png p;
 	p.s = &s;
-	if (!stbi__parse_png_file(&p, STBI__SCAN_header, 0))
+	if (!stbi__parse_png_file(&p, Scan::Header, 0))
 	{
 		p.s->rewind();
 		return stbi__err("unknown image type", "Image not of any known type, or corrupt");
