@@ -1035,17 +1035,15 @@ static Byte* stbi__convert_format(Byte* data, int img_n, int req_comp, unsigned 
 }
 
 
-static U16 stbi__compute_y_16(int r, int g, int b)
-{
-	return static_cast<U16>(((r * 77) + (g * 150) + (29 * b)) >> 8);
-}
 
 
 
 static U16 *stbi__convert_format16(U16*data, int img_n, int req_comp, unsigned int x, unsigned int y)
 {
-
-	if (req_comp == img_n) return data;
+	if (req_comp == img_n)
+	{
+		return data;
+	}
 	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
 
 	const auto good = static_cast<U16 *>(stbi__malloc(req_comp * x * y * 2));
@@ -1054,6 +1052,11 @@ static U16 *stbi__convert_format16(U16*data, int img_n, int req_comp, unsigned i
 		STBI_FREE(data);
 		return (U16*)stbi__errpuc("outofmem", "Out of memory");
 	}
+
+	static auto compute_y_16 = [](int r, int g, int b) -> U16
+	{
+		return static_cast<U16>(((r * 77) + (g * 150) + (29 * b)) >> 8);
+	};
 
 	int i;
 	for (int j = 0; j < static_cast<int>(y); ++j)
@@ -1099,19 +1102,19 @@ static U16 *stbi__convert_format16(U16*data, int img_n, int req_comp, unsigned i
 					dest[3] = 0xffff;
 				}
 				break;
-			STBI__CASE(3, 1) { dest[0] = stbi__compute_y_16(src[0], src[1], src[2]); }
+			STBI__CASE(3, 1) { dest[0] = compute_y_16(src[0], src[1], src[2]); }
 				break;
 			STBI__CASE(3, 2)
 				{
-					dest[0] = stbi__compute_y_16(src[0], src[1], src[2]);
+					dest[0] = compute_y_16(src[0], src[1], src[2]);
 					dest[1] = 0xffff;
 				}
 				break;
-			STBI__CASE(4, 1) { dest[0] = stbi__compute_y_16(src[0], src[1], src[2]); }
+			STBI__CASE(4, 1) { dest[0] = compute_y_16(src[0], src[1], src[2]); }
 				break;
 			STBI__CASE(4, 2)
 				{
-					dest[0] = stbi__compute_y_16(src[0], src[1], src[2]);
+					dest[0] = compute_y_16(src[0], src[1], src[2]);
 					dest[1] = src[3];
 				}
 				break;
@@ -1426,7 +1429,10 @@ static int stbi__create_png_image_raw(stbi__png *a, Byte* raw, U32 raw_len, int 
 	}
 
 	STBI_FREE(filter_buf);
-	if (!all_ok) return 0;
+	if (!all_ok)
+	{
+		return 0;
+	}
 
 	return 1;
 }
@@ -1450,7 +1456,7 @@ static int stbi__create_png_image(stbi__png *a, Byte*image_data, U32 image_data_
 	}
 
 	// de-interlacing
-	auto final = stbi__malloc_fma3<Byte>(a->s->img_x, a->s->img_y, out_bytes, 0);
+	const auto final = stbi__malloc_fma3<Byte>(a->s->img_x, a->s->img_y, out_bytes, 0);
 	if (!final)
 	{
 		return stbi__err("outofmem", "Out of memory");
