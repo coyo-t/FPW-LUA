@@ -23,22 +23,27 @@ extern "C" {
 #define STBI_NO_STDIO
 
 
-STBIDEF Byte*
-stbi_load_from_memory(Byte const *buffer, U64 len, U64*x, U64*y, U64 *channels_in_file, U64 desired_channels);
+STBIDEF auto stbi_failure_reason() -> const char*;
+
+STBIDEF auto stbi_image_free(void *retval_from_stbi_load) -> void;
+
+STBIDEF auto stbi_load_from_memory (
+	Byte const *buffer,
+	U64 len,
+	U64*x,
+	U64*y,
+	U64 *channels_in_file,
+	U64 desired_channels
+) -> Byte*;
 
 
-// get a VERY brief reason for failure
-// on most compilers (and ALL modern mainstream compilers) this is threadsafe
-STBIDEF const char*
-stbi_failure_reason(void);
-
-// free the loaded image -- this is just free()
-STBIDEF void
-stbi_image_free(void *retval_from_stbi_load);
-
-// get image dimensions & components without fully decoding
-STBIDEF int
-stbi_info_from_memory(Byte const *buffer, U64 len, U64* x, U64* y, U64* comp);
+STBIDEF auto stbi_info_from_memory (
+	Byte const *buffer,
+	U64 len,
+	U64* x,
+	U64* y,
+	U64* comp
+) -> bool;
 
 
 }

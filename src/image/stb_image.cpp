@@ -1950,7 +1950,7 @@ STBIDEF void stbi_image_free(void *retval_from_stbi_load)
 	STBI_FREE(retval_from_stbi_load);
 }
 
-STBIDEF int stbi_info_from_memory(Byte const *buffer, U64 len, U64 * x, U64 * y, U64 * comp)
+STBIDEF bool stbi_info_from_memory(Byte const *buffer, U64 len, U64 * x, U64 * y, U64 * comp)
 {
 	Context s;
 	s.start_mem(buffer, len);
