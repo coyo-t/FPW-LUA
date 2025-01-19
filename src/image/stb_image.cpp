@@ -2070,7 +2070,7 @@ STBIDEF Byte *stbi_load_from_memory(Byte const *buffer, U64 len, U64* x, U64* y,
 
 	if (ri.bits_per_channel != 8)
 	{
-		int img_len = (*x) * (*y) * (req_comp == 0 ? (*comp) : req_comp);
+		const auto img_len = (*x) * (*y) * (req_comp == 0 ? (*comp) : req_comp);
 
 		const auto reduced = static_cast<Byte*>(stbi_malloc(img_len));
 		if (reduced == nullptr)
