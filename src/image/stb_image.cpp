@@ -228,10 +228,15 @@ static void *stbi__load_main(stbi__context *s, int *x, int *y, int *comp, int re
 }
 
 
-static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, int *y, int *comp, int req_comp)
+STBIDEF stbi_uc *coyote_stbi_load_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *comp, int req_comp)
 {
+	stbi__context s;
+	s.start_mem(buffer, len);
+
+
+
 	stbi__result_info ri;
-	void *result = stbi__load_main(s, x, y, comp, req_comp, &ri, 8);
+	void *result = stbi__load_main(&s, x, y, comp, req_comp, &ri, 8);
 
 	if (result == nullptr)
 	{
@@ -243,38 +248,27 @@ static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, 
 
 	if (ri.bits_per_channel != 8)
 	{
-		static auto convert_16_to_8 = [](stbi__uint16 *orig, int w, int h, int channels) {
-			int img_len = w * h * channels;
+		auto orig = static_cast<stbi__uint16 *>(result);
+		int img_len = (*x) * (*y) * (req_comp == 0 ? *comp : req_comp);
 
-			auto reduced = static_cast<stbi_uc *>(stbi__malloc(img_len));
-			if (reduced == NULL)
-			{
-				return stbi__errpuc("outofmem", "Out of memory");
-			}
+		auto reduced = static_cast<stbi_uc *>(stbi__malloc(img_len));
+		if (reduced == NULL)
+		{
+			return stbi__errpuc("outofmem", "Out of memory");
+		}
 
-			for (int i = 0; i < img_len; ++i)
-			{
-				// top half of each byte is sufficient approx of 16->8 bit scaling
-				reduced[i] = static_cast<stbi_uc>((orig[i] >> 8) & 0xFF);
-			}
+		for (int i = 0; i < img_len; ++i)
+		{
+			// top half of each byte is sufficient approx of 16->8 bit scaling
+			reduced[i] = static_cast<stbi_uc>((orig[i] >> 8) & 0xFF);
+		}
 
-			STBI_FREE(orig);
-			return reduced;
-		};
-
-		result = convert_16_to_8(static_cast<stbi__uint16 *>(result), *x, *y, req_comp == 0 ? *comp : req_comp);
+		STBI_FREE(orig);
+		result = reduced;
 		ri.bits_per_channel = 8;
 	}
 
 	return (unsigned char *) result;
-}
-
-
-STBIDEF stbi_uc *coyote_stbi_load_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *comp, int req_comp)
-{
-	stbi__context s;
-	s.start_mem(buffer, len);
-	return stbi__load_and_postprocess_8bit(&s, x, y, comp, req_comp);
 }
 
 enum
