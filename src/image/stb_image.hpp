@@ -23,19 +23,31 @@ extern "C" {
 
 #define STBIDEF extern
 
-STBIDEF stbi_uc *stbi_load_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *channels_in_file,
-                                       int desired_channels);
+STBIDEF stbi_uc* coyote_stbi_load_from_memory(
+	stbi_uc const *buffer,
+	int len,
+	int *x,
+	int *y,
+	int *channels_in_file,
+	int desired_channels
+);
 
 
 // get a VERY brief reason for failure
 // on most compilers (and ALL modern mainstream compilers) this is threadsafe
-STBIDEF const char *stbi_failure_reason(void);
+STBIDEF const char *coyote_stbi_failure_reason(void);
 
 // free the loaded image -- this is just free()
-STBIDEF void stbi_image_free(void *retval_from_stbi_load);
+STBIDEF void coyote_stbi_image_free (void *retval_from_stbi_load);
 
 // get image dimensions & components without fully decoding
-STBIDEF int stbi_info_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *comp);
+STBIDEF int coyote_stbi_info_from_memory(
+	stbi_uc const *buffer,
+	int len,
+	int *x,
+	int *y,
+	int *comp
+);
 
 }
 

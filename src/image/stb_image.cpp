@@ -23,8 +23,7 @@ typedef int16_t stbi__int16;
 typedef uint32_t stbi__uint32;
 typedef int32_t stbi__int32;
 
-// should produce compiler error if size is wrong
-typedef unsigned char validate_uint32[sizeof(stbi__uint32) == 4 ? 1 : -1];
+static_assert(sizeof(stbi__uint32) == 4);
 
 
 #define STBI_NOTUSED(v)  (void)sizeof(v)
@@ -52,7 +51,7 @@ static constexpr auto STBI_MAX_DIMENSIONS = 1 << 24;
 
 // stbi__context structure is our basic context used by all images, so it
 // contains all the IO context, plus some basic image information
-typedef struct
+struct stbi__context
 {
 	stbi__uint32 img_x, img_y;
 	int img_n, img_out_n;
@@ -82,7 +81,10 @@ typedef struct
 
 	auto stbi__skip(int n) -> void
 	{
-		if (n == 0) return; // already there!
+		if (n == 0)
+		{
+			return; // already there!
+		}
 		if (n < 0)
 		{
 			this->img_buffer = this->img_buffer_end;
@@ -90,15 +92,15 @@ typedef struct
 		}
 		this->img_buffer += n;
 	}
-} stbi__context;
+	// initialize a memory-decode context
+	auto stbi__start_mem(stbi_uc const *buffer, int len) -> void
+	{
+		this->img_buffer = this->img_buffer_original = (stbi_uc *) buffer;
+		this->img_buffer_end = this->img_buffer_original_end = (stbi_uc *) buffer + len;
+	}
+};
 
 
-// initialize a memory-decode context
-static void stbi__start_mem(stbi__context *s, stbi_uc const *buffer, int len)
-{
-	s->img_buffer = s->img_buffer_original = (stbi_uc *) buffer;
-	s->img_buffer_end = s->img_buffer_original_end = (stbi_uc *) buffer + len;
-}
 
 static void stbi__rewind(stbi__context *s)
 {
@@ -131,7 +133,7 @@ static void *stbi__png_load(stbi__context *s, int *x, int *y, int *comp, int req
 static
 const char *stbi__g_failure_reason;
 
-STBIDEF const char *stbi_failure_reason()
+STBIDEF const char *coyote_stbi_failure_reason()
 {
 	return stbi__g_failure_reason;
 }
@@ -215,7 +217,7 @@ static void *stbi__malloc_mad3(int a, int b, int c, int add)
 #define stbi__err(x,y)  stbi__err(x)
 #define stbi__errpuc(x,y)  ((unsigned char *)(size_t) (stbi__err(x,y)?NULL:NULL))
 
-STBIDEF void stbi_image_free(void *retval_from_stbi_load)
+STBIDEF void coyote_stbi_image_free(void *retval_from_stbi_load)
 {
 	STBI_FREE(retval_from_stbi_load);
 }
@@ -239,15 +241,18 @@ static void *stbi__load_main(stbi__context *s, int *x, int *y, int *comp, int re
 
 static stbi_uc *stbi__convert_16_to_8(stbi__uint16 *orig, int w, int h, int channels)
 {
-	int i;
 	int img_len = w * h * channels;
-	stbi_uc *reduced;
 
-	reduced = (stbi_uc *) stbi__malloc(img_len);
-	if (reduced == NULL) return stbi__errpuc("outofmem", "Out of memory");
+	auto reduced = (stbi_uc *) stbi__malloc(img_len);
+	if (reduced == NULL)
+	{
+		return stbi__errpuc("outofmem", "Out of memory");
+	}
 
-	for (i = 0; i < img_len; ++i)
+	for (int i = 0; i < img_len; ++i)
+	{
 		reduced[i] = (stbi_uc) ((orig[i] >> 8) & 0xFF); // top half of each byte is sufficient approx of 16->8 bit scaling
+	}
 
 	STBI_FREE(orig);
 	return reduced;
@@ -276,10 +281,10 @@ static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, 
 }
 
 
-STBIDEF stbi_uc *stbi_load_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *comp, int req_comp)
+STBIDEF stbi_uc *coyote_stbi_load_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *comp, int req_comp)
 {
 	stbi__context s;
-	stbi__start_mem(&s, buffer, len);
+	s.stbi__start_mem(buffer, len);
 	return stbi__load_and_postprocess_8bit(&s, x, y, comp, req_comp);
 }
 
@@ -919,7 +924,7 @@ static int stbi__compute_transparency(stbi__png *z, stbi_uc tc[3], int out_n)
 static int stbi__compute_transparency16(stbi__png *z, stbi__uint16 tc[3], int out_n)
 {
 	stbi__context *s = z->s;
-	stbi__uint32 i, pixel_count = s->img_x * s->img_y;
+	stbi__uint32 pixel_count = s->img_x * s->img_y;
 	auto p = reinterpret_cast<stbi__uint16*>(z->out);
 
 	// compute color-based transparency, assuming we've
@@ -928,15 +933,15 @@ static int stbi__compute_transparency16(stbi__png *z, stbi__uint16 tc[3], int ou
 
 	if (out_n == 2)
 	{
-		for (i = 0; i < pixel_count; ++i)
+		for (auto i = 0; i < pixel_count; ++i)
 		{
-			p[1] = (p[0] == tc[0] ? 0 : 65535);
+			p[1] = (p[0] == tc[0] ? 0 : 0xFFFF);
 			p += 2;
 		}
 	}
 	else
 	{
-		for (i = 0; i < pixel_count; ++i)
+		for (auto i = 0; i < pixel_count; ++i)
 		{
 			if (p[0] == tc[0] && p[1] == tc[1] && p[2] == tc[2])
 			{
@@ -1460,10 +1465,10 @@ static int stbi__png_test(stbi__context *s)
 }
 
 
-STBIDEF int stbi_info_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *comp)
+STBIDEF int coyote_stbi_info_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *comp)
 {
 	stbi__context s;
-	stbi__start_mem(&s, buffer, len);
+	s.stbi__start_mem(buffer, len);
 
 	stbi__png p;
 	p.s = &s;
