@@ -169,6 +169,13 @@ struct stbi__context
 		}
 		return true;
 	}
+
+	auto stbi__png_test () -> bool
+	{
+		auto r = check_png_header();
+		rewind();
+		return r;
+	}
 };
 
 struct stbi__png
@@ -177,8 +184,6 @@ struct stbi__png
 	std::uint8_t *idata, *expanded, *out;
 	int depth;
 };
-
-static int stbi__png_test(stbi__context *s);
 
 static void *stbi__png_load(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri);
 
@@ -202,7 +207,7 @@ static void *stbi__load_main(stbi__context *s, int *x, int *y, int *comp, int re
 
 	// test the formats with a very explicit header first (at least a FOURCC
 	// or distinctive magic number first)
-	if (stbi__png_test(s))
+	if (s->stbi__png_test())
 	{
 		return stbi__png_load(s, x, y, comp, req_comp, ri);
 	}
@@ -212,15 +217,19 @@ static void *stbi__load_main(stbi__context *s, int *x, int *y, int *comp, int re
 
 static std::uint8_t *stbi__convert_16_to_8(std::uint16_t *orig, int w, int h, int channels)
 {
-	int i;
 	int img_len = w * h * channels;
-	std::uint8_t *reduced;
 
-	reduced = (std::uint8_t *) stbi__malloc(img_len);
-	if (reduced == NULL) return stbi__errpuc("outofmem", "Out of memory");
+	std::uint8_t *reduced = static_cast<std::uint8_t *>(stbi__malloc(img_len));
+	if (reduced == nullptr)
+	{
+		return stbi__errpuc("outofmem", "Out of memory");
+	}
 
-	for (i = 0; i < img_len; ++i)
-		reduced[i] = (std::uint8_t) ((orig[i] >> 8) & 0xFF); // top half of each byte is sufficient approx of 16->8 bit scaling
+	for (int i = 0; i < img_len; ++i)
+	{
+		// top half of each byte is sufficient approx of 16->8 bit scaling
+		reduced[i] = static_cast<std::uint8_t>((orig[i] >> 8) & 0xFF);
+	}
 
 	STBI_FREE(orig);
 	return reduced;
@@ -328,16 +337,28 @@ static constexpr auto LENGTH_BASE[31] = {
 	67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0
 };
 
-static constexpr auto LENGTH_EXTRA[31] =
-		{0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, 0, 0};
+static constexpr auto LENGTH_EXTRA[31] = {
+	0, 0, 0, 0, 0, 0, 0, 0, 1,
+	1, 1, 1, 2, 2, 2, 2, 3, 3,
+	3, 3, 4, 4, 4, 4, 5, 5, 5,
+	5, 0, 0, 0,
+};
 
 static constexpr auto DIST_BASE[32] = {
 	1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193,
 	257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577, 0, 0
 };
 
-static constexpr auto DIST_EXTRA[32] =
-		{0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13};
+static constexpr auto DIST_EXTRA[32] = {
+	0,  0,  0,  0,
+	1,  1,  2,  2,
+	3,  3,  4,  4,
+	5,  5,  6,  6,
+	7,  7,  8,  8,
+	9,  9,  10, 10,
+	11, 11, 12, 12,
+	13, 13,
+};
 
 
 /*
@@ -404,11 +425,17 @@ struct Huffman {
 
 		memset(this->fast, 0, sizeof(this->fast));
 		for (i = 0; i < num; ++i)
+		{
 			++sizes[sizelist[i]];
+		}
 		sizes[0] = 0;
 		for (i = 1; i < 16; ++i)
+		{
 			if (sizes[i] > (1 << i))
+			{
 				return stbi__err("bad sizes", "Corrupt PNG");
+			}
+		}
 		int code = 0;
 		for (i = 1; i < 16; ++i)
 		{
@@ -416,9 +443,10 @@ struct Huffman {
 			this->firstcode[i] = static_cast<std::uint16_t>(code);
 			this->firstsymbol[i] = static_cast<std::uint16_t>(k);
 			code = (code + sizes[i]);
-			if (sizes[i])
-				if (code - 1 >= (1 << i))
-					return stbi__err("bad codelengths", "Corrupt PNG");
+			if (sizes[i] && (code - 1 >= 1 << i))
+			{
+				return stbi__err("bad codelengths", "Corrupt PNG");
+			}
 			this->maxcode[i] = code << (16 - i); // preshift for inner loop
 			code <<= 1;
 			k += sizes[i];
@@ -426,13 +454,12 @@ struct Huffman {
 		this->maxcode[16] = 0x10000; // sentinel
 		for (i = 0; i < num; ++i)
 		{
-			int s = sizelist[i];
-			if (s)
+			if (int s = sizelist[i])
 			{
 				int c = next_code[s] - this->firstcode[s] + this->firstsymbol[s];
-				auto fastv = (std::uint16_t) ((s << 9) | i);
-				this->size[c] = (std::uint8_t) s;
-				this->value[c] = (std::uint16_t) i;
+				auto fastv = static_cast<std::uint16_t>((s << 9) | i);
+				this->size[c] = static_cast<std::uint8_t>(s);
+				this->value[c] = static_cast<std::uint16_t>(i);
 				if (s <= FAST_BITS)
 				{
 					int j = bit_reverse(next_code[s], s);
@@ -445,7 +472,7 @@ struct Huffman {
 				++next_code[s];
 			}
 		}
-		return 1;
+		return true;
 	}
 };
 
@@ -556,7 +583,7 @@ struct Buffer {
 		return zhuffman_decode_slowpath(z);
 	}
 	// need to make room for n bytes
-	auto zexpand(std::uint8_t* zout, int n) -> int
+	auto zexpand (std::uint8_t* zout, int n) -> int
 	{
 		std::uint8_t *q;
 		this->zout = zout;
@@ -632,11 +659,17 @@ struct Buffer {
 				{
 					// run of one byte; common in images.
 					std::uint8_t v = *p;
-					if (len) { do *zout++ = v; while (--len); }
+					if (len)
+					{
+						do *zout++ = v; while (--len);
+					}
 				}
 				else
 				{
-					if (len) { do *zout++ = *p++; while (--len); }
+					if (len)
+					{
+						do *zout++ = *p++; while (--len);
+					}
 				}
 			}
 		}
@@ -1639,18 +1672,17 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					// header scan definitely stops at first IDAT
 					if (pal_img_n)
 						s->img_n = pal_img_n;
-					return 1;
+					return true;
 				}
 				if (c.length > (1u << 30))
 					return stbi__err("IDAT size limit", "IDAT section larger than 2^30 bytes");
 				if ((int) (ioff + c.length) < (int) ioff) return 0;
 				if (ioff + c.length > idata_limit)
 				{
-					std::uint8_t *p;
 					if (idata_limit == 0) idata_limit = c.length > 4096 ? c.length : 4096;
 					while (ioff + c.length > idata_limit)
 						idata_limit *= 2;
-					p = static_cast<std::uint8_t *>(STBI_REALLOC_SIZED(z->idata, idata_limit_old, idata_limit));
+					auto *p = static_cast<std::uint8_t *>(STBI_REALLOC_SIZED(z->idata, idata_limit_old, idata_limit));
 					if (p == nullptr)
 						return stbi__err("outofmem", "Out of memory");
 					z->idata = p;
@@ -1662,7 +1694,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 			}
 
 			case STBI__PNG_TYPE('I', 'E', 'N', 'D'): {
-				std::uint32_t raw_len, bpl;
+				std::uint32_t raw_len;
 				if (first)
 					return stbi__err("first not IHDR", "Corrupt PNG");
 				if (scan != STBI__SCAN_load)
@@ -1670,18 +1702,23 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				if (z->idata == NULL)
 					return stbi__err("no IDAT", "Corrupt PNG");
 				// initial guess for decoded data size to avoid unnecessary reallocs
-				bpl = (s->img_x * z->depth + 7) / 8; // bytes per line, per component
+				// bytes per line, per component
+				std::uint32_t bpl = (s->img_x * z->depth + 7) / 8;
 				raw_len = bpl * s->img_y * s->img_n /* pixels */ + s->img_y /* filter mode per row */;
 				z->expanded = Buffer::zlib_decode_malloc_guesssize_headerflag(
 					z->idata,
 					ioff,
 					raw_len,
-					(int *)&raw_len,
+					reinterpret_cast<int *>(&raw_len),
 					true
 				);
-				if (z->expanded == NULL) return 0; // zlib should set error
+				if (z->expanded == nullptr)
+				{
+					// zlib should set error
+					return false;
+				}
 				STBI_FREE(z->idata);
-				z->idata = NULL;
+				z->idata = nullptr;
 				if ((req_comp == s->img_n + 1 && req_comp != 3 && !pal_img_n) || has_trans)
 					s->img_out_n = s->img_n + 1;
 				else
@@ -1691,11 +1728,13 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				{
 					if (z->depth == 16)
 					{
-						if (!stbi__compute_transparency16(z, tc16, s->img_out_n)) return 0;
+						if (!stbi__compute_transparency16(z, tc16, s->img_out_n))
+							return false;
 					}
 					else
 					{
-						if (!stbi__compute_transparency(z, tc, s->img_out_n)) return 0;
+						if (!stbi__compute_transparency(z, tc, s->img_out_n))
+							return false;
 					}
 				}
 				if (pal_img_n)
@@ -1705,7 +1744,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 					s->img_out_n = pal_img_n;
 					if (req_comp >= 3) s->img_out_n = req_comp;
 					if (!stbi__expand_png_palette(z, palette, s->img_out_n))
-						return 0;
+						return false;
 				}
 				else if (has_trans)
 				{
@@ -1716,7 +1755,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				z->expanded = nullptr;
 				// end of PNG chunk, read and skip CRC
 				s->readu32be();
-				return 1;
+				return true;
 			}
 
 			default:
