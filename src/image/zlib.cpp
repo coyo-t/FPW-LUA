@@ -248,7 +248,7 @@ struct ZBuffer
 		this->zout = q + cur;
 		this->zout_end = q + limit;
 	}
-	auto zhuffman_decode(ZHuffman *z) -> int
+	auto zhuffman_decode(ZHuffman& z) -> int
 	{
 		int b, s;
 		if (this->num_bits < 16)
@@ -275,7 +275,7 @@ struct ZBuffer
 				this->zfill_bits();
 			}
 		}
-		b = z->fast[this->code_buffer & STBI__ZFAST_MASK];
+		b = z.fast[this->code_buffer & STBI__ZFAST_MASK];
 		if (b)
 		{
 			s = b >> 9;
@@ -290,7 +290,7 @@ struct ZBuffer
 		int k2 = bit_reverse(this->code_buffer, 16);
 		for (s2 = STBI__ZFAST_BITS + 1; ; ++s2)
 		{
-			if (k2 < z->maxcode[s2])
+			if (k2 < z.maxcode[s2])
 			{
 				break;
 			}
@@ -300,18 +300,18 @@ struct ZBuffer
 			return -1; // invalid code!
 		}
 		// code size is s, so:
-		int b2 = (k2 >> (16 - s2)) - z->firstcode[s2] + z->firstsymbol[s2];
+		int b2 = (k2 >> (16 - s2)) - z.firstcode[s2] + z.firstsymbol[s2];
 		if (b2 >= STBI__ZNSYMS)
 		{
 			return -1; // some data was corrupt somewhere!
 		}
-		if (z->size[b2] != s2)
+		if (z.size[b2] != s2)
 		{
 			return -1; // was originally an assert, but report failure instead.
 		}
 		this->code_buffer >>= s2;
 		this->num_bits -= s2;
-		return z->value[b2];
+		return z.value[b2];
 	}
 };
 
@@ -449,7 +449,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 					int n = 0;
 					while (n < ntot)
 					{
-						int c = a.zhuffman_decode(&z_codelength);
+						int c = a.zhuffman_decode(z_codelength);
 						if (c < 0 || c >= 19)
 						{
 							throw Zlib::Er("bad codelengths");
@@ -502,7 +502,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 				auto zout = a.zout;
 				for (;;)
 				{
-					if (int z = a.zhuffman_decode(&a.z_length); z < 256)
+					if (int z = a.zhuffman_decode(a.z_length); z < 256)
 					{
 						if (z < 0)
 						{
@@ -544,7 +544,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 							{
 								len += a.zreceive(stbi__zlength_extra[z]);
 							}
-							z = a.zhuffman_decode(&a.z_distance);
+							z = a.zhuffman_decode(a.z_distance);
 							if (z < 0 || z >= 30)
 							{
 								throw Zlib::Er("bad huffman code");
