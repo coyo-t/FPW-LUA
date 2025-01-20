@@ -572,7 +572,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 		return 1;
 	}
 
-	static constexpr auto PNG_TYPE = [](char a, char b, char c, char d) -> uint32_t {
+	static constexpr auto PNG_TYPE = [](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint32_t {
 		return (
 			(static_cast<uint32_t>(a) << 24) | (static_cast<uint32_t>(b) << 16) |
 			(static_cast<uint32_t>(c) << 8) | static_cast<uint32_t>(d)
@@ -843,7 +843,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				{
 					return 1;
 				}
-				if (z->idata == NULL)
+				if (z->idata == nullptr)
 				{
 					return stbi__err("no IDAT", "Corrupt PNG");
 				}
@@ -1145,55 +1145,49 @@ auto coyote_stbi_load_from_memory(
 
 	PNG p;
 	p.s = &s;
-	auto a_p = &p;
-	auto a_x = x;
-	auto a_y = y;
-	auto a_n = comp;
-	auto a_req_comp = req_comp;
-	auto a_ri = &ri;
 	void *result = nullptr;
-	if (a_req_comp < 0 || a_req_comp > 4)
+	if (req_comp < 0 || req_comp > 4)
 	{
 		true_result = stbi__errpuc("bad req_comp", "Internal error");
 		goto trueend;
 	}
-	if (stbi__parse_png_file(a_p, STBI__SCAN_load, a_req_comp))
+	if (stbi__parse_png_file(&p, STBI__SCAN_load, req_comp))
 	{
-		if (a_p->depth <= 8)
+		if (p.depth <= 8)
 		{
-			a_ri->bits_per_channel = 8;
+			ri.bits_per_channel = 8;
 		}
-		else if (a_p->depth == 16)
+		else if (p.depth == 16)
 		{
-			a_ri->bits_per_channel = 16;
+			ri.bits_per_channel = 16;
 		}
 		else
 		{
 			true_result = stbi__errpuc("bad bits_per_channel", "PNG not supported: unsupported color depth");
 			goto trueend;
 		}
-		result = a_p->out;
-		a_p->out = nullptr;
-		if (a_req_comp && a_req_comp != a_p->s->img_out_bytes)
+		result = p.out;
+		p.out = nullptr;
+		if (req_comp && req_comp != p.s->img_out_bytes)
 		{
 			static constexpr auto COMBO = [](size_t a, size_t b) { return (a<<3)|b; };
-			const auto bpp = a_ri->bits_per_channel;
+			const auto bpp = ri.bits_per_channel;
 			const size_t max_component = ((1<<(bpp-1))-1)|(1<<(bpp-1));
 
-			if (a_ri->bits_per_channel == 8)
+			if (ri.bits_per_channel == 8)
 			{
 				auto data = static_cast<uint8_t*>(result);
-				auto img_n = a_p->s->img_out_bytes;
-				auto xx = a_p->s->img_x;
-				auto yy = a_p->s->img_y;
+				auto img_n = p.s->img_out_bytes;
+				auto xx = p.s->img_x;
+				auto yy = p.s->img_y;
 
-				if (a_req_comp == img_n)
+				if (req_comp == img_n)
 				{
 					result = data;
 					goto endp;
 				}
 
-				auto good = malloc_fma3<uint8_t>(a_req_comp, xx, yy, 0);
+				auto good = malloc_fma3<uint8_t>(req_comp, xx, yy, 0);
 				if (good == nullptr)
 				{
 					stbi_free(data);
@@ -1203,9 +1197,9 @@ auto coyote_stbi_load_from_memory(
 
 				auto (*CONV_FUNC)(uint8_t* src, uint8_t* dst) -> void = nullptr;
 				const auto src_ofs = img_n;
-				const auto dst_ofs = a_req_comp;
+				const auto dst_ofs = req_comp;
 
-				switch (COMBO(img_n, a_req_comp))
+				switch (COMBO(img_n, req_comp))
 				{
 					case COMBO(1,2): {
 						CONV_FUNC = [](auto src, auto dest) {
@@ -1306,7 +1300,7 @@ auto coyote_stbi_load_from_memory(
 				for (auto j = 0; j < yy; ++j)
 				{
 					auto src = data + j * xx * img_n;
-					auto dst = good + j * xx * a_req_comp;
+					auto dst = good + j * xx * req_comp;
 
 					// FIXME: ditch the scanline approach, do whole image at once
 					for(auto i=xx-1;; --i)
@@ -1328,16 +1322,16 @@ auto coyote_stbi_load_from_memory(
 			else
 			{
 				auto _data = static_cast<uint16_t*>(result);
-				auto _img_n = a_p->s->img_out_bytes;
-				if (a_req_comp == _img_n)
+				auto _img_n = p.s->img_out_bytes;
+				if (req_comp == _img_n)
 				{
 					result = _data;
 					goto endp;
 				}
 
-				auto xx = a_p->s->img_x;
-				auto yy = a_p->s->img_y;
-				auto good = stbi_malloc_t<uint16_t>(a_req_comp * xx * yy * 2);
+				auto xx = p.s->img_x;
+				auto yy = p.s->img_y;
+				auto good = stbi_malloc_t<uint16_t>(req_comp * xx * yy * 2);
 				if (good == nullptr)
 				{
 					stbi_free(_data);
@@ -1347,9 +1341,9 @@ auto coyote_stbi_load_from_memory(
 
 				auto (*CONV_FUNC)(uint16_t* src, uint16_t* dst) -> void = nullptr;
 				const auto src_ofs = _img_n;
-				const auto dst_ofs = a_req_comp;
+				const auto dst_ofs = req_comp;
 
-				switch (COMBO(_img_n, a_req_comp))
+				switch (COMBO(_img_n, req_comp))
 				{
 					case COMBO(1,2): {
 						CONV_FUNC = [](auto src, auto dest) {
@@ -1449,7 +1443,7 @@ auto coyote_stbi_load_from_memory(
 				for (auto j = 0; j < yy; ++j)
 				{
 					auto src = _data + j * xx * _img_n;
-					auto dest = good + j * xx * a_req_comp;
+					auto dest = good + j * xx * req_comp;
 
 					// FIXME: ditch the scanline approach, do whole image at once
 					for(auto i=xx-1;; --i)
@@ -1468,26 +1462,33 @@ auto coyote_stbi_load_from_memory(
 				result = good;
 			endp:
 			}
-			a_p->s->img_out_bytes = a_req_comp;
+			p.s->img_out_bytes = req_comp;
 			if (result == nullptr)
 			{
 				true_result = result;
 				goto trueend;
 			}
 		}
-		*a_x = a_p->s->img_x;
-		*a_y = a_p->s->img_y;
-		if (a_n)
+		if (x != nullptr)
 		{
-			*a_n = a_p->s->img_n;
+			*x = p.s->img_x;
+		}
+		if (y != nullptr)
+		{
+			*y = p.s->img_y;
+		}
+
+		if (comp != nullptr)
+		{
+			*comp = p.s->img_n;
 		}
 	}
-	stbi_free(a_p->out);
-	a_p->out = nullptr;
-	stbi_free(a_p->expanded);
-	a_p->expanded = nullptr;
-	stbi_free(a_p->idata);
-	a_p->idata = nullptr;
+	stbi_free(p.out);
+	p.out = nullptr;
+	stbi_free(p.expanded);
+	p.expanded = nullptr;
+	stbi_free(p.idata);
+	p.idata = nullptr;
 
 	true_result = result;
 	trueend:
