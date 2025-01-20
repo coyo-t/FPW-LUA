@@ -75,7 +75,7 @@ STBIDEF coyote_stbi_info_from_memory(
 	std::uint64_t source_length,
 	std::uint64_t* x,
 	std::uint64_t* y,
-	std::uint64_t* comp
+	std::uint64_t* component_count
 ) -> std::uint32_t;
 
 // free the loaded image -- this is just free()

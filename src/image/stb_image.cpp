@@ -109,9 +109,9 @@ struct Allocation
 
 struct DecodeContext
 {
-	size_t img_x = 0;
-	size_t img_y = 0;
-	size_t img_n = 0;
+	size_t image_wide = 0;
+	size_t image_tall = 0;
+	size_t image_component_count = 0;
 	size_t img_out_n = 0;
 
 	uint8_t* img_buffer;
@@ -470,13 +470,13 @@ static int stbi__create_png_image_raw(
 	auto stride = x * out_n * bytes;
 	int all_ok = 1;
 	int k;
-	auto img_n = s.img_n; // copy it into a local for later
+	auto img_n = s.image_component_count; // copy it into a local for later
 
 	auto output_bytes = out_n * bytes;
 	auto filter_bytes = img_n * bytes;
 	auto width = x;
 
-	STBI_ASSERT(out_n == s.img_n || out_n == s.img_n+1);
+	STBI_ASSERT(out_n == s.image_component_count || out_n == s.image_component_count+1);
 	a->out = s.allocate_t<uint8_t>(x * y * output_bytes);
 	if (!a->out)
 	{
@@ -764,13 +764,13 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				}
 				first = 0;
 				if (chunkc.length != 13) return stbi__err("bad IHDR len", "Corrupt PNG");
-				s.img_x = s.get32be();
-				s.img_y = s.get32be();
-				if (s.img_y > STBI_MAX_DIMENSIONS)
+				s.image_wide = s.get32be();
+				s.image_tall = s.get32be();
+				if (s.image_tall > STBI_MAX_DIMENSIONS)
 				{
 					return stbi__err("too large", "Very large image (corrupt?)");
 				}
-				if (s.img_x > STBI_MAX_DIMENSIONS)
+				if (s.image_wide > STBI_MAX_DIMENSIONS)
 				{
 					return stbi__err("too large", "Very large image (corrupt?)");
 				}
@@ -812,7 +812,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				{
 					return stbi__err("bad interlace method", "Corrupt PNG");
 				}
-				if (!s.img_x || !s.img_y)
+				if (!s.image_wide || !s.image_tall)
 				{
 					return stbi__err("0-pixel image", "Corrupt PNG");
 				}
@@ -820,16 +820,16 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				{
 					// if paletted, then pal_n is our final components, and
 					// img_n is # components to decompress/filter.
-					s.img_n = 1;
-					if ((1 << 30) / s.img_x / 4 < s.img_y)
+					s.image_component_count = 1;
+					if ((1 << 30) / s.image_wide / 4 < s.image_tall)
 					{
 						return stbi__err("too large", "Corrupt PNG");
 					}
 				}
 				else
 				{
-					s.img_n = (color & 2 ? 3 : 1) + (color & 4 ? 1 : 0);
-					if ((1 << 30) / s.img_x / s.img_n < s.img_y)
+					s.image_component_count = (color & 2 ? 3 : 1) + (color & 4 ? 1 : 0);
+					if ((1 << 30) / s.image_wide / s.image_component_count < s.image_tall)
 					{
 						return stbi__err(
 							"too large", "Image too large to decode");
@@ -874,7 +874,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				{
 					if (scan == STBI__SCAN_header)
 					{
-						s.img_n = 4;
+						s.image_component_count = 4;
 						return 1;
 					}
 					if (pal_len == 0)
@@ -893,11 +893,11 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				}
 				else
 				{
-					if (!(s.img_n & 1))
+					if (!(s.image_component_count & 1))
 					{
 						return stbi__err("tRNS with alpha", "Corrupt PNG");
 					}
-					if (chunkc.length != s.img_n * 2)
+					if (chunkc.length != s.image_component_count * 2)
 					{
 						return stbi__err("bad tRNS len", "Corrupt PNG");
 					}
@@ -905,19 +905,19 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 					// non-paletted with tRNS = constant alpha. if header-scanning, we can stop now.
 					if (scan == STBI__SCAN_header)
 					{
-						++s.img_n;
+						++s.image_component_count;
 						return 1;
 					}
 					if (z.depth == 16)
 					{
-						for (k = 0; k < s.img_n && k < 3; ++k) // extra loop test to suppress false GCC warning
+						for (k = 0; k < s.image_component_count && k < 3; ++k) // extra loop test to suppress false GCC warning
 						{
 							tc16[k] = s.get16be(); // copy the values as-is
 						}
 					}
 					else
 					{
-						for (k = 0; k < s.img_n && k < 3; ++k)
+						for (k = 0; k < s.image_component_count && k < 3; ++k)
 						{
 							tc[k] = static_cast<uint8_t>(s.get16be() & 255) * DEPTH_SCALE_TABLE[z.depth];
 						}
@@ -940,7 +940,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 					// header scan definitely stops at first IDAT
 					if (pal_img_n)
 					{
-						s.img_n = pal_img_n;
+						s.image_component_count = pal_img_n;
 					}
 					return 1;
 				}
@@ -997,8 +997,8 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 					return stbi__err("no IDAT", "Corrupt PNG");
 				}
 				// initial guess for decoded data size to avoid unnecessary reallocs
-				bpl = (s.img_x * z.depth + 7) / 8; // bytes per line, per component
-				raw_len = bpl * s.img_y * s.img_n /* pixels */ + s.img_y /* filter mode per row */;
+				bpl = (s.image_wide * z.depth + 7) / 8; // bytes per line, per component
+				raw_len = bpl * s.image_tall * s.image_component_count /* pixels */ + s.image_tall /* filter mode per row */;
 
 				auto zctx = Zlib::Context();
 				zctx.buffer = z.idata;
@@ -1034,16 +1034,16 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				}
 				stbi_free(z.idata);
 				z.idata = nullptr;
-				if ((req_comp == s.img_n + 1 && req_comp != 3 && !pal_img_n) || has_trans)
+				if ((req_comp == s.image_component_count + 1 && req_comp != 3 && !pal_img_n) || has_trans)
 				{
-					s.img_out_n = s.img_n + 1;
+					s.img_out_n = s.image_component_count + 1;
 				}
 				else
 				{
-					s.img_out_n = s.img_n;
+					s.img_out_n = s.image_component_count;
 				}
-				const auto pic_wide = z.s.img_x;
-				const auto pic_tall = z.s.img_y;
+				const auto pic_wide = z.s.image_wide;
+				const auto pic_tall = z.s.image_tall;
 				{
 					auto _image_data = z.expanded;
 					auto _image_data_len = raw_len;
@@ -1083,7 +1083,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 						auto y = (pic_tall - yorig[p] + yspc[p] - 1) / yspc[p];
 						if (x && y)
 						{
-							auto img_len = ((((z.s.img_n * x * _depth) + 7) >> 3) + 1) * y;
+							auto img_len = ((((z.s.image_component_count * x * _depth) + 7) >> 3) + 1) * y;
 							if (!stbi__create_png_image_raw(&z, _image_data, _image_data_len, _out_n, x, y, _depth, _color))
 							{
 								stbi_free(final);
@@ -1180,7 +1180,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				if (pal_img_n)
 				{
 					// pal_img_n == 3 or 4
-					s.img_n = pal_img_n; // record the actual colors we had
+					s.image_component_count = pal_img_n; // record the actual colors we had
 					s.img_out_n = pal_img_n;
 					if (req_comp >= 3)
 					{
@@ -1231,7 +1231,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				else if (has_trans)
 				{
 					// non-paletted image with tRNS -> source image has (constant) alpha
-					++s.img_n;
+					++s.image_component_count;
 				}
 				s.free(z.expanded);
 				z.expanded = nullptr;
@@ -1322,8 +1322,8 @@ auto coyote_stbi_load_from_memory(
 			const auto img_components = p.s.img_out_n;
 			const auto src_ofs = img_components;
 			const auto dst_ofs = req_comp;
-			const auto xx = p.s.img_x;
-			const auto yy = p.s.img_y;
+			const auto xx = p.s.image_wide;
+			const auto yy = p.s.image_tall;
 			if (ri.bits_per_channel == 8)
 			{
 				auto data = static_cast<uint8_t*>(result);
@@ -1612,16 +1612,16 @@ auto coyote_stbi_load_from_memory(
 		}
 		if (x != nullptr)
 		{
-			*x = p.s.img_x;
+			*x = p.s.image_wide;
 		}
 		if (y != nullptr)
 		{
-			*y = p.s.img_y;
+			*y = p.s.image_tall;
 		}
 
 		if (comp != nullptr)
 		{
-			*comp = p.s.img_n;
+			*comp = p.s.image_component_count;
 		}
 	}
 	stbi_free(p.out);
@@ -1671,7 +1671,7 @@ auto coyote_stbi_info_from_memory(
 	uint64_t source_length,
 	uint64_t *x,
 	uint64_t *y,
-	uint64_t *comp) -> uint32_t
+	uint64_t *component_count) -> uint32_t
 {
 	auto s = DecodeContext(source_png_buffer, source_length);
 
@@ -1681,15 +1681,15 @@ auto coyote_stbi_info_from_memory(
 	{
 		if (x)
 		{
-			*x = p.s.img_x;
+			*x = p.s.image_wide;
 		}
 		if (y)
 		{
-			*y = p.s.img_y;
+			*y = p.s.image_tall;
 		}
-		if (comp)
+		if (component_count)
 		{
-			*comp = p.s.img_n;
+			*component_count = p.s.image_component_count;
 		}
 		return true;
 	}
