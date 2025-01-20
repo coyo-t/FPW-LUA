@@ -5,7 +5,6 @@
 #include <cstring>
 
 #include <stdexcept>
-#include <climits>
 #include <cassert>
 #include <cstdint>
 
@@ -16,8 +15,6 @@
 struct STBIErr final : std::exception
 {
 	const char* reason;
-
-	STBIErr() = default;
 
 	explicit STBIErr(const char * str);
 };
@@ -48,9 +45,9 @@ static const char *stbi__g_failure_reason;
 template<typename T>
 static auto compute_luma (T r, T g, T b) -> T
 {
-	const auto ir =static_cast<uint64_t>(r);
-	const auto ig =static_cast<uint64_t>(g);
-	const auto ib =static_cast<uint64_t>(b);
+	const auto ir = static_cast<uint32_t>(r);
+	const auto ig = static_cast<uint32_t>(g);
+	const auto ib = static_cast<uint32_t>(b);
 	return static_cast<T>((ir * 77 + ig * 150 + ib * 29) >> 8);
 }
 
@@ -82,7 +79,6 @@ static auto stb_realloc (void* p, size_t oldsz, size_t newsz) -> void*
 }
 
 #define STBI_ASSERT(x) assert(x)
-#define STBI_NOTUSED(v)  (void)sizeof(v)
 
 static constexpr auto STBI_MAX_DIMENSIONS = 1 << 24;
 
@@ -476,8 +472,7 @@ static int stbi__create_png_image_raw(
 	auto width = x;
 
 	STBI_ASSERT(out_n == s->img_n || out_n == s->img_n+1);
-	// extra bytes to write off the end into
-	a->out = stbi_malloc_t<uint8_t>(x * y * output_bytes);
+	a->out = s->allocate_t<uint8_t>(x * y * output_bytes);
 	if (!a->out)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -555,33 +550,47 @@ static int stbi__create_png_image_raw(
 		switch (filter)
 		{
 			case STBI__F_none:
-				memcpy(cur, raw, nk);
+				std::memcpy(cur, raw, nk);
 				break;
 			case STBI__F_sub:
-				memcpy(cur, raw, filter_bytes);
+				std::memcpy(cur, raw, filter_bytes);
 				for (k = filter_bytes; k < nk; ++k)
+				{
 					cur[k] = BYTECAST(raw[k] + cur[k-filter_bytes]);
+				}
 				break;
 			case STBI__F_up:
 				for (k = 0; k < nk; ++k)
+				{
 					cur[k] = BYTECAST(raw[k] + prior[k]);
+				}
 				break;
 			case STBI__F_avg:
 				for (k = 0; k < filter_bytes; ++k)
+				{
 					cur[k] = BYTECAST(raw[k] + (prior[k]>>1));
+				}
 				for (k = filter_bytes; k < nk; ++k)
+				{
 					cur[k] = BYTECAST(raw[k] + ((prior[k] + cur[k-filter_bytes])>>1));
+				}
 				break;
 			case STBI__F_paeth:
 				for (k = 0; k < filter_bytes; ++k)
-					cur[k] = BYTECAST(raw[k] + prior[k]); // prior[k] == stbi__paeth(0,prior[k],0)
+				{
+					cur[k] = BYTECAST(raw[k] + prior[k]);
+				}
 				for (k = filter_bytes; k < nk; ++k)
+				{
 					cur[k] = BYTECAST(raw[k] + paeth(cur[k-filter_bytes], prior[k], prior[k-filter_bytes]));
+				}
 				break;
 			case STBI__F_avg_first:
-				memcpy(cur, raw, filter_bytes);
+				std::memcpy(cur, raw, filter_bytes);
 				for (k = filter_bytes; k < nk; ++k)
+				{
 					cur[k] = BYTECAST(raw[k] + (cur[k-filter_bytes] >> 1));
+				}
 				break;
 		}
 
@@ -602,7 +611,10 @@ static int stbi__create_png_image_raw(
 			{
 				for (i = 0; i < nsmp; ++i)
 				{
-					if ((i & 1) == 0) inb = *in++;
+					if ((i & 1) == 0)
+					{
+						inb = *in++;
+					}
 					*out++ = scale * (inb >> 4);
 					inb <<= 4;
 				}
@@ -611,17 +623,22 @@ static int stbi__create_png_image_raw(
 			{
 				for (i = 0; i < nsmp; ++i)
 				{
-					if ((i & 3) == 0) inb = *in++;
+					if ((i & 3) == 0)
+					{
+						inb = *in++;
+					}
 					*out++ = scale * (inb >> 6);
 					inb <<= 2;
 				}
 			}
-			else
+			else if (depth == 1)
 			{
-				STBI_ASSERT(depth == 1);
 				for (i = 0; i < nsmp; ++i)
 				{
-					if ((i & 7) == 0) inb = *in++;
+					if ((i & 7) == 0)
+					{
+						inb = *in++;
+					}
 					*out++ = scale * (inb >> 7);
 					inb <<= 1;
 				}
@@ -637,7 +654,7 @@ static int stbi__create_png_image_raw(
 		{
 			if (img_n == out_n)
 			{
-				memcpy(dest, cur, x * img_n);
+				std::memcpy(dest, cur, x * img_n);
 			}
 			else
 			{
