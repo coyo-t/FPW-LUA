@@ -1,13 +1,9 @@
 #include "./stb_image.hpp"
 
-#include <cmath>
-#include <cstdlib>
 #include <cstring>
 
 #include <stdexcept>
-#include <cassert>
 #include <cstdint>
-
 
 #include "./zlib.hpp"
 
@@ -58,8 +54,6 @@ static auto stb_realloc (void* p, size_t oldsz, size_t newsz) -> void*
 {
 	return std::realloc(p,newsz);
 }
-
-#define STBI_ASSERT(x) assert(x)
 
 static constexpr auto STBI_MAX_DIMENSIONS = 1 << 24;
 
@@ -448,7 +442,10 @@ static int create_png_image_raw(
 	auto filter_bytes = img_n * bytes;
 	auto width = x;
 
-	STBI_ASSERT(out_n == s.image_component_count || out_n == s.image_component_count+1);
+	if (out_n != s.image_component_count && out_n != s.image_component_count+1)
+	{
+		throw STBIErr("assertion error: out_n != component count");
+	}
 	a->out = s.allocate_t<uint8_t>(x * y * output_bytes);
 	if (!a->out)
 	{
@@ -650,7 +647,10 @@ static int create_png_image_raw(
 			}
 			else
 			{
-				STBI_ASSERT(img_n+1 == out_n);
+				if (img_n + 1 != out_n)
+				{
+					throw STBIErr("assertion failure: img_n + 1 == out_n");
+				}
 				if (img_n == 1)
 				{
 					for (i = 0; i < x; ++i, dest16 += 2, cur += 2)
@@ -661,7 +661,10 @@ static int create_png_image_raw(
 				}
 				else
 				{
-					STBI_ASSERT(img_n == 3);
+					if (img_n != 3)
+					{
+						throw STBIErr("assertion failure: img_n == 3");
+					}
 					for (i = 0; i < x; ++i, dest16 += 4, cur += 6)
 					{
 						dest16[0] = (cur[0] << 8) | cur[1];
