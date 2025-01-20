@@ -40,21 +40,21 @@ struct DecodeContext
 
 	auto get8() -> uint8_t
 	{
-		if (this->img_buffer < this->img_buffer_end)
-			return *this->img_buffer++;
+		if (img_buffer < img_buffer_end)
+			return *img_buffer++;
 		return 0;
 	}
 
 	auto get16be() -> uint16_t
 	{
-		const auto z = this->get8();
-		return (static_cast<uint16_t>(z) << 8) | this->get8();
+		const auto z = get8();
+		return (static_cast<uint16_t>(z) << 8) | get8();
 	}
 
 	auto get32be() -> uint32_t
 	{
-		const auto z = this->get16be();
-		return (static_cast<uint32_t>(z) << 16) | this->get16be();
+		const auto z = get16be();
+		return (static_cast<uint32_t>(z) << 16) | get16be();
 	}
 
 	auto skip (int count) -> void
@@ -139,9 +139,12 @@ static auto stb_realloc (void* p, size_t oldsz, size_t newsz) -> void*
 
 // return 1 if the sum is valid, 0 on overflow.
 // negative terms are considered invalid.
-static int stbi__addsizes_valid(size_t a, size_t b)
+static int addsizes_valid(size_t a, size_t b)
 {
-	if (b < 0) return 0;
+	if (b < 0)
+	{
+		return 0;
+	}
 	// now 0 <= b <= INT_MAX, hence also
 	// 0 <= INT_MAX - b <= INTMAX.
 	// And "a + b <= INT_MAX" (which might overflow) is the
@@ -151,7 +154,7 @@ static int stbi__addsizes_valid(size_t a, size_t b)
 
 // returns 1 if the product is valid, 0 on overflow.
 // negative factors are considered invalid.
-static int stbi__mul2sizes_valid(size_t a, size_t b)
+static int mul2sizes_valid(size_t a, size_t b)
 {
 	if (a < 0 || b < 0)
 	{
@@ -163,26 +166,26 @@ static int stbi__mul2sizes_valid(size_t a, size_t b)
 }
 
 // returns 1 if "a*b + add" has no negative terms/factors and doesn't overflow
-static int stbi__mad2sizes_valid(size_t a, size_t b, size_t add)
+static int fma2sizes_valid(size_t a, size_t b, size_t add)
 {
-	return stbi__mul2sizes_valid(a, b) && stbi__addsizes_valid(a * b, add);
+	return mul2sizes_valid(a, b) && addsizes_valid(a * b, add);
 }
 
 // returns 1 if "a*b*c + add" has no negative terms/factors and doesn't overflow
-static int stbi__mad3sizes_valid(size_t a, size_t b, size_t c, size_t add)
+static int fma3sizes_valid(size_t a, size_t b, size_t c, size_t add)
 {
 	return (
-		stbi__mul2sizes_valid(a, b) &&
-		stbi__mul2sizes_valid(a * b, c) &&
-		stbi__addsizes_valid(a * b * c, add)
+		mul2sizes_valid(a, b) &&
+		mul2sizes_valid(a * b, c) &&
+		addsizes_valid(a * b * c, add)
 	);
 }
 
 // mallocs with size overflow checking
 template<typename T>
-static auto stbi__malloc_mad2(size_t a, size_t b, size_t add) -> T*
+static auto malloc_fma2(size_t a, size_t b, size_t add) -> T*
 {
-	if (!stbi__mad2sizes_valid(a, b, add))
+	if (!fma2sizes_valid(a, b, add))
 	{
 		return nullptr;
 	}
@@ -190,9 +193,9 @@ static auto stbi__malloc_mad2(size_t a, size_t b, size_t add) -> T*
 }
 
 template<typename T>
-static auto stbi__malloc_mad3(size_t a, size_t b, size_t c, size_t add) -> T*
+static auto malloc_fma3(size_t a, size_t b, size_t c, size_t add) -> T*
 {
-	if (!stbi__mad3sizes_valid(a, b, c, add))
+	if (!fma3sizes_valid(a, b, c, add))
 	{
 		return nullptr;
 	}
@@ -246,7 +249,7 @@ static uint8_t* stbi__convert_format(
 	}
 	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
 
-	auto good = stbi__malloc_mad3<uint8_t>(req_comp, x, y, 0);
+	auto good = malloc_fma3<uint8_t>(req_comp, x, y, 0);
 	if (good == nullptr)
 	{
 		stbi_free(data);
@@ -255,10 +258,10 @@ static uint8_t* stbi__convert_format(
 
 	static auto compute_luma = [](int r, int g, int b) -> uint8_t
 	{
-		return static_cast<uint8_t>(((r * 77) + (g * 150) + (29 * b)) >> 8);
+		return static_cast<uint8_t>((r * 77 + g * 150 + 29 * b) >> 8);
 	};
 
-	for (int j = 0; j < (int) y; ++j)
+	for (auto j = 0; j < y; ++j)
 	{
 		auto src = data + j * x * img_n;
 		auto dest = good + j * x * req_comp;
@@ -354,7 +357,10 @@ static uint16_t *stbi__convert_format16 (
 {
 	int i;
 
-	if (req_comp == img_n) return data;
+	if (req_comp == img_n)
+	{
+		return data;
+	}
 	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
 
 	auto good = stbi_malloc_t<uint16_t>(req_comp * x * y * 2);
@@ -368,10 +374,10 @@ static uint16_t *stbi__convert_format16 (
 		return static_cast<uint16_t>(((r * 77) + (g * 150) + (29 * b)) >> 8);
 	};
 
-	for (int j = 0; j < (int) y; ++j)
+	for (auto j = 0; j < y; ++j)
 	{
-		uint16_t *src = data + j * x * img_n;
-		uint16_t *dest = good + j * x * req_comp;
+		auto src = data + j * x * img_n;
+		auto dest = good + j * x * req_comp;
 
 		static constexpr auto COMBO = [](int a, int b) { return a*8+b; };
 
@@ -521,32 +527,43 @@ static uint8_t first_row_filter[5] =
 	STBI__F_sub // Paeth with b=c=0 turns out to be equivalent to sub
 };
 
-static const uint8_t stbi__depth_scale_table[9] = {0, 0xff, 0x55, 0, 0x11, 0, 0, 0, 0x01};
+static const uint8_t DEPTH_SCALE_TABLE[9] = {0, 0xff, 0x55, 0, 0x11, 0, 0, 0, 0x01};
 
 // adds an extra all-255 alpha channel
 // dest == src is legal
 // img_n must be 1 or 3
-static void stbi__create_png_alpha_expand8(uint8_t *dest, uint8_t *src, uint32_t x, int img_n)
+static void stbi__create_png_alpha_expand8(
+	uint8_t *dest,
+	uint8_t *src,
+	size_t x,
+	size_t img_n)
 {
-	int i;
 	// must process data backwards since we allow dest==src
 	if (img_n == 1)
 	{
-		for (i = x - 1; i >= 0; --i)
+		for (auto i = x - 1;; --i)
 		{
 			dest[i * 2 + 1] = 255;
 			dest[i * 2 + 0] = src[i];
+			if (i == 0)
+			{
+				return;
+			}
+
 		}
 	}
-	else
+	if (img_n == 3)
 	{
-		STBI_ASSERT(img_n == 3);
-		for (i = x - 1; i >= 0; --i)
+		for (auto i = x - 1;; --i)
 		{
 			dest[i * 4 + 3] = 255;
 			dest[i * 4 + 2] = src[i * 3 + 2];
 			dest[i * 4 + 1] = src[i * 3 + 1];
 			dest[i * 4 + 0] = src[i * 3 + 0];
+			if (i == 0)
+			{
+				return;
+			}
 		}
 	}
 }
@@ -576,7 +593,7 @@ static int stbi__create_png_image_raw(
 
 	STBI_ASSERT(out_n == s->img_n || out_n == s->img_n+1);
 	// extra bytes to write off the end into
-	a->out = stbi__malloc_mad3<uint8_t>(x, y, output_bytes, 0);
+	a->out = malloc_fma3<uint8_t>(x, y, output_bytes, 0);
 	if (!a->out)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -584,12 +601,12 @@ static int stbi__create_png_image_raw(
 
 	// note: error exits here don't need to clean up a->out individually,
 	// stbi__do_png always does on error.
-	if (!stbi__mad3sizes_valid(img_n, x, depth, 7))
+	if (!fma3sizes_valid(img_n, x, depth, 7))
 	{
 		return stbi__err("too large", "Corrupt PNG");
 	}
 	auto img_width_bytes = (((img_n * x * depth) + 7) >> 3);
-	if (!stbi__mad2sizes_valid(img_width_bytes, y, img_width_bytes))
+	if (!fma2sizes_valid(img_width_bytes, y, img_width_bytes))
 	{
 		return stbi__err("too large", "Corrupt PNG");
 	}
@@ -604,7 +621,7 @@ static int stbi__create_png_image_raw(
 	}
 
 	// Allocate two scan lines worth of filter workspace buffer.
-	auto filter_buf = stbi__malloc_mad2<uint8_t>(img_width_bytes, 2, 0);
+	auto filter_buf = malloc_fma2<uint8_t>(img_width_bytes, 2, 0);
 	if (!filter_buf)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -689,7 +706,7 @@ static int stbi__create_png_image_raw(
 		// expand decoded bits in cur to dest, also adding an extra alpha channel if desired
 		if (depth < 8)
 		{
-			auto scale = (color == 0) ? stbi__depth_scale_table[depth] : 1; // scale grayscale values to 0..255 range
+			auto scale = (color == 0) ? DEPTH_SCALE_TABLE[depth] : 1; // scale grayscale values to 0..255 range
 			auto in = cur;
 			auto out = dest;
 			uint8_t inb = 0;
@@ -805,7 +822,7 @@ static int stbi__create_png_image(
 	}
 
 	// de-interlacing
-	auto final = stbi__malloc_mad3<uint8_t>(a->s->img_x, a->s->img_y, out_bytes, 0);
+	auto final = malloc_fma3<uint8_t>(a->s->img_x, a->s->img_y, out_bytes, 0);
 	if (!final)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -926,7 +943,7 @@ static int stbi__expand_png_palette(PNG *a, uint8_t *palette, int len, int pal_i
 	uint32_t i, pixel_count = a->s->img_x * a->s->img_y;
 	uint8_t *orig = a->out;
 
-	auto p = stbi__malloc_mad2<uint8_t>(pixel_count, pal_img_n, 0);
+	auto p = malloc_fma2<uint8_t>(pixel_count, pal_img_n, 0);
 	if (p == nullptr)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -1182,7 +1199,7 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 					{
 						for (k = 0; k < s->img_n && k < 3; ++k)
 						{
-							tc[k] = static_cast<uint8_t>(s->get16be() & 255) * stbi__depth_scale_table[z->depth];
+							tc[k] = static_cast<uint8_t>(s->get16be() & 255) * DEPTH_SCALE_TABLE[z->depth];
 						}
 						// non 8-bit images will be larger
 					}
