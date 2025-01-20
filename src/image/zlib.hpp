@@ -11,11 +11,13 @@ namespace Zlib {
 	using std::uint8_t;
 	using std::size_t;
 
-	struct Er final : std::exception
+	struct Err final : std::exception
 	{
 		const char* reason;
 
-		explicit Er(const char * str);
+		explicit Err(const char * str): reason(str)
+		{
+		}
 	};
 
 	struct Context

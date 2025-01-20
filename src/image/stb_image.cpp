@@ -2,18 +2,9 @@
 
 #include <cstring>
 
-#include <stdexcept>
 #include <cstdint>
 
 #include "./zlib.hpp"
-
-
-struct STBIErr final : std::exception
-{
-	const char* reason;
-
-	explicit STBIErr(const char * str);
-};
 
 
 static constexpr auto FOURCC (const char (&items)[5]) -> uint32_t
@@ -984,7 +975,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				{
 					z.expanded = zctx.decode_malloc_guesssize_headerflag();
 				}
-				catch (Zlib::Er er)
+				catch (Zlib::Err& er)
 				{
 					throw STBIErr(er.reason);
 				}
@@ -1629,7 +1620,7 @@ auto coyote_stbi_load_from_memory(
 			return nullptr;
 		return value;
 	}
-	catch (STBIErr e)
+	catch (STBIErr& e)
 	{
 		interface->set_failure(e.reason);
 		return nullptr;
@@ -1671,7 +1662,7 @@ auto coyote_stbi_info_from_memory(
 			);
 		}
 	}
-	catch (STBIErr e)
+	catch (STBIErr& e)
 	{
 		return interface->set_failure(e.reason);
 	}

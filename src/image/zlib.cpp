@@ -111,7 +111,7 @@ static const int ZDIST_EXTRA[32] = {
 	9, 10, 10, 11, 11, 12, 12, 13, 13
 };
 
-static int bitreverse16(int n)
+static int bitreverse16(uint32_t n)
 {
 	n = ((n & 0xAAAA) >> 1) | ((n & 0x5555) << 1);
 	n = ((n & 0xCCCC) >> 2) | ((n & 0x3333) << 2);
@@ -120,7 +120,7 @@ static int bitreverse16(int n)
 	return n;
 }
 
-static int bit_reverse(int v, int bits)
+static int bit_reverse(uint32_t v, size_t bits)
 {
 	// STBI_ASSERT(bits <= 16);
 	// to bit reverse n bits, reverse 16 and shift
@@ -153,7 +153,7 @@ struct ZHuffman
 		{
 			if (sizes[i] > (1 << i))
 			{
-				throw Zlib::Er("bad sizes");
+				throw Zlib::Err("bad sizes");
 			}
 		}
 		int code = 0;
@@ -167,7 +167,7 @@ struct ZHuffman
 			{
 				if (code - 1 >= (1 << i))
 				{
-					throw Zlib::Er("bad codelengths");
+					throw Zlib::Err("bad codelengths");
 				}
 			}
 			this->maxcode[i] = code << (16 - i); // preshift for inner loop
@@ -210,7 +210,7 @@ struct ZBuffer
 {
 	uint8_t * zbuffer;
 	uint8_t *zbuffer_end;
-	int num_bits;
+	size_t num_bits;
 	int hit_zeof_once;
 	uint32_t code_buffer;
 
@@ -262,7 +262,7 @@ struct ZBuffer
 		return k + OFS;
 	}
 
-	auto read_bits (int n) -> uint32_t
+	auto read_bits (size_t n) -> uint32_t
 	{
 		if (num_bits < n)
 		{
@@ -280,19 +280,19 @@ struct ZBuffer
 		this->zout = zout;
 		if (!this->z_expandable)
 		{
-			throw Zlib::Er("output buffer limit");
+			throw Zlib::Err("output buffer limit");
 		}
 		auto cur = (this->zout - this->zout_start);
 		auto limit = old_limit = (this->zout_end - this->zout_start);
 		if (UINT_MAX - cur < n)
 		{
-			throw Zlib::Er("outofmem");
+			throw Zlib::Err("outofmem");
 		}
 		while (cur + n > limit)
 		{
 			if (limit > UINT_MAX / 2)
 			{
-				throw Zlib::Er("outofmem");
+				throw Zlib::Err("outofmem");
 			}
 			limit *= 2;
 		}
@@ -300,7 +300,7 @@ struct ZBuffer
 		// STBI_NOTUSED(old_limit);
 		if (q == nullptr)
 		{
-			throw Zlib::Er("outofmem");
+			throw Zlib::Err("outofmem");
 		}
 		this->zout_start = q;
 		this->zout = q + cur;
@@ -377,7 +377,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 	const auto p = this->malloc_t<uint8_t>(this->initial_size);
 	if (p == nullptr)
 	{
-		throw Zlib::Er("Out of memory");
+		throw Zlib::Err("Out of memory");
 	}
 	ZBuffer a;
 	a.zbuffer = this->buffer;
@@ -400,42 +400,42 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 			if (a.eof())
 			{
 				// zlib spec
-				throw Zlib::Er("bad zlib header");
+				throw Zlib::Err("bad zlib header");
 			}
 			if ((cmf * 256 + flg) % 31 != 0)
 			{
 				// zlib spec
-				throw Zlib::Er("bad zlib header");
+				throw Zlib::Err("bad zlib header");
 			}
 			if (flg & 32)
 			{
 				// preset dictionary not allowed in png
-				throw Zlib::Er("no preset dict");
+				throw Zlib::Err("no preset dict");
 			}
 			if (cm != 8)
 			{
 				// DEFLATE required for png
-				throw Zlib::Er("bad compression");
+				throw Zlib::Err("bad compression");
 			}
 			// window = 1 << (8 + cinfo)... but who cares, we fully buffer output
 		}
 		a.num_bits = 0;
 		a.code_buffer = 0;
 		a.hit_zeof_once = 0;
-		int final;
+		uint8_t final;
 		do
 		{
 			final = a.read_bits_t<1>();
-			int type = a.read_bits_t<2>();
-			if (type == 0)
+			if (const auto type = a.read_bits_t<2>(); type == 0)
 			{
 				uint8_t header[4];
-				int len;
 				if (a.num_bits & 7)
 				{
 					a.read_bits(a.num_bits & 7); // discard
 				}
 				// drain the bit-packed data into header
+
+				auto pev_bits = a.num_bits;
 				int k = 0;
 				while (a.num_bits > 0)
 				{
@@ -443,25 +443,25 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 					header[k++] = static_cast<uint8_t>(a.code_buffer & 255);
 					a.code_buffer >>= 8;
 					a.num_bits -= 8;
-				}
-				if (a.num_bits < 0)
-				{
-					throw Zlib::Er("zlib corrupt");
+					if (a.num_bits > pev_bits)
+					{
+						throw Zlib::Err("zlib corrupt");
+					}
 				}
 				// now fill header the normal way
 				while (k < 4)
 				{
 					header[k++] = a.read_u8();
 				}
-				len = header[1] * 256 + header[0];
+				int len = header[1] * 256 + header[0];
 				int nlen = header[3] * 256 + header[2];
 				if (nlen != (len ^ 0xffff))
 				{
-					throw Zlib::Er("zlib corrupt");
+					throw Zlib::Err("zlib corrupt");
 				}
 				if (a.zbuffer + len > a.zbuffer_end)
 				{
-					throw Zlib::Er("read past buffer");
+					throw Zlib::Err("read past buffer");
 				}
 				if (a.zout + len > a.zout_end)
 				{
@@ -473,7 +473,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 			}
 			else if (type == 3)
 			{
-				throw Zlib::Er("zdo_zlib: type == 3");
+				throw Zlib::Err("zdo_zlib: type == 3");
 			}
 			else
 			{
@@ -508,7 +508,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 						int c = a.zhuffman_decode(z_codelength);
 						if (c < 0 || c >= 19)
 						{
-							throw Zlib::Er("bad codelengths");
+							throw Zlib::Err("bad codelengths");
 						}
 						if (c < 16)
 						{
@@ -522,7 +522,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 								c = a.read_bits_t<2, 3>();
 								if (n == 0)
 								{
-									throw Zlib::Er("bad codelengths");
+									throw Zlib::Err("bad codelengths");
 								}
 								fill = lencodes[n - 1];
 							}
@@ -536,11 +536,11 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 							}
 							else
 							{
-								throw Zlib::Er("bad codelengths");
+								throw Zlib::Err("bad codelengths");
 							}
 							if (ntot - n < c)
 							{
-								throw Zlib::Er("bad codelengths");
+								throw Zlib::Err("bad codelengths");
 							}
 							std::memset(lencodes + n, fill, c);
 							n += c;
@@ -548,7 +548,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 					}
 					if (n != ntot)
 					{
-						throw Zlib::Er("bad codelengths");
+						throw Zlib::Err("bad codelengths");
 					}
 					a.z_length.zbuild_huffman(lencodes, hlit);
 					a.z_distance.zbuild_huffman(lencodes + hlit, hdist);
@@ -563,7 +563,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 						if (z < 0)
 						{
 							// error in huffman codes
-							throw Zlib::Er("bad huffman code");
+							throw Zlib::Err("bad huffman code");
 						}
 						if (zout >= a.zout_end)
 						{
@@ -583,14 +583,14 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 								// buffer so the decoder can just do its speculative decoding. But if we
 								// actually consumed any of those bits (which is the case when num_bits < 16),
 								// the stream actually read past the end so it is malformed.
-								throw Zlib::Er("unexpected end");
+								throw Zlib::Err("unexpected end");
 							}
 						}
 						else
 						{
 							if (z >= 286)
 							{
-								throw Zlib::Er("bad huffman code");
+								throw Zlib::Err("bad huffman code");
 							}
 							// per DEFLATE, length codes 286 and 287 must not appear in compressed data
 							z -= 257;
@@ -602,7 +602,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 							z = a.zhuffman_decode(a.z_distance);
 							if (z < 0 || z >= 30)
 							{
-								throw Zlib::Er("bad huffman code");
+								throw Zlib::Err("bad huffman code");
 							}
 							// per DEFLATE, distance codes 30 and 31 must not appear in compressed data
 							int dist = ZDIST_BASE[z];
@@ -612,7 +612,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 							}
 							if (zout - a.zout_start < dist)
 							{
-								throw Zlib::Er("bad dist");
+								throw Zlib::Err("bad dist");
 							}
 							if (len > a.zout_end - zout)
 							{
@@ -646,7 +646,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 		this->out_len = a.zout - a.zout_start;
 		return a.zout_start;
 	}
-	catch (Zlib::Er e)
+	catch (Zlib::Err& e)
 	{
 		this->free_t(a.zout_start);
 		throw e;

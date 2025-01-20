@@ -2,6 +2,7 @@
 #define STBI_INCLUDE_STB_IMAGE_H
 
 #include <cstdint>
+#include <exception>
 
 enum
 {
@@ -13,7 +14,17 @@ enum
 	STBI_rgb_alpha = 4
 };
 
+struct STBIErr final : std::exception
+{
+	const char* reason;
+
+	explicit STBIErr (const char* reason): reason(reason)
+	{
+	}
+};
+
 using AllocatorCallback = auto (uint64_t size) -> void*;
+
 
 struct DllInterface
 {
