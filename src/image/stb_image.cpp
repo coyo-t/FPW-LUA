@@ -217,6 +217,20 @@ struct DecodeContext
 		entry->freed = true;
 	}
 
+	auto reallocate (void* thing, size_t news) -> void*
+	{
+		if (news == 0)
+		{
+			free(thing);
+			return nullptr;
+		}
+		auto a = Allocation::get_address(thing);
+		if (a->size >= news)
+		{
+			return thing;
+		}
+		return allocate(news);
+	}
 
 	template<typename T>
 	auto allocate_t (size_t count) -> T*
