@@ -1174,12 +1174,14 @@ auto coyote_stbi_load_from_memory(
 			const auto bpp = ri.bits_per_channel;
 			const size_t max_component = ((1<<(bpp-1))-1)|(1<<(bpp-1));
 
+			const auto img_n = p.s->img_out_bytes;
+			const auto src_ofs = img_n;
+			const auto dst_ofs = req_comp;
+			const auto xx = p.s->img_x;
+			const auto yy = p.s->img_y;
 			if (ri.bits_per_channel == 8)
 			{
 				auto data = static_cast<uint8_t*>(result);
-				auto img_n = p.s->img_out_bytes;
-				auto xx = p.s->img_x;
-				auto yy = p.s->img_y;
 
 				if (req_comp == img_n)
 				{
@@ -1196,8 +1198,6 @@ auto coyote_stbi_load_from_memory(
 				}
 
 				auto (*CONV_FUNC)(uint8_t* src, uint8_t* dst) -> void = nullptr;
-				const auto src_ofs = img_n;
-				const auto dst_ofs = req_comp;
 
 				switch (COMBO(img_n, req_comp))
 				{
@@ -1322,15 +1322,12 @@ auto coyote_stbi_load_from_memory(
 			else
 			{
 				auto _data = static_cast<uint16_t*>(result);
-				auto _img_n = p.s->img_out_bytes;
-				if (req_comp == _img_n)
+				if (req_comp == img_n)
 				{
 					result = _data;
 					goto endp;
 				}
 
-				auto xx = p.s->img_x;
-				auto yy = p.s->img_y;
 				auto good = stbi_malloc_t<uint16_t>(req_comp * xx * yy * 2);
 				if (good == nullptr)
 				{
@@ -1340,10 +1337,8 @@ auto coyote_stbi_load_from_memory(
 				}
 
 				auto (*CONV_FUNC)(uint16_t* src, uint16_t* dst) -> void = nullptr;
-				const auto src_ofs = _img_n;
-				const auto dst_ofs = req_comp;
 
-				switch (COMBO(_img_n, req_comp))
+				switch (COMBO(img_n, req_comp))
 				{
 					case COMBO(1,2): {
 						CONV_FUNC = [](auto src, auto dest) {
@@ -1442,7 +1437,7 @@ auto coyote_stbi_load_from_memory(
 
 				for (auto j = 0; j < yy; ++j)
 				{
-					auto src = _data + j * xx * _img_n;
+					auto src = _data + j * xx * img_n;
 					auto dest = good + j * xx * req_comp;
 
 					// FIXME: ditch the scanline approach, do whole image at once
