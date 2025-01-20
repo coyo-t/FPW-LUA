@@ -1592,7 +1592,7 @@ trueend:
 	}
 
 	// it is the responsibility of the loaders to make sure we get either 8 or 16 bit.
-	if (bits_per_channel != 8 || bits_per_channel != 16)
+	if (bits_per_channel != 8 && bits_per_channel != 16)
 	{
 		throw STBIErr("assertion error: bits per channel isn't 8 or 16");
 	}
