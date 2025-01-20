@@ -5,6 +5,28 @@
 #include<cstring>
 #include<climits>
 
+template<typename T, size_t S>
+struct ThaArray
+{
+	template<typename T, size_t S>
+	explicit ThaArray (const T (&items)[S]): items(items)
+	{
+	}
+
+	auto size () -> size_t
+	{
+		return S;
+	}
+
+	T items[S];
+};
+
+template<typename T, typename... A>
+constexpr auto arrayOf (const A... items) {
+	return ThaArray<T, sizeof...(items)>({&items...});
+}
+
+constexpr auto test = arrayOf<uint8_t>(10, 20);
 
 // public domain zlib decode    v0.2  Sean Barrett 2006-11-18
 //    simple implementation
@@ -15,10 +37,10 @@
 
 // fast-way is faster to check than jpeg huffman, but slow way is slower
 // accelerate all cases in default tables
-static constexpr auto STBI__ZFAST_BITS = 9;
-static constexpr auto STBI__ZFAST_MASK = ((1 << STBI__ZFAST_BITS) - 1);
+static constexpr auto ZFAST_BITS = 9;
+static constexpr auto ZFAST_MASK = ((1 << ZFAST_BITS) - 1);
 // number of symbols in literal/length alphabet
-static constexpr auto STBI__ZNSYMS = 288;
+static constexpr auto ZNSYMS = 288;
 
 
 /*
@@ -33,24 +55,60 @@ Init algorithm:
 	for (i=0; i <=  31; ++i)     stbi__zdefault_distance[i] = 5;
 }
 */
-static const uint8_t DEFAULT_LENGTH[STBI__ZNSYMS] =
+static const uint8_t DEFAULT_LENGTH[ZNSYMS] =
 {
-	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-	9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-	9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-	9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-	7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8
-};
-static const uint8_t DEFAULT_DISTANCE[32] =
-{
-	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9,
+	9, 9, 9, 9, 9, 9, 9, 9,
+	7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7,
+	8, 8, 8, 8, 8, 8, 8, 8,
 };
 
-static const uint8_t LENGTH_DE_ZIGZAG[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
+static const uint8_t DEFAULT_DISTANCE[32] = {
+	5, 5, 5, 5, 5, 5, 5, 5,
+	5, 5, 5, 5, 5, 5, 5, 5,
+	5, 5, 5, 5, 5, 5, 5, 5,
+	5, 5, 5, 5, 5, 5, 5, 5,
+};
+
+static const uint8_t LENGTH_DE_ZIGZAG[19] = {
+	16, 17, 18, 0,
+	8,  7,  9,  6,
+	10, 5,  11, 4,
+	12, 3,  13, 2,
+	14, 1,  15
+};
 
 static const int ZLENGTH_BASE[31] = {
 	3, 4, 5, 6, 7, 8, 9, 10, 11, 13,
@@ -58,8 +116,12 @@ static const int ZLENGTH_BASE[31] = {
 	67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0
 };
 
-static const int stbi__zlength_extra[31] =
-		{0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, 0, 0};
+static const int ZLENGTH_EXTRA[31] = {
+	0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 1, 1, 2, 2, 2, 2,
+	3, 3, 3, 3, 4, 4, 4, 4,
+	5, 5, 5, 5, 0, 0, 0,
+};
 
 static const int ZDIST_BASE[32] = {
 	1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193,
@@ -88,12 +150,12 @@ static int bit_reverse(int v, int bits)
 
 struct ZHuffman
 {
-	uint16_t fast[1 << STBI__ZFAST_BITS];
+	uint16_t fast[1 << ZFAST_BITS];
 	uint16_t firstcode[16];
 	int maxcode[17];
 	uint16_t firstsymbol[16];
-	uint8_t size[STBI__ZNSYMS];
-	uint16_t value[STBI__ZNSYMS];
+	uint8_t size[ZNSYMS];
+	uint16_t value[ZNSYMS];
 
 	auto zbuild_huffman(const uint8_t *sizelist, int num) -> void
 	{
@@ -136,19 +198,19 @@ struct ZHuffman
 		this->maxcode[16] = 0x10000; // sentinel
 		for (i = 0; i < num; ++i)
 		{
-			int s = sizelist[i];
+			const int s = sizelist[i];
 			if (!s)
 			{
 				continue;
 			}
-			int c = next_code[s] - this->firstcode[s] + this->firstsymbol[s];
+			const int c = next_code[s] - this->firstcode[s] + this->firstsymbol[s];
 			auto fastv = static_cast<uint16_t>((s << 9) | i);
 			this->size[c] = static_cast<uint8_t>(s);
 			this->value[c] = static_cast<uint16_t>(i);
-			if (s <= STBI__ZFAST_BITS)
+			if (s <= ZFAST_BITS)
 			{
 				int j = bit_reverse(next_code[s], s);
-				while (j < (1 << STBI__ZFAST_BITS))
+				while (j < (1 << ZFAST_BITS))
 				{
 					this->fast[j] = fastv;
 					j += (1 << s);
@@ -267,8 +329,7 @@ struct ZBuffer
 	}
 	auto zhuffman_decode(ZHuffman& z) -> int
 	{
-		int b, s;
-		if (this->num_bits < 16)
+		if (num_bits < 16)
 		{
 			if (this->eof())
 			{
@@ -292,10 +353,9 @@ struct ZBuffer
 				this->zfill_bits();
 			}
 		}
-		b = z.fast[this->code_buffer & STBI__ZFAST_MASK];
-		if (b)
+		if (const int b = z.fast[this->code_buffer & ZFAST_MASK])
 		{
-			s = b >> 9;
+			const int s = b >> 9;
 			this->code_buffer >>= s;
 			this->num_bits -= s;
 			return b & 511;
@@ -304,8 +364,8 @@ struct ZBuffer
 		int s2;
 		// not resolved by fast table, so compute it the slow way
 		// use jpeg approach, which requires MSbits at top
-		int k2 = bit_reverse(this->code_buffer, 16);
-		for (s2 = STBI__ZFAST_BITS + 1; ; ++s2)
+		auto k2 = bit_reverse(code_buffer, 16);
+		for (s2 = ZFAST_BITS + 1; ; ++s2)
 		{
 			if (k2 < z.maxcode[s2])
 			{
@@ -318,7 +378,7 @@ struct ZBuffer
 		}
 		// code size is s, so:
 		int b2 = (k2 >> (16 - s2)) - z.firstcode[s2] + z.firstsymbol[s2];
-		if (b2 >= STBI__ZNSYMS)
+		if (b2 >= ZNSYMS)
 		{
 			return -1; // some data was corrupt somewhere!
 		}
@@ -441,7 +501,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 				if (type == 1)
 				{
 					// use fixed code lengths
-					a.z_length.zbuild_huffman(DEFAULT_LENGTH, STBI__ZNSYMS);
+					a.z_length.zbuild_huffman(DEFAULT_LENGTH, ZNSYMS);
 					a.z_distance.zbuild_huffman(DEFAULT_DISTANCE, 32);
 				}
 				else
@@ -557,9 +617,9 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 							// per DEFLATE, length codes 286 and 287 must not appear in compressed data
 							z -= 257;
 							int len = ZLENGTH_BASE[z];
-							if (stbi__zlength_extra[z])
+							if (ZLENGTH_EXTRA[z])
 							{
-								len += a.read_bits(stbi__zlength_extra[z]);
+								len += a.read_bits(ZLENGTH_EXTRA[z]);
 							}
 							z = a.zhuffman_decode(a.z_distance);
 							if (z < 0 || z >= 30)
