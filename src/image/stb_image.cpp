@@ -1702,7 +1702,7 @@ auto coyote_stbi_failure_get_info(DllInterface *res) -> const char *
 	{
 		return "not actually a failure dingus!!!";
 	}
-	return res->failure.reason;
+	return res->result.failure.reason;
 }
 
 
@@ -1718,7 +1718,7 @@ auto coyote_stbi_success_get_pic(DllInterface *res, uint64_t *out_size) -> uint8
 		return nullptr;
 	}
 
-	auto [s, p] = res->success;
+	auto [s, p] = res->result.success;
 	if (out_size != nullptr)
 	{
 		*out_size = s;
@@ -1735,5 +1735,5 @@ auto coyote_stbi_interface_setup(
 	interface->source_png_buffer = source_png_buffer;
 	interface->source_png_size = source_png_size;
 	interface->is_success = false;
-	interface->failure.reason = nullptr;
+	interface->result.failure.reason = nullptr;
 }

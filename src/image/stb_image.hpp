@@ -33,7 +33,7 @@ struct DllInterface
 		{
 			const char* reason;
 		} failure;
-	};
+	} result;
 };
 
 extern "C" {
