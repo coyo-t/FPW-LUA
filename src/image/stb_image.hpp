@@ -1,9 +1,6 @@
 #ifndef STBI_INCLUDE_STB_IMAGE_H
 #define STBI_INCLUDE_STB_IMAGE_H
 
-#define STBI_NO_LINEAR
-#define STBI_ONLY_PNG
-#define STBI_NO_STDIO
 #include <cstdint>
 
 enum
@@ -20,6 +17,7 @@ struct DllInterface
 {
 	uint8_t const* source_png_buffer;
 	size_t source_png_size;
+	size_t desired_channel_count;
 	bool is_success;
 	union
 	{
@@ -34,42 +32,47 @@ struct DllInterface
 			const char* reason;
 		} failure;
 	} result;
+
+	auto set_failure (const char* reason) -> bool
+	{
+		result.failure.reason = reason;
+		return false;
+	}
 };
 
 extern "C" {
 #define STBIDEF extern auto
 
 
-STBIDEF coyote_stbi_interface_sizeof () -> std::uint64_t;
+STBIDEF coyote_stbi_interface_sizeof () -> uint64_t;
 STBIDEF coyote_stbi_interface_setup (
 	DllInterface* interface,
 	uint8_t const* source_png_buffer,
-	uint64_t source_png_size
+	uint64_t source_png_size,
+	uint64_t desired_channel_count
 ) -> void;
 
 
-STBIDEF coyote_stbi_is_success (DllInterface* res) -> uint8_t;
-STBIDEF coyote_stbi_failure_get_info (DllInterface* res) -> const char*;
-
-STBIDEF coyote_stbi_success_get_pic (DllInterface* res, uint64_t* out_size) -> uint8_t*;
+STBIDEF coyote_stbi_get_failure (DllInterface* res) -> const char*;
+STBIDEF coyote_stbi_get_success (DllInterface* res, uint64_t* out_size) -> uint8_t*;
 
 
 STBIDEF coyote_stbi_load_from_memory(
-	std::uint8_t const *source_png_buffer,
-	std::uint64_t source_length,
-	std::uint64_t* x,
-	std::uint64_t* y,
-	std::uint64_t* channels_in_file,
-	std::uint64_t desired_channels
-) -> std::uint8_t*;
+	uint8_t const *source_png_buffer,
+	uint64_t source_length,
+	uint64_t* x,
+	uint64_t* y,
+	uint64_t* channels_in_file,
+	uint64_t desired_channels
+) -> uint8_t*;
 
 STBIDEF coyote_stbi_info_from_memory(
-	std::uint8_t const *source_png_buffer,
-	std::uint64_t source_length,
-	std::uint64_t* x,
-	std::uint64_t* y,
-	std::uint64_t* component_count
-) -> std::uint32_t;
+	DllInterface *interface,
+	uint64_t* out_pic_wide,
+	uint64_t* out_pic_tall,
+	uint64_t* out_pic_component_count,
+	uint64_t *out_required_output_size
+) -> uint32_t;
 
 // free the loaded image -- this is just free()
 STBIDEF coyote_stbi_image_free(void *retval_from_stbi_load) -> void;

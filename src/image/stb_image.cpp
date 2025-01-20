@@ -371,13 +371,13 @@ static auto stbi__check_png_header (DecodeContext &s) -> void
 
 struct PNG
 {
-	DecodeContext& s;
+	DecodeContext& context;
 	uint8_t *idata = nullptr;
 	uint8_t *expanded = nullptr;
 	uint8_t *out = nullptr;
-	int depth = 0;
+	int pixel_bit_depth = 0;
 
-	explicit PNG (DecodeContext& ctx): s(ctx)
+	explicit PNG (DecodeContext& ctx): context(ctx)
 	{
 	}
 };
@@ -456,7 +456,7 @@ static int stbi__create_png_image_raw(
 	size_t color)
 {
 	auto bytes = (depth == 16 ? 2 : 1);
-	auto s = a->s;
+	auto s = a->context;
 	uint32_t i;
 	auto stride = x * out_n * bytes;
 	int all_ok = 1;
@@ -705,7 +705,7 @@ static int stbi__create_png_image_raw(
 
 static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 {
-	auto s = z.s;
+	auto s = z.context;
 
 	z.expanded = nullptr;
 	z.idata = nullptr;
@@ -754,7 +754,10 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 					return stbi__err("multiple IHDR", "Corrupt PNG");
 				}
 				first = 0;
-				if (chunkc.length != 13) return stbi__err("bad IHDR len", "Corrupt PNG");
+				if (chunkc.length != 13)
+				{
+					return stbi__err("bad IHDR len", "Corrupt PNG");
+				}
 				s.image_wide = s.get32be();
 				s.image_tall = s.get32be();
 				if (s.image_tall > STBI_MAX_DIMENSIONS)
@@ -765,8 +768,8 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				{
 					return stbi__err("too large", "Very large image (corrupt?)");
 				}
-				z.depth = s.get8();
-				if (z.depth != 1 && z.depth != 2 && z.depth != 4 && z.depth != 8 && z.depth != 16)
+				z.pixel_bit_depth = s.get8();
+				if (z.pixel_bit_depth != 1 && z.pixel_bit_depth != 2 && z.pixel_bit_depth != 4 && z.pixel_bit_depth != 8 && z.pixel_bit_depth != 16)
 				{
 					return stbi__err(
 						"1/2/4/8/16-bit only", "PNG not supported: 1/2/4/8/16-bit only");
@@ -776,7 +779,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				{
 					return stbi__err("bad ctype", "Corrupt PNG");
 				}
-				if (color == 3 && z.depth == 16)
+				if (color == 3 && z.pixel_bit_depth == 16)
 				{
 					return stbi__err("bad ctype", "Corrupt PNG");
 				}
@@ -899,7 +902,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 						++s.image_component_count;
 						return 1;
 					}
-					if (z.depth == 16)
+					if (z.pixel_bit_depth == 16)
 					{
 						for (k = 0; k < s.image_component_count && k < 3; ++k) // extra loop test to suppress false GCC warning
 						{
@@ -910,7 +913,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 					{
 						for (k = 0; k < s.image_component_count && k < 3; ++k)
 						{
-							tc[k] = static_cast<uint8_t>(s.get16be() & 255) * DEPTH_SCALE_TABLE[z.depth];
+							tc[k] = static_cast<uint8_t>(s.get16be() & 255) * DEPTH_SCALE_TABLE[z.pixel_bit_depth];
 						}
 						// non 8-bit images will be larger
 					}
@@ -988,7 +991,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 					return stbi__err("no IDAT", "Corrupt PNG");
 				}
 				// initial guess for decoded data size to avoid unnecessary reallocs
-				bpl = (s.image_wide * z.depth + 7) / 8; // bytes per line, per component
+				bpl = (s.image_wide * z.pixel_bit_depth + 7) / 8; // bytes per line, per component
 				raw_len = bpl * s.image_tall * s.image_component_count /* pixels */ + s.image_tall /* filter mode per row */;
 
 				auto zctx = Zlib::Context();
@@ -1033,13 +1036,13 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				{
 					s.img_out_n = s.image_component_count;
 				}
-				const auto pic_wide = z.s.image_wide;
-				const auto pic_tall = z.s.image_tall;
+				const auto pic_wide = z.context.image_wide;
+				const auto pic_tall = z.context.image_tall;
 				{
 					auto _image_data = z.expanded;
 					auto _image_data_len = raw_len;
 					auto _out_n = s.img_out_n;
-					auto _depth = z.depth;
+					auto _depth = z.pixel_bit_depth;
 					auto _color = color;
 					auto _interlaced = interlace;
 					if (!_interlaced)
@@ -1074,7 +1077,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 						auto y = (pic_tall - yorig[p] + yspc[p] - 1) / yspc[p];
 						if (x && y)
 						{
-							auto img_len = ((((z.s.image_component_count * x * _depth) + 7) >> 3) + 1) * y;
+							auto img_len = ((((z.context.image_component_count * x * _depth) + 7) >> 3) + 1) * y;
 							if (!stbi__create_png_image_raw(&z, _image_data, _image_data_len, _out_n, x, y, _depth, _color))
 							{
 								stbi_free(final);
@@ -1102,7 +1105,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				}
 				if (has_trans)
 				{
-					if (z.depth == 16)
+					if (z.pixel_bit_depth == 16)
 					{
 
 						auto outn = s.img_out_n;
@@ -1290,11 +1293,11 @@ auto coyote_stbi_load_from_memory(
 	}
 	if (parse_png_file(p, STBI__SCAN_load, req_comp))
 	{
-		if (p.depth <= 8)
+		if (p.pixel_bit_depth <= 8)
 		{
 			bits_per_channel = 8;
 		}
-		else if (p.depth == 16)
+		else if (p.pixel_bit_depth == 16)
 		{
 			bits_per_channel = 16;
 		}
@@ -1305,14 +1308,14 @@ auto coyote_stbi_load_from_memory(
 		}
 		result = p.out;
 		p.out = nullptr;
-		if (req_comp && req_comp != p.s.img_out_n)
+		if (req_comp && req_comp != p.context.img_out_n)
 		{
 			static constexpr auto COMBO = [](size_t a, size_t b) { return (a<<3)|b; };
-			const auto img_components = p.s.img_out_n;
+			const auto img_components = p.context.img_out_n;
 			const auto src_ofs = img_components;
 			const auto dst_ofs = req_comp;
-			const auto xx = p.s.image_wide;
-			const auto yy = p.s.image_tall;
+			const auto xx = p.context.image_wide;
+			const auto yy = p.context.image_tall;
 			if (bits_per_channel == 8)
 			{
 				auto data = static_cast<uint8_t*>(result);
@@ -1592,7 +1595,7 @@ auto coyote_stbi_load_from_memory(
 				result = good;
 			endp:
 			}
-			p.s.img_out_n = req_comp;
+			p.context.img_out_n = req_comp;
 			if (result == nullptr)
 			{
 				true_result = result;
@@ -1601,16 +1604,16 @@ auto coyote_stbi_load_from_memory(
 		}
 		if (x != nullptr)
 		{
-			*x = p.s.image_wide;
+			*x = p.context.image_wide;
 		}
 		if (y != nullptr)
 		{
-			*y = p.s.image_tall;
+			*y = p.context.image_tall;
 		}
 
 		if (comp != nullptr)
 		{
-			*comp = p.s.image_component_count;
+			*comp = p.context.image_component_count;
 		}
 	}
 	stbi_free(p.out);
@@ -1656,34 +1659,40 @@ auto coyote_stbi_load_from_memory(
 }
 
 auto coyote_stbi_info_from_memory(
-	uint8_t const *source_png_buffer,
-	uint64_t source_length,
-	uint64_t *x,
-	uint64_t *y,
-	uint64_t *component_count) -> uint32_t
+	DllInterface *interface,
+	uint64_t *out_pic_wide,
+	uint64_t *out_pic_tall,
+	uint64_t *out_pic_component_count,
+	uint64_t *out_required_output_size) -> uint32_t
 {
-	auto s = DecodeContext(source_png_buffer, source_length);
-
+	auto s = DecodeContext(interface->source_png_buffer, interface->source_png_size);
 	auto p = PNG(s);
 
-	if (parse_png_file(p, STBI__SCAN_header, 0))
+	try
 	{
-		if (x)
+		if (!parse_png_file(p, STBI__SCAN_header, 0))
 		{
-			*x = p.s.image_wide;
+			throw STBIErr("image isn't a PNG or is corrupted");
 		}
-		if (y)
-		{
-			*y = p.s.image_tall;
-		}
-		if (component_count)
-		{
-			*component_count = p.s.image_component_count;
-		}
-		return true;
 	}
-	p.s.rewind();
-	return stbi__err("unknown image type", "Image not of any known type, or corrupt");
+	catch (STBIErr e)
+	{
+		return interface->set_failure(e.reason);
+	}
+
+	if (out_pic_wide != nullptr)
+	{
+		*out_pic_wide = p.context.image_wide;
+	}
+	if (out_pic_tall != nullptr)
+	{
+		*out_pic_tall = p.context.image_tall;
+	}
+	if (out_pic_component_count != nullptr)
+	{
+		*out_pic_component_count = p.context.image_component_count;
+	}
+	return true;
 }
 
 void coyote_stbi_image_free(void *retval_from_stbi_load)
@@ -1691,12 +1700,12 @@ void coyote_stbi_image_free(void *retval_from_stbi_load)
 	stbi_free(retval_from_stbi_load);
 }
 
-auto coyote_stbi_is_success(DllInterface *res) -> uint8_t
+auto coyote_stbi_interface_sizeof() -> std::uint64_t
 {
-	return res->is_success != 0;
+	return sizeof(DllInterface);
 }
 
-auto coyote_stbi_failure_get_info(DllInterface *res) -> const char *
+auto coyote_stbi_get_failure(DllInterface *res) -> const char *
 {
 	if (res->is_success)
 	{
@@ -1705,13 +1714,7 @@ auto coyote_stbi_failure_get_info(DllInterface *res) -> const char *
 	return res->result.failure.reason;
 }
 
-
-auto coyote_stbi_interface_sizeof() -> std::uint64_t
-{
-	return sizeof(DllInterface);
-}
-
-auto coyote_stbi_success_get_pic(DllInterface *res, uint64_t *out_size) -> uint8_t *
+auto coyote_stbi_get_success(DllInterface *res, uint64_t *out_size) -> uint8_t *
 {
 	if (!res->is_success)
 	{
@@ -1729,11 +1732,15 @@ auto coyote_stbi_success_get_pic(DllInterface *res, uint64_t *out_size) -> uint8
 auto coyote_stbi_interface_setup(
 	DllInterface *interface,
 	uint8_t const *source_png_buffer,
-	uint64_t source_png_size
+	uint64_t source_png_size,
+	uint64_t desired_channel_count
 ) -> void
 {
 	interface->source_png_buffer = source_png_buffer;
 	interface->source_png_size = source_png_size;
 	interface->is_success = false;
 	interface->result.failure.reason = nullptr;
+	interface->desired_channel_count = desired_channel_count == 0
+		? 4
+		: desired_channel_count;
 }
