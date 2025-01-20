@@ -19,11 +19,9 @@ typedef unsigned char stbi_uc;
 typedef unsigned short stbi_us;
 
 extern "C" {
-
-
 #define STBIDEF extern
 
-STBIDEF stbi_uc* coyote_stbi_load_from_memory(
+STBIDEF stbi_uc *coyote_stbi_load_from_memory(
 	stbi_uc const *buffer,
 	int len,
 	int *x,
@@ -38,7 +36,7 @@ STBIDEF stbi_uc* coyote_stbi_load_from_memory(
 STBIDEF const char *coyote_stbi_failure_reason(void);
 
 // free the loaded image -- this is just free()
-STBIDEF void coyote_stbi_image_free (void *retval_from_stbi_load);
+STBIDEF void coyote_stbi_image_free(void *retval_from_stbi_load);
 
 // get image dimensions & components without fully decoding
 STBIDEF int coyote_stbi_info_from_memory(
@@ -48,7 +46,6 @@ STBIDEF int coyote_stbi_info_from_memory(
 	int *y,
 	int *comp
 );
-
 }
 
 #endif // STBI_INCLUDE_STB_IMAGE_H
