@@ -16,49 +16,42 @@ enum
 	STBI_rgb_alpha = 4
 };
 
-struct SuccessResult
+struct DllInterface
 {
-	size_t pic_data_size;
-	uint8_t* pic_data;
-};
-
-struct FailureResult
-{
-	const char* reason;
-};
-
-struct DecodeResult
-{
-
+	uint8_t const* source_png_buffer;
+	size_t source_png_size;
 	bool is_success;
 	union
 	{
-		SuccessResult success;
-		FailureResult failure;
+		struct
+		{
+			size_t pic_data_size;
+			uint8_t* pic_data;
+		} success;
+
+		struct
+		{
+			const char* reason;
+		} failure;
 	};
-
-	explicit DecodeResult (const SuccessResult result):
-		is_success(true),
-		success(result)
-	{
-	}
-
-	explicit DecodeResult (const FailureResult result):
-		is_success(false),
-		failure(result)
-	{
-	}
 };
 
 extern "C" {
 #define STBIDEF extern auto
 
 
-STBIDEF coyote_stbi_result_sizeof () -> std::uint64_t;
-STBIDEF coyote_stbi_result_is_success (DecodeResult* res) -> uint8_t;
-STBIDEF coyote_stbi_failure_get_info (DecodeResult* res) -> const char*;
+STBIDEF coyote_stbi_interface_sizeof () -> std::uint64_t;
+STBIDEF coyote_stbi_interface_setup (
+	DllInterface* interface,
+	uint8_t const* source_png_buffer,
+	uint64_t source_png_size
+) -> void;
 
-STBIDEF coyote_stbi_success_get_pic (DecodeResult* res, uint64_t* out_size) -> uint8_t*;
+
+STBIDEF coyote_stbi_is_success (DllInterface* res) -> uint8_t;
+STBIDEF coyote_stbi_failure_get_info (DllInterface* res) -> const char*;
+
+STBIDEF coyote_stbi_success_get_pic (DllInterface* res, uint64_t* out_size) -> uint8_t*;
 
 
 STBIDEF coyote_stbi_load_from_memory(

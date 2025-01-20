@@ -1691,12 +1691,12 @@ void coyote_stbi_image_free(void *retval_from_stbi_load)
 	stbi_free(retval_from_stbi_load);
 }
 
-auto coyote_stbi_result_is_success(DecodeResult *res) -> uint8_t
+auto coyote_stbi_is_success(DllInterface *res) -> uint8_t
 {
 	return res->is_success != 0;
 }
 
-auto coyote_stbi_failure_get_info(DecodeResult *res) -> const char *
+auto coyote_stbi_failure_get_info(DllInterface *res) -> const char *
 {
 	if (res->is_success)
 	{
@@ -1706,12 +1706,12 @@ auto coyote_stbi_failure_get_info(DecodeResult *res) -> const char *
 }
 
 
-auto coyote_stbi_result_sizeof() -> std::uint64_t
+auto coyote_stbi_interface_sizeof() -> std::uint64_t
 {
-	return sizeof(DecodeResult);
+	return sizeof(DllInterface);
 }
 
-auto coyote_stbi_success_get_pic(DecodeResult *res, uint64_t *out_size) -> uint8_t *
+auto coyote_stbi_success_get_pic(DllInterface *res, uint64_t *out_size) -> uint8_t *
 {
 	if (!res->is_success)
 	{
@@ -1724,4 +1724,16 @@ auto coyote_stbi_success_get_pic(DecodeResult *res, uint64_t *out_size) -> uint8
 		*out_size = s;
 	}
 	return p;
+}
+
+auto coyote_stbi_interface_setup(
+	DllInterface *interface,
+	uint8_t const *source_png_buffer,
+	uint64_t source_png_size
+) -> void
+{
+	interface->source_png_buffer = source_png_buffer;
+	interface->source_png_size = source_png_size;
+	interface->is_success = false;
+	interface->failure.reason = nullptr;
 }
