@@ -218,253 +218,6 @@ enum
 #define STBI__BYTECAST(x)  ((uint8_t) ((x) & 255))  // truncate int to byte without warnings
 
 
-//////////////////////////////////////////////////////////////////////////////
-//
-//  generic converter from built-in img_n to req_comp
-//    individual types do this automatically as much as possible (e.g. jpeg
-//    does all cases internally since it needs to colorspace convert anyway,
-//    and it never has alpha, so very few cases ). png can automatically
-//    interleave an alpha=255 channel, but falls back to this for other cases
-//
-//  assume data buffer is malloced, so malloc a new one and free that one
-//  only failure mode is malloc failing
-
-
-static uint8_t* stbi__convert_format(
-	uint8_t* data,
-	size_t img_n,
-	size_t req_comp,
-	size_t x,
-	size_t y)
-{
-	int i;
-
-	if (req_comp == img_n)
-	{
-		return data;
-	}
-	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
-
-	auto good = malloc_fma3<uint8_t>(req_comp, x, y, 0);
-	if (good == nullptr)
-	{
-		stbi_free(data);
-		return stbi__errpuc("outofmem", "Out of memory");
-	}
-
-	static auto compute_luma = [](int r, int g, int b) -> uint8_t
-	{
-		return static_cast<uint8_t>((r * 77 + g * 150 + 29 * b) >> 8);
-	};
-
-	for (auto j = 0; j < y; ++j)
-	{
-		auto src = data + j * x * img_n;
-		auto dest = good + j * x * req_comp;
-
-		static constexpr auto COMBO = [](int a, int b) { return a*8+b; };
-#define STBI__CASE(a,b)   case COMBO(a,b): for(i=x-1; i >= 0; --i, src += a, dest += b)
-		// convert source image with img_n components to one with req_comp components;
-		// avoid switch per pixel, so use switch per scanline and massive macros
-		switch (COMBO(img_n, req_comp))
-		{
-			STBI__CASE(1, 2)
-				{
-					dest[0] = src[0];
-					dest[1] = 255;
-				}
-				break;
-			STBI__CASE(1, 3) { dest[0] = dest[1] = dest[2] = src[0]; }
-				break;
-			STBI__CASE(1, 4)
-				{
-					dest[0] = dest[1] = dest[2] = src[0];
-					dest[3] = 255;
-				}
-				break;
-			STBI__CASE(2, 1) { dest[0] = src[0]; }
-				break;
-			STBI__CASE(2, 3) { dest[0] = dest[1] = dest[2] = src[0]; }
-				break;
-			STBI__CASE(2, 4)
-				{
-					dest[0] = dest[1] = dest[2] = src[0];
-					dest[3] = src[1];
-				}
-				break;
-			STBI__CASE(3, 4)
-				{
-					dest[0] = src[0];
-					dest[1] = src[1];
-					dest[2] = src[2];
-					dest[3] = 255;
-				}
-				break;
-			STBI__CASE(3, 1)
-				{
-					dest[0] = compute_luma(src[0], src[1], src[2]);
-				}
-				break;
-			STBI__CASE(3, 2)
-				{
-					dest[0] = compute_luma(src[0], src[1], src[2]);
-					dest[1] = 255;
-				}
-				break;
-			STBI__CASE(4, 1)
-				{
-					dest[0] = compute_luma(src[0], src[1], src[2]);
-				}
-				break;
-			STBI__CASE(4, 2)
-				{
-					dest[0] = compute_luma(src[0], src[1], src[2]);
-					dest[1] = src[3];
-				}
-				break;
-			STBI__CASE(4, 3)
-				{
-					dest[0] = src[0];
-					dest[1] = src[1];
-					dest[2] = src[2];
-				}
-				break;
-			default: {
-				STBI_ASSERT(0);
-				stbi_free(data);
-				stbi_free(good);
-				return stbi__errpuc("unsupported", "Unsupported format conversion");
-			}
-		}
-#undef STBI__CASE
-	}
-
-	stbi_free(data);
-	return good;
-}
-
-
-static uint16_t *stbi__convert_format16 (
-	uint16_t *data,
-	size_t img_n,
-	size_t req_comp,
-	size_t x,
-	size_t y)
-{
-	int i;
-
-	if (req_comp == img_n)
-	{
-		return data;
-	}
-	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
-
-	auto good = stbi_malloc_t<uint16_t>(req_comp * x * y * 2);
-	if (good == nullptr)
-	{
-		stbi_free(data);
-		return reinterpret_cast<uint16_t *>(stbi__errpuc("outofmem", "Out of memory"));
-	}
-
-	static auto stbi__compute_y_16 = [](int r, int g, int b) {
-		return static_cast<uint16_t>(((r * 77) + (g * 150) + (29 * b)) >> 8);
-	};
-
-	for (auto j = 0; j < y; ++j)
-	{
-		auto src = data + j * x * img_n;
-		auto dest = good + j * x * req_comp;
-
-		static constexpr auto COMBO = [](int a, int b) { return a*8+b; };
-
-#define STBI__CASE(a,b)   case COMBO(a,b): for(i=x-1; i >= 0; --i, src += a, dest += b)
-		// convert source image with img_n components to one with req_comp components;
-		// avoid switch per pixel, so use switch per scanline and massive macros
-		switch (COMBO(img_n, req_comp))
-		{
-			STBI__CASE(1, 2)
-				{
-					dest[0] = src[0];
-					dest[1] = 0xffff;
-				}
-				break;
-			STBI__CASE(1, 3)
-				{
-					dest[0] = dest[1] = dest[2] = src[0];
-				}
-				break;
-			STBI__CASE(1, 4)
-				{
-					dest[0] = dest[1] = dest[2] = src[0];
-					dest[3] = 0xffff;
-				}
-				break;
-			STBI__CASE(2, 1)
-				{
-					dest[0] = src[0];
-				}
-				break;
-			STBI__CASE(2, 3) { dest[0] = dest[1] = dest[2] = src[0]; }
-				break;
-			STBI__CASE(2, 4)
-				{
-					dest[0] = dest[1] = dest[2] = src[0];
-					dest[3] = src[1];
-				}
-				break;
-			STBI__CASE(3, 4)
-				{
-					dest[0] = src[0];
-					dest[1] = src[1];
-					dest[2] = src[2];
-					dest[3] = 0xffff;
-				}
-				break;
-			STBI__CASE(3, 1)
-				{
-					dest[0] = stbi__compute_y_16(src[0], src[1], src[2]);
-				}
-				break;
-			STBI__CASE(3, 2)
-				{
-					dest[0] = stbi__compute_y_16(src[0], src[1], src[2]);
-					dest[1] = 0xffff;
-				}
-				break;
-			STBI__CASE(4, 1)
-				{
-					dest[0] = stbi__compute_y_16(src[0], src[1], src[2]);
-				}
-				break;
-			STBI__CASE(4, 2)
-				{
-					dest[0] = stbi__compute_y_16(src[0], src[1], src[2]);
-					dest[1] = src[3];
-				}
-				break;
-			STBI__CASE(4, 3)
-				{
-					dest[0] = src[0];
-					dest[1] = src[1];
-					dest[2] = src[2];
-				}
-				break;
-			default: {
-				STBI_ASSERT(0);
-				stbi_free(data);
-				stbi_free(good);
-				return reinterpret_cast<uint16_t *>(stbi__errpuc("unsupported", "Unsupported format conversion"));
-			}
-
-		}
-#undef STBI__CASE
-	}
-
-	stbi_free(data);
-	return good;
-}
-
-
 // public domain "baseline" PNG decoder   v0.10  Sean Barrett 2006-11-18
 //    simple implementation
 //      - only 8-bit samples
@@ -801,84 +554,8 @@ static int stbi__create_png_image_raw(
 	return 1;
 }
 
-static int stbi__create_png_image(
-	PNG *_a,
-	uint8_t *_image_data,
-	size_t _image_data_len,
-	size_t _out_n,
-	size_t _depth,
-	size_t _color,
-	bool _interlaced)
-{
-	auto bytes = (_depth == 16 ? 2 : 1);
-	auto out_bytes = _out_n * bytes;
-	if (!_interlaced)
-	{
-		return stbi__create_png_image_raw(_a, _image_data, _image_data_len, _out_n, _a->s->img_x, _a->s->img_y, _depth, _color);
-	}
-
-	// de-interlacing
-	auto final = malloc_fma3<uint8_t>(_a->s->img_x, _a->s->img_y, out_bytes, 0);
-	if (!final)
-	{
-		return stbi__err("outofmem", "Out of memory");
-	}
-	for (int p = 0; p < 7; ++p)
-	{
-		int xorig[] = {0, 4, 0, 2, 0, 1, 0};
-		int yorig[] = {0, 0, 4, 0, 2, 0, 1};
-		int xspc[] = {8, 8, 4, 4, 2, 2, 1};
-		int yspc[] = {8, 8, 8, 4, 4, 2, 2};
-		// pass1_x[4] = 0, pass1_x[5] = 1, pass1_x[12] = 1
-		auto x = (_a->s->img_x - xorig[p] + xspc[p] - 1) / xspc[p];
-		auto y = (_a->s->img_y - yorig[p] + yspc[p] - 1) / yspc[p];
-		if (x && y)
-		{
-			auto img_len = ((((_a->s->img_n * x * _depth) + 7) >> 3) + 1) * y;
-			if (!stbi__create_png_image_raw(_a, _image_data, _image_data_len, _out_n, x, y, _depth, _color))
-			{
-				stbi_free(final);
-				return 0;
-			}
-			for (int j = 0; j < y; ++j)
-			{
-				for (int i = 0; i < x; ++i)
-				{
-					auto out_y = j * yspc[p] + yorig[p];
-					auto out_x = i * xspc[p] + xorig[p];
-					std::memcpy(
-						final + out_y * _a->s->img_x * out_bytes + out_x * out_bytes,
-						_a->out + (j * x + i) * out_bytes,
-						out_bytes
-					);
-				}
-			}
-			stbi_free(_a->out);
-			_image_data += img_len;
-			_image_data_len -= img_len;
-		}
-	}
-	_a->out = final;
-
-	return 1;
-}
-
 static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 {
-	uint8_t palette[1024];
-	uint8_t pal_img_n = 0;
-	uint8_t has_trans = 0;
-	uint8_t tc[3] = {0};
-	uint16_t tc16[3];
-	uint32_t ioff = 0;
-	uint32_t idata_limit = 0;
-	uint32_t i;
-	uint32_t pal_len = 0;
-	int first = 1;
-	int k;
-	int interlace = 0;
-	int color = 0;
-	int is_iphone = 0;
 	DecodeContext *s = z->s;
 
 	z->expanded = nullptr;
@@ -902,6 +579,20 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 		);
 	};
 
+	uint8_t palette[1024];
+	uint8_t pal_img_n = 0;
+	uint8_t has_trans = 0;
+	uint16_t tc16[3];
+	uint8_t tc[3] = {0};
+	uint32_t ioff = 0;
+	uint32_t idata_limit = 0;
+	uint32_t i;
+	uint32_t pal_len = 0;
+	int first = 1;
+	int k;
+	int interlace = 0;
+	int color = 0;
+	int is_iphone = 0;
 	while (true)
 	{
 		// stbi__get_chunk_header
@@ -996,7 +687,6 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 				// even with SCAN_header, have to scan to see if we have a tRNS
 				break;
 			}
-
 			case PNG_TYPE('P', 'L', 'T', 'E'): {
 				if (first)
 				{
@@ -1020,7 +710,6 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 				}
 				break;
 			}
-
 			case PNG_TYPE('t', 'R', 'N', 'S'): {
 				if (first)
 				{
@@ -1086,7 +775,6 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 				}
 				break;
 			}
-
 			case PNG_TYPE('I', 'D', 'A', 'T'): {
 				if (first)
 				{
@@ -1145,7 +833,6 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 				ioff += c.length;
 				break;
 			}
-
 			case PNG_TYPE('I', 'E', 'N', 'D'): {
 				uint32_t raw_len, bpl;
 				if (first)
@@ -1393,7 +1080,6 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 				s->get32be();
 				return 1;
 			}
-
 			default: {
 				// if critical, fail
 				if (first)
@@ -1402,15 +1088,11 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 				}
 				if ((c.type & (1 << 29)) == 0)
 				{
-#ifndef STBI_NO_FAILURE_STRINGS
-					// not threadsafe
-					static char invalid_chunk[] = "XXXX PNG chunk not known";
-					invalid_chunk[0] = STBI__BYTECAST(c.type >> 24);
-					invalid_chunk[1] = STBI__BYTECAST(c.type >> 16);
-					invalid_chunk[2] = STBI__BYTECAST(c.type >> 8);
-					invalid_chunk[3] = STBI__BYTECAST(c.type >> 0);
-#endif
-					return stbi__err(invalid_chunk, "PNG not supported: unknown PNG chunk type");
+					// invalid_chunk[0] = STBI__BYTECAST(c.type >> 24);
+					// invalid_chunk[1] = STBI__BYTECAST(c.type >> 16);
+					// invalid_chunk[2] = STBI__BYTECAST(c.type >> 8);
+					// invalid_chunk[3] = STBI__BYTECAST(c.type >> 0);
+					return stbi__err("XXXX PNG chunk not known", "PNG not supported: unknown PNG chunk type");
 				}
 				s->skip(c.length);
 				break;
@@ -1452,13 +1134,242 @@ static void *stbi__do_png(
 		p->out = nullptr;
 		if (req_comp && req_comp != p->s->img_out_n)
 		{
+			static constexpr auto COMBO = [](int a, int b) { return a*8+b; };
+			#define STBI__CASE(a,b)   case COMBO(a,b): for(i=xx-1; i >= 0; --i, src += a, dest += b)
 			if (ri->bits_per_channel == 8)
 			{
-				result = stbi__convert_format(static_cast<uint8_t*>(result), p->s->img_out_n, req_comp, p->s->img_x, p->s->img_y);
+				// result = stbi__convert_format(
+				// 	static_cast<uint8_t*>(result),
+				// 	p->s->img_out_n,
+				// 	req_comp,
+				// 	p->s->img_x,
+				// 	p->s->img_y);
+				auto data = static_cast<uint8_t*>(result);
+				auto img_n = p->s->img_out_n;
+				auto xx = p->s->img_x;
+				auto yy = p->s->img_y;
+
+				if (req_comp == img_n)
+				{
+					result = data;
+					goto endp;
+				}
+				STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
+
+				auto good = malloc_fma3<uint8_t>(req_comp, xx, yy, 0);
+				if (good == nullptr)
+				{
+					stbi_free(data);
+					result = stbi__errpuc("outofmem", "Out of memory");
+					goto endp;
+				}
+
+				static auto compute_luma = [](int r, int g, int b) -> uint8_t
+				{
+					return static_cast<uint8_t>((r * 77 + g * 150 + 29 * b) >> 8);
+				};
+
+				int i;
+				for (auto j = 0; j < yy; ++j)
+				{
+					auto src = data + j * xx * img_n;
+					auto dest = good + j * xx * req_comp;
+
+					// convert source image with img_n components to one with req_comp components;
+					// avoid switch per pixel, so use switch per scanline and massive macros
+					switch (COMBO(img_n, req_comp))
+					{
+						STBI__CASE(1, 2)
+							{
+								dest[0] = src[0];
+								dest[1] = 255;
+							}
+							break;
+						STBI__CASE(1, 3) { dest[0] = dest[1] = dest[2] = src[0]; }
+							break;
+						STBI__CASE(1, 4)
+							{
+								dest[0] = dest[1] = dest[2] = src[0];
+								dest[3] = 255;
+							}
+							break;
+						STBI__CASE(2, 1) { dest[0] = src[0]; }
+							break;
+						STBI__CASE(2, 3) { dest[0] = dest[1] = dest[2] = src[0]; }
+							break;
+						STBI__CASE(2, 4)
+							{
+								dest[0] = dest[1] = dest[2] = src[0];
+								dest[3] = src[1];
+							}
+							break;
+						STBI__CASE(3, 4)
+							{
+								dest[0] = src[0];
+								dest[1] = src[1];
+								dest[2] = src[2];
+								dest[3] = 255;
+							}
+							break;
+						STBI__CASE(3, 1)
+							{
+								dest[0] = compute_luma(src[0], src[1], src[2]);
+							}
+							break;
+						STBI__CASE(3, 2)
+							{
+								dest[0] = compute_luma(src[0], src[1], src[2]);
+								dest[1] = 255;
+							}
+							break;
+						STBI__CASE(4, 1)
+							{
+								dest[0] = compute_luma(src[0], src[1], src[2]);
+							}
+							break;
+						STBI__CASE(4, 2)
+							{
+								dest[0] = compute_luma(src[0], src[1], src[2]);
+								dest[1] = src[3];
+							}
+							break;
+						STBI__CASE(4, 3)
+							{
+								dest[0] = src[0];
+								dest[1] = src[1];
+								dest[2] = src[2];
+							}
+							break;
+						default: {
+							STBI_ASSERT(0);
+							stbi_free(data);
+							stbi_free(good);
+							result = stbi__errpuc("unsupported", "Unsupported format conversion");
+							goto endp;
+						}
+					}
+				}
+
+				stbi_free(data);
+				result = good;
+				endp:
 			}
 			else
 			{
-				result = stbi__convert_format16(static_cast<uint16_t*>(result), p->s->img_out_n, req_comp, p->s->img_x, p->s->img_y);
+				auto _data = static_cast<uint16_t*>(result);
+				auto _img_n = p->s->img_out_n;
+				if (req_comp == _img_n)
+				{
+					result = _data;
+					goto endp;
+				}
+
+				auto xx = p->s->img_x;
+				auto yy = p->s->img_y;
+				auto good = stbi_malloc_t<uint16_t>(req_comp * xx * yy * 2);
+				if (good == nullptr)
+				{
+					stbi_free(_data);
+					result = reinterpret_cast<uint16_t *>(stbi__errpuc("outofmem", "Out of memory"));
+					goto endp;
+				}
+
+				static auto compute_y_16 = [](int r, int g, int b) {
+					return static_cast<uint16_t>(((r * 77) + (g * 150) + (29 * b)) >> 8);
+				};
+
+				int i;
+				for (auto j = 0; j < yy; ++j)
+				{
+					auto src = _data + j * xx * _img_n;
+					auto dest = good + j * xx * req_comp;
+
+					// convert source image with img_n components to one with req_comp components;
+					// avoid switch per pixel, so use switch per scanline and massive macros
+					switch (COMBO(_img_n, req_comp))
+					{
+						STBI__CASE(1, 2)
+							{
+								dest[0] = src[0];
+								dest[1] = 0xffff;
+							}
+							break;
+						STBI__CASE(1, 3)
+							{
+								dest[0] = dest[1] = dest[2] = src[0];
+							}
+							break;
+						STBI__CASE(1, 4)
+							{
+								dest[0] = dest[1] = dest[2] = src[0];
+								dest[3] = 0xffff;
+							}
+							break;
+						STBI__CASE(2, 1)
+							{
+								dest[0] = src[0];
+							}
+							break;
+						STBI__CASE(2, 3) { dest[0] = dest[1] = dest[2] = src[0]; }
+							break;
+						STBI__CASE(2, 4)
+							{
+								dest[0] = dest[1] = dest[2] = src[0];
+								dest[3] = src[1];
+							}
+							break;
+						STBI__CASE(3, 4)
+							{
+								dest[0] = src[0];
+								dest[1] = src[1];
+								dest[2] = src[2];
+								dest[3] = 0xffff;
+							}
+							break;
+						STBI__CASE(3, 1)
+							{
+								dest[0] = compute_y_16(src[0], src[1], src[2]);
+							}
+							break;
+						STBI__CASE(3, 2)
+							{
+								dest[0] = compute_y_16(src[0], src[1], src[2]);
+								dest[1] = 0xffff;
+							}
+							break;
+						STBI__CASE(4, 1)
+							{
+								dest[0] = compute_y_16(src[0], src[1], src[2]);
+							}
+							break;
+						STBI__CASE(4, 2)
+							{
+								dest[0] = compute_y_16(src[0], src[1], src[2]);
+								dest[1] = src[3];
+							}
+							break;
+						STBI__CASE(4, 3)
+							{
+								dest[0] = src[0];
+								dest[1] = src[1];
+								dest[2] = src[2];
+							}
+							break;
+						default: {
+							STBI_ASSERT(0);
+							stbi_free(_data);
+							stbi_free(good);
+							result = reinterpret_cast<uint16_t *>(stbi__errpuc("unsupported", "Unsupported format conversion"));
+							goto endp;
+						}
+
+					}
+				#undef STBI__CASE
+				}
+
+				stbi_free(_data);
+				result = good;
+			endp:
 			}
 			p->s->img_out_n = req_comp;
 			if (result == nullptr)
