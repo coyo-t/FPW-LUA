@@ -47,11 +47,15 @@ static constexpr auto STBI_MAX_DIMENSIONS = 1 << 24;
 // contains all the IO context, plus some basic image information
 struct DecodeContext
 {
-	uint32_t img_x, img_y;
-	int img_n, img_out_n;
+	size_t img_x;
+	size_t img_y;
+	size_t img_n;
+	size_t img_out_n;
 
-	uint8_t *img_buffer, *img_buffer_end;
-	uint8_t *img_buffer_original, *img_buffer_original_end;
+	uint8_t *img_buffer;
+	uint8_t *img_buffer_end;
+	uint8_t *img_buffer_original;
+	uint8_t *img_buffer_original_end;
 
 	auto get8() -> uint8_t
 	{
@@ -60,37 +64,38 @@ struct DecodeContext
 		return 0;
 	}
 
-	auto get16be() -> int
+	auto get16be() -> uint16_t
 	{
-		int z = this->get8();
-		return (z << 8) + this->get8();
+		const auto z = this->get8();
+		return (static_cast<uint16_t>(z) << 8) | this->get8();
 	}
 
 	auto get32be() -> uint32_t
 	{
-		uint32_t z = this->get16be();
-		return (z << 16) + this->get16be();
+		const auto z = this->get16be();
+		return (static_cast<uint32_t>(z) << 16) | this->get16be();
 	}
 
-	auto skip(int n) -> void
+	auto skip (int count) -> void
 	{
-		if (n == 0)
+		if (count == 0)
 		{
-			return; // already there!
-		}
-		if (n < 0)
-		{
-			this->img_buffer = this->img_buffer_end;
 			return;
 		}
-		this->img_buffer += n;
+		if (count < 0)
+		{
+			img_buffer = img_buffer_end;
+			return;
+		}
+		img_buffer += count;
 	}
 
 	// initialize a memory-decode context
-	auto start_mem(uint8_t const *buffer, size_t len) -> void
+	auto start_mem(uint8_t const *buffer, size_t size) -> void
 	{
-		this->img_buffer = this->img_buffer_original = const_cast<uint8_t *>(buffer);
-		this->img_buffer_end = this->img_buffer_original_end = const_cast<uint8_t *>(buffer) + len;
+		const auto cbi = const_cast<uint8_t*>(buffer);
+		img_buffer = img_buffer_original = cbi;
+		img_buffer_end = img_buffer_original_end = cbi + size;
 	}
 };
 
@@ -1141,14 +1146,14 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 					{
 						for (k = 0; k < s->img_n && k < 3; ++k) // extra loop test to suppress false GCC warning
 						{
-							tc16[k] = (uint16_t) s->get16be(); // copy the values as-is
+							tc16[k] = s->get16be(); // copy the values as-is
 						}
 					}
 					else
 					{
 						for (k = 0; k < s->img_n && k < 3; ++k)
 						{
-							tc[k] = (uint8_t) (s->get16be() & 255) * stbi__depth_scale_table[z->depth];
+							tc[k] = static_cast<uint8_t>(s->get16be() & 255) * stbi__depth_scale_table[z->depth];
 						}
 						// non 8-bit images will be larger
 					}
@@ -1374,16 +1379,14 @@ static void *stbi__do_png(
 		{
 			if (ri->bits_per_channel == 8)
 			{
-				result = stbi__convert_format((unsigned char *) result, p->s->img_out_n, req_comp, p->s->img_x,
-				                              p->s->img_y);
+				result = stbi__convert_format(static_cast<uint8_t*>(result), p->s->img_out_n, req_comp, p->s->img_x, p->s->img_y);
 			}
 			else
 			{
-				result = stbi__convert_format16((uint16_t *) result, p->s->img_out_n, req_comp, p->s->img_x,
-				                                p->s->img_y);
+				result = stbi__convert_format16(static_cast<uint16_t*>(result), p->s->img_out_n, req_comp, p->s->img_x, p->s->img_y);
 			}
 			p->s->img_out_n = req_comp;
-			if (result == NULL)
+			if (result == nullptr)
 			{
 				return result;
 			}
