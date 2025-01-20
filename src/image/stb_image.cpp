@@ -162,7 +162,7 @@ struct DecodeContext
 	{
 		if (allocate_index >= MAX_ALLOCATIONS)
 		{
-			throw STBIErr("out of allocations");
+			return nullptr;
 		}
 
 		auto node = &head;
@@ -188,6 +188,12 @@ struct DecodeContext
 		}
 
 		const auto outs = stbi_malloc(size + sizeof(Allocation));
+
+		if (outs == nullptr)
+		{
+			return nullptr;
+		}
+
 		const auto entry = static_cast<Allocation*>(outs);
 		entry->size = size;
 		entry->freed = false;
@@ -209,6 +215,13 @@ struct DecodeContext
 			throw STBIErr("tried freeing an already freed block! this is a mistake!");
 		}
 		entry->freed = true;
+	}
+
+
+	template<typename T>
+	auto allocate_t (size_t count) -> T*
+	{
+		return static_cast<T*>(allocate(count * sizeof(T)));
 	}
 };
 
@@ -1269,7 +1282,8 @@ auto coyote_stbi_load_from_memory(
 					goto endp;
 				}
 
-				auto good = stbi_malloc_t<uint8_t>(req_comp * xx * yy);
+				// auto good = stbi_malloc_t<uint8_t>(req_comp * xx * yy);
+				auto good = s.allocate_t<uint8_t>(req_comp * xx * yy);
 				if (good == nullptr)
 				{
 					stbi_free(data);
@@ -1408,7 +1422,7 @@ auto coyote_stbi_load_from_memory(
 					goto endp;
 				}
 
-				auto good = stbi_malloc_t<uint16_t>(req_comp * xx * yy * 2);
+				auto good = s.allocate_t<uint16_t>(req_comp * xx * yy);
 				if (good == nullptr)
 				{
 					stbi_free(data);
