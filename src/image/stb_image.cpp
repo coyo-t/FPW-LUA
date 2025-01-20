@@ -1,40 +1,21 @@
 #include "./stb_image.hpp"
 
 #include <cmath>
-
-
 #include <cstdlib>
 #include <cstring>
+
 #include <climits>
-
-
-#ifndef STBI_ASSERT
 #include <cassert>
-#define STBI_ASSERT(x) assert(x)
-#endif
+#include <cstdint>
+
 
 #include "./zlib.hpp"
 
 
-#include <cstdint>
 static_assert(sizeof(uint32_t) == 4);
 
-
+#define STBI_ASSERT(x) assert(x)
 #define STBI_NOTUSED(v)  (void)sizeof(v)
-
-
-#define stbi_lrot(x,y)  (((x) << (y)) | ((x) >> (-(y) & 31)))
-
-
-#ifndef STBI_MALLOC
-#define STBI_MALLOC(sz)           malloc(sz)
-#define STBI_REALLOC(p,newsz)     realloc(p,newsz)
-#define STBI_FREE(p)              free(p)
-#endif
-
-#ifndef STBI_REALLOC_SIZED
-#define STBI_REALLOC_SIZED(p,oldsz,newsz) STBI_REALLOC(p,newsz)
-#endif
 
 static constexpr auto STBI_MAX_DIMENSIONS = 1 << 24;
 
@@ -118,22 +99,26 @@ struct ResultInfo
 
 static const char *stbi__g_failure_reason;
 
-const char *coyote_stbi_failure_reason()
-{
-	return stbi__g_failure_reason;
-}
 
-#ifndef STBI_NO_FAILURE_STRINGS
-static int stbi__err(const char *str)
+static auto stbi__err(const char *str) -> bool
 {
 	stbi__g_failure_reason = str;
-	return 0;
+	return false;
 }
-#endif
 
-static void *stbi__malloc(size_t size)
+static void *stbi_malloc(size_t size)
 {
-	return STBI_MALLOC(size);
+	return std::malloc(size);
+}
+
+static auto stbi_free (void* p) -> void
+{
+	std::free(p);
+}
+
+static auto stb_realloc (void* p, size_t oldsz, size_t newsz) -> void*
+{
+	return std::realloc(p,newsz);
 }
 
 // stb_image uses ints pervasively, including for offset calculations.
@@ -185,13 +170,13 @@ static int stbi__mad3sizes_valid(int a, int b, int c, int add)
 static void *stbi__malloc_mad2(int a, int b, int add)
 {
 	if (!stbi__mad2sizes_valid(a, b, add)) return NULL;
-	return stbi__malloc(a * b + add);
+	return stbi_malloc(a * b + add);
 }
 
 static void *stbi__malloc_mad3(int a, int b, int c, int add)
 {
 	if (!stbi__mad3sizes_valid(a, b, c, add)) return NULL;
-	return stbi__malloc(a * b * c + add);
+	return stbi_malloc(a * b * c + add);
 }
 
 
@@ -244,7 +229,7 @@ static uint8_t* stbi__convert_format(
 	auto good = static_cast<uint8_t*>(stbi__malloc_mad3(req_comp, x, y, 0));
 	if (good == nullptr)
 	{
-		STBI_FREE(data);
+		stbi_free(data);
 		return stbi__errpuc("outofmem", "Out of memory");
 	}
 
@@ -327,15 +312,15 @@ static uint8_t* stbi__convert_format(
 				break;
 			default: {
 				STBI_ASSERT(0);
-				STBI_FREE(data);
-				STBI_FREE(good);
+				stbi_free(data);
+				stbi_free(good);
 				return stbi__errpuc("unsupported", "Unsupported format conversion");
 			}
 		}
 #undef STBI__CASE
 	}
 
-	STBI_FREE(data);
+	stbi_free(data);
 	return good;
 }
 
@@ -352,10 +337,10 @@ static uint16_t *stbi__convert_format16 (
 	if (req_comp == img_n) return data;
 	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
 
-	auto good = static_cast<uint16_t *>(stbi__malloc(req_comp * x * y * 2));
+	auto good = static_cast<uint16_t *>(stbi_malloc(req_comp * x * y * 2));
 	if (good == nullptr)
 	{
-		STBI_FREE(data);
+		stbi_free(data);
 		return reinterpret_cast<uint16_t *>(stbi__errpuc("outofmem", "Out of memory"));
 	}
 
@@ -444,8 +429,8 @@ static uint16_t *stbi__convert_format16 (
 				break;
 			default: {
 				STBI_ASSERT(0);
-				STBI_FREE(data);
-				STBI_FREE(good);
+				stbi_free(data);
+				stbi_free(good);
 				return reinterpret_cast<uint16_t *>(stbi__errpuc("unsupported", "Unsupported format conversion"));
 			}
 
@@ -453,7 +438,7 @@ static uint16_t *stbi__convert_format16 (
 #undef STBI__CASE
 	}
 
-	STBI_FREE(data);
+	stbi_free(data);
 	return good;
 }
 
@@ -763,7 +748,7 @@ static int stbi__create_png_image_raw(PNG *a, uint8_t *raw, uint32_t raw_len, in
 		}
 	}
 
-	STBI_FREE(filter_buf);
+	stbi_free(filter_buf);
 	if (!all_ok) return 0;
 
 	return 1;
@@ -800,7 +785,7 @@ static int stbi__create_png_image(PNG *a, uint8_t *image_data, uint32_t image_da
 			uint32_t img_len = ((((a->s->img_n * x * depth) + 7) >> 3) + 1) * y;
 			if (!stbi__create_png_image_raw(a, image_data, image_data_len, out_n, x, y, depth, color))
 			{
-				STBI_FREE(final);
+				stbi_free(final);
 				return 0;
 			}
 			for (int j = 0; j < y; ++j)
@@ -813,7 +798,7 @@ static int stbi__create_png_image(PNG *a, uint8_t *image_data, uint32_t image_da
 					            a->out + (j * x + i) * out_bytes, out_bytes);
 				}
 			}
-			STBI_FREE(a->out);
+			stbi_free(a->out);
 			image_data += img_len;
 			image_data_len -= img_len;
 		}
@@ -922,7 +907,7 @@ static int stbi__expand_png_palette(PNG *a, uint8_t *palette, int len, int pal_i
 			p += 4;
 		}
 	}
-	STBI_FREE(a->out);
+	stbi_free(a->out);
 	a->out = temp_out;
 
 	STBI_NOTUSED(len);
@@ -1194,7 +1179,7 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 						idata_limit *= 2;
 					}
 					STBI_NOTUSED(idata_limit_old);
-					uint8_t *p = (uint8_t *) STBI_REALLOC_SIZED(z->idata, idata_limit_old, idata_limit);
+					uint8_t *p = (uint8_t *) stb_realloc(z->idata, idata_limit_old, idata_limit);
 					if (p == NULL)
 					{
 						return stbi__err("outofmem", "Out of memory");
@@ -1238,9 +1223,9 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 				zctx.initial_size = raw_len;
 				zctx.parse_header = !is_iphone;
 
-				zctx.malloc = &stbi__malloc;
-				zctx.free = [](void *p) { STBI_FREE(p); };
-				zctx.realloc = [](void *p, size_t olds, size_t news) { return STBI_REALLOC_SIZED(p, olds, news); };
+				zctx.malloc = &stbi_malloc;
+				zctx.free = [](void *p) { stbi_free(p); };
+				zctx.realloc = [](void *p, size_t olds, size_t news) { return stb_realloc(p, olds, news); };
 
 				try
 				{
@@ -1256,7 +1241,7 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 				{
 					return stbi__err("z->expanded == nullptr", "");
 				}
-				STBI_FREE(z->idata);
+				stbi_free(z->idata);
 				z->idata = nullptr;
 				if ((req_comp == s->img_n + 1 && req_comp != 3 && !pal_img_n) || has_trans)
 				{
@@ -1307,7 +1292,7 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 					// non-paletted image with tRNS -> source image has (constant) alpha
 					++s->img_n;
 				}
-				STBI_FREE(z->expanded);
+				stbi_free(z->expanded);
 				z->expanded = NULL;
 				// end of PNG chunk, read and skip CRC
 				s->get32be();
@@ -1393,11 +1378,11 @@ static void *stbi__do_png(
 			*n = p->s->img_n;
 		}
 	}
-	STBI_FREE(p->out);
+	stbi_free(p->out);
 	p->out = NULL;
-	STBI_FREE(p->expanded);
+	stbi_free(p->expanded);
 	p->expanded = NULL;
-	STBI_FREE(p->idata);
+	stbi_free(p->idata);
 	p->idata = NULL;
 
 	return result;
@@ -1482,7 +1467,7 @@ uint8_t *coyote_stbi_load_from_memory(
 		auto orig = static_cast<uint16_t *>(result);
 		auto img_len = (*x) * (*y) * (req_comp == 0 ? *comp : req_comp);
 
-		auto reduced = static_cast<uint8_t *>(stbi__malloc(img_len));
+		auto reduced = static_cast<uint8_t *>(stbi_malloc(img_len));
 		if (reduced == nullptr)
 		{
 			return stbi__errpuc("outofmem", "Out of memory");
@@ -1494,7 +1479,7 @@ uint8_t *coyote_stbi_load_from_memory(
 			reduced[i] = static_cast<uint8_t>((orig[i] >> 8) & 0xFF);
 		}
 
-		STBI_FREE(orig);
+		stbi_free(orig);
 		result = reduced;
 		ri.bits_per_channel = 8;
 	}
@@ -1505,5 +1490,10 @@ uint8_t *coyote_stbi_load_from_memory(
 
 void coyote_stbi_image_free(void *retval_from_stbi_load)
 {
-	STBI_FREE(retval_from_stbi_load);
+	stbi_free(retval_from_stbi_load);
+}
+
+auto coyote_stbi_failure_reason () -> const char *
+{
+	return stbi__g_failure_reason;
 }
