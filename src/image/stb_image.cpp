@@ -1237,32 +1237,6 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 	}
 }
 
-
-// template<size_t BPP, typename T>
-// auto convfuck (
-// 	T* source_data,
-// 	size_t source_size,
-// 	size_t wide,
-// 	size_t tall,
-// 	size_t from_comp_count,
-// 	size_t to_comp_count,
-// 	size_t* out_new_buffer_size
-// ) -> T*
-// {
-// 	if (from_comp_count == to_comp_count)
-// 	{
-// 		*out_new_buffer_size = source_size;
-// 		return source_data;
-// 	}
-// 	auto good = static_cast<T*>(stbi_malloc(wide*tall*to_comp_count*sizeof(T)));
-// 	if (good == nullptr)
-// 	{
-// 	}
-//
-//
-// }
-
-
 auto coyote_stbi_load_from_memory(
 	uint8_t const *buffer,
 	uint64_t len,
