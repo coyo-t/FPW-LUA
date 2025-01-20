@@ -527,8 +527,7 @@ static int stbi__create_png_image_raw(stbi__png *a, uint8_t *raw, uint32_t raw_l
 {
 	int bytes = (depth == 16 ? 2 : 1);
 	stbi__context *s = a->s;
-	uint32_t i, j, stride = x * out_n * bytes;
-	uint32_t img_len, img_width_bytes;
+	uint32_t i, stride = x * out_n * bytes;
 	int all_ok = 1;
 	int k;
 	int img_n = s->img_n; // copy it into a local for later
@@ -538,7 +537,8 @@ static int stbi__create_png_image_raw(stbi__png *a, uint8_t *raw, uint32_t raw_l
 	int width = x;
 
 	STBI_ASSERT(out_n == s->img_n || out_n == s->img_n+1);
-	a->out = (uint8_t *) stbi__malloc_mad3(x, y, output_bytes, 0); // extra bytes to write off the end into
+	// extra bytes to write off the end into
+	a->out = static_cast<uint8_t *>(stbi__malloc_mad3(x, y, output_bytes, 0));
 	if (!a->out)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -550,12 +550,12 @@ static int stbi__create_png_image_raw(stbi__png *a, uint8_t *raw, uint32_t raw_l
 	{
 		return stbi__err("too large", "Corrupt PNG");
 	}
-	img_width_bytes = (((img_n * x * depth) + 7) >> 3);
+	uint32_t img_width_bytes = (((img_n * x * depth) + 7) >> 3);
 	if (!stbi__mad2sizes_valid(img_width_bytes, y, img_width_bytes))
 	{
 		return stbi__err("too large", "Corrupt PNG");
 	}
-	img_len = (img_width_bytes + 1) * y;
+	uint32_t img_len = (img_width_bytes + 1) * y;
 
 	// we used to check for exact match between raw_len and img_len on non-interlaced PNGs,
 	// but issue #276 reported a PNG in the wild that had extra data at the end (all zeros),
@@ -566,7 +566,7 @@ static int stbi__create_png_image_raw(stbi__png *a, uint8_t *raw, uint32_t raw_l
 	}
 
 	// Allocate two scan lines worth of filter workspace buffer.
-	uint8_t *filter_buf = (uint8_t *) stbi__malloc_mad2(img_width_bytes, 2, 0);
+	auto filter_buf = static_cast<uint8_t*>(stbi__malloc_mad2(img_width_bytes, 2, 0));
 	if (!filter_buf)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -590,7 +590,7 @@ static int stbi__create_png_image_raw(stbi__png *a, uint8_t *raw, uint32_t raw_l
 		return thresh <= lo ? hi : t0;
 	};
 
-	for (j = 0; j < y; ++j)
+	for (uint32_t j = 0; j < y; ++j)
 	{
 		// cur/prior filter buffers alternate
 		uint8_t *cur = filter_buf + (j & 1) * img_width_bytes;
@@ -648,9 +648,9 @@ static int stbi__create_png_image_raw(stbi__png *a, uint8_t *raw, uint32_t raw_l
 		// expand decoded bits in cur to dest, also adding an extra alpha channel if desired
 		if (depth < 8)
 		{
-			uint8_t scale = (color == 0) ? stbi__depth_scale_table[depth] : 1; // scale grayscale values to 0..255 range
-			uint8_t *in = cur;
-			uint8_t *out = dest;
+			auto scale = (color == 0) ? stbi__depth_scale_table[depth] : 1; // scale grayscale values to 0..255 range
+			auto* in = cur;
+			auto* out = dest;
 			uint8_t inb = 0;
 			uint32_t nsmp = x * img_n;
 
@@ -686,14 +686,20 @@ static int stbi__create_png_image_raw(stbi__png *a, uint8_t *raw, uint32_t raw_l
 
 			// insert alpha=255 values if desired
 			if (img_n != out_n)
+			{
 				stbi__create_png_alpha_expand8(dest, dest, x, img_n);
+			}
 		}
 		else if (depth == 8)
 		{
 			if (img_n == out_n)
+			{
 				memcpy(dest, cur, x * img_n);
+			}
 			else
+			{
 				stbi__create_png_alpha_expand8(dest, cur, x, img_n);
+			}
 		}
 		else if (depth == 16)
 		{
