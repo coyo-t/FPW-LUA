@@ -40,8 +40,6 @@ static constexpr auto FOURCC (const char (&items)[5]) -> uint32_t
 
 static_assert(sizeof(uint32_t) == 4);
 
-static const char *stbi__g_failure_reason;
-
 template<typename T>
 static auto compute_luma (T r, T g, T b) -> T
 {
@@ -49,23 +47,6 @@ static auto compute_luma (T r, T g, T b) -> T
 	const auto ig = static_cast<uint32_t>(g);
 	const auto ib = static_cast<uint32_t>(b);
 	return static_cast<T>((ir * 77 + ig * 150 + ib * 29) >> 8);
-}
-
-static auto stbi__err(const char *str) -> bool
-{
-	stbi__g_failure_reason = str;
-	return false;
-}
-
-static auto stbi_malloc(size_t size) -> void*
-{
-	return std::malloc(size);
-}
-
-template<typename T>
-static auto stbi_malloc_t (size_t size) -> T*
-{
-	return static_cast<T*>(stbi_malloc(size));
 }
 
 static auto stbi_free (void* p) -> void
@@ -121,8 +102,10 @@ struct DecodeContext
 
 	size_t allocate_index = 0;
 	Allocation head;
+	AllocatorCallback* allocator;
 
-	DecodeContext (uint8_t const *buffer, size_t size)
+
+	DecodeContext (uint8_t const *buffer, size_t size, AllocatorCallback* allocator)
 	{
 		// initialize a memory-decode context
 		const auto cbi = const_cast<uint8_t *>(buffer);
@@ -132,6 +115,7 @@ struct DecodeContext
 		img_buffer_end = cbe;
 		img_buffer_original_end = cbe;
 		head.next = &head;
+		this->allocator = allocator;
 	}
 
 	auto get8() -> uint8_t
@@ -201,7 +185,7 @@ struct DecodeContext
 			return maybe_freed->data();
 		}
 
-		const auto outs = stbi_malloc(size + sizeof(Allocation));
+		const auto outs = allocator(size + sizeof(Allocation));
 
 		if (outs == nullptr)
 		{
@@ -268,7 +252,6 @@ struct DecodeContext
 			// node, then node.next may or may not poof out of existance
 			node = next;
 			next = node->next;
-			stbi_free(node);
 		}
 	}
 };
@@ -355,7 +338,7 @@ struct PNGChunk
 };
 
 
-static auto stbi__check_png_header (DecodeContext &s) -> void
+static auto check_png_header (DecodeContext &s) -> void
 {
 	static const uint8_t png_sig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 	for (const auto i: png_sig)
@@ -407,7 +390,7 @@ static const uint8_t DEPTH_SCALE_TABLE[9] = {0, 0xff, 0x55, 0, 0x11, 0, 0, 0, 0x
 // adds an extra all-255 alpha channel
 // dest == src is legal
 // img_n must be 1 or 3
-static void stbi__create_png_alpha_expand8(
+static void create_png_alpha_expand8(
 	uint8_t *dest,
 	uint8_t *src,
 	size_t x,
@@ -444,7 +427,7 @@ static void stbi__create_png_alpha_expand8(
 }
 
 // create the png data from post-deflated data
-static int stbi__create_png_image_raw(
+static int create_png_image_raw(
 	PNG *a,
 	uint8_t *raw,
 	size_t raw_len,
@@ -494,7 +477,7 @@ static int stbi__create_png_image_raw(
 	}
 
 	// Allocate two scan lines worth of filter workspace buffer.
-	auto filter_buf = stbi_malloc_t<uint8_t>(img_width_bytes * 2);
+	auto filter_buf = s.allocate_t<uint8_t>(img_width_bytes * 2);
 	if (!filter_buf)
 	{
 		throw STBIErr("out of memory");
@@ -640,7 +623,7 @@ static int stbi__create_png_image_raw(
 			// insert alpha=255 values if desired
 			if (img_n != out_n)
 			{
-				stbi__create_png_alpha_expand8(dest, dest, x, img_n);
+				create_png_alpha_expand8(dest, dest, x, img_n);
 			}
 		}
 		else if (depth == 8)
@@ -651,7 +634,7 @@ static int stbi__create_png_image_raw(
 			}
 			else
 			{
-				stbi__create_png_alpha_expand8(dest, cur, x, img_n);
+				create_png_alpha_expand8(dest, cur, x, img_n);
 			}
 		}
 		else if (depth == 16)
@@ -703,7 +686,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 	z.idata = nullptr;
 	z.out = nullptr;
 
-	stbi__check_png_header(s);
+	check_png_header(s);
 
 	uint8_t palette[1024];
 	uint8_t pal_img_n = 0;
@@ -1030,7 +1013,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 					auto _interlaced = interlace;
 					if (!_interlaced)
 					{
-						return stbi__create_png_image_raw(
+						return create_png_image_raw(
 							&z,
 							_image_data,
 							_image_data_len,
@@ -1044,7 +1027,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 
 					// de-interlacing
 					auto out_bytes = _out_n * (_depth == 16 ? 2 : 1);
-					auto final = stbi_malloc_t<uint8_t>(pic_wide * pic_tall * out_bytes);
+					auto final = s.allocate_t<uint8_t>(pic_wide * pic_tall * out_bytes);
 					if (!final)
 					{
 						throw STBIErr("out of memory");
@@ -1061,7 +1044,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 						if (x && y)
 						{
 							auto img_len = ((((z.context.image_component_count * x * _depth) + 7) >> 3) + 1) * y;
-							if (!stbi__create_png_image_raw(&z, _image_data, _image_data_len, _out_n, x, y, _depth, _color))
+							if (!create_png_image_raw(&z, _image_data, _image_data_len, _out_n, x, y, _depth, _color))
 							{
 								stbi_free(final);
 								return false;
@@ -1168,7 +1151,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 					auto pixel_count = pic_wide * pic_tall;
 					auto orig = z.out;
 
-					auto p = stbi_malloc_t<uint8_t>(pixel_count * pal_img_n2);
+					auto p = s.allocate_t<uint8_t>(pixel_count * pal_img_n2);
 					if (p == nullptr)
 					{
 						throw STBIErr("out of memory");
@@ -1240,7 +1223,6 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 auto get_valuessss (
 	uint64_t *out_wide,
 	uint64_t *out_tall,
-	uint64_t *out_component_count,
 	DecodeContext s,
 	size_t bits_per_channel
 ) -> uint8_t*
@@ -1265,7 +1247,7 @@ auto get_valuessss (
 		}
 		result = p.out;
 		p.out = nullptr;
-		if (req_comp && req_comp != p.context.img_out_n)
+		if (req_comp != p.context.img_out_n)
 		{
 			static constexpr auto COMBO = [](size_t a, size_t b) { return (a<<3)|b; };
 			const auto img_components = p.context.img_out_n;
@@ -1554,19 +1536,6 @@ auto get_valuessss (
 				goto trueend;
 			}
 		}
-		if (out_wide != nullptr)
-		{
-			*out_wide = p.context.image_wide;
-		}
-		if (out_tall != nullptr)
-		{
-			*out_tall = p.context.image_tall;
-		}
-
-		if (out_component_count != nullptr)
-		{
-			*out_component_count = p.context.image_component_count;
-		}
 	}
 	stbi_free(p.out);
 	p.out = nullptr;
@@ -1589,6 +1558,8 @@ trueend:
 		throw STBIErr("assertion error: bits per channel isn't 8 or 16");
 	}
 
+
+
 	if (bits_per_channel != 8)
 	{
 		auto orig = static_cast<uint16_t *>(true_result);
@@ -1608,6 +1579,15 @@ trueend:
 		s.free(orig);
 		return reduced;
 	}
+
+	if (out_wide != nullptr)
+	{
+		*out_wide = p.context.image_wide;
+	}
+	if (out_tall != nullptr)
+	{
+		*out_tall = p.context.image_tall;
+	}
 	return static_cast<uint8_t*>(true_result);
 }
 
@@ -1618,9 +1598,15 @@ auto coyote_stbi_load_from_memory(
 {
 	try
 	{
+		if (interface->allocator == nullptr)
+		{
+			throw STBIErr("no memory allocator callback defined");
+		}
+
 		auto s = DecodeContext(
 			interface->source_png_buffer,
-			interface->source_png_size
+			interface->source_png_size,
+			interface->allocator
 		);
 
 		// default is 8 so most paths don't have to be changed
@@ -1628,12 +1614,11 @@ auto coyote_stbi_load_from_memory(
 
 		// test the formats with a very explicit header first
 		// (at least a FOURCC or distinctive magic number first)
-		stbi__check_png_header(s);
+		check_png_header(s);
 		s.rewind();
 		auto value = get_valuessss(
 			out_wide,
 			out_tall,
-			nullptr,
 			s,
 			bits_per_channel
 		);
@@ -1656,9 +1641,14 @@ auto coyote_stbi_info_from_memory(
 {
 	try
 	{
+		if (interface->allocator == nullptr)
+		{
+			throw STBIErr("no memory allocator callback defined");
+		}
 		auto s = DecodeContext(
 			interface->source_png_buffer,
-			interface->source_png_size
+			interface->source_png_size,
+			interface->allocator
 		);
 		auto p = PNG(s);
 		parse_png_file(p, STBI__SCAN_header, 0);
@@ -1670,6 +1660,12 @@ auto coyote_stbi_info_from_memory(
 		if (out_pic_tall != nullptr)
 		{
 			*out_pic_tall = p.context.image_tall;
+		}
+		if (out_required_output_size != nullptr)
+		{
+			*out_required_output_size = (
+				p.context.image_wide * p.context.image_tall * 4
+			);
 		}
 	}
 	catch (STBIErr e)
@@ -1718,9 +1714,11 @@ auto coyote_stbi_interface_setup(
 	DllInterface *interface,
 	uint8_t const *source_png_buffer,
 	uint64_t source_png_size,
-	uint64_t desired_channel_count
+	uint64_t desired_channel_count,
+	AllocatorCallback* allocator
 ) -> void
 {
+	interface->allocator = allocator;
 	interface->source_png_buffer = source_png_buffer;
 	interface->source_png_size = source_png_size;
 	interface->is_success = false;

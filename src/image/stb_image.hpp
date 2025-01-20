@@ -13,8 +13,11 @@ enum
 	STBI_rgb_alpha = 4
 };
 
+using AllocatorCallback = auto (uint64_t size) -> void*;
+
 struct DllInterface
 {
+	AllocatorCallback* allocator;
 	uint8_t const* source_png_buffer;
 	size_t source_png_size;
 	size_t desired_channel_count;
@@ -49,7 +52,8 @@ STBIDEF coyote_stbi_interface_setup (
 	DllInterface* interface,
 	uint8_t const* source_png_buffer,
 	uint64_t source_png_size,
-	uint64_t desired_channel_count
+	uint64_t desired_channel_count,
+	AllocatorCallback* allocator
 ) -> void;
 
 
