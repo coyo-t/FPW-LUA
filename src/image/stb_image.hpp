@@ -58,6 +58,7 @@ STBIDEF coyote_stbi_get_success (DllInterface* res, uint64_t* out_size) -> uint8
 
 
 STBIDEF coyote_stbi_load_from_memory(
+	DllInterface* interface,
 	uint8_t const *source_png_buffer,
 	uint64_t source_length,
 	uint64_t* x,

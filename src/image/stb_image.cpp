@@ -364,7 +364,8 @@ static auto stbi__check_png_header (DecodeContext &s) -> void
 	{
 		if (s.get8() != i)
 		{
-			throw STBIErr("bad png sig"); // "Not a PNG"
+			// "Not a PNG"
+			throw STBIErr("incorrect PNG magic");
 		}
 	}
 }
@@ -1249,35 +1250,17 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 	}
 }
 
-auto coyote_stbi_load_from_memory(
-	uint8_t const *source_png_buffer,
-	uint64_t source_length,
-	uint64_t* x,
-	uint64_t* y,
-	uint64_t* comp,
-	uint64_t req_comp) -> uint8_t*
+auto get_valuessss (
+	uint64_t *out_wide,
+	uint64_t *out_tall,
+	uint64_t *out_component_count,
+	uint64_t req_comp,
+	DecodeContext s,
+	size_t bits_per_channel
+) -> uint8_t*
 {
-	auto s = DecodeContext(source_png_buffer, source_length);
-
-	// default is 8 so most paths don't have to be changed
-	size_t bits_per_channel = 8;
-
-	// test the formats with a very explicit header first (at least a FOURCC
-	// or distinctive magic number first)
-
-	try
-	{
-		stbi__check_png_header(s);
-		s.rewind();
-	}
-	catch (STBIErr e)
-	{
-		s.rewind();
-		throw;
-	}
-
+	void *true_result;
 	auto p = PNG(s);
-	void* true_result;
 	void *result = nullptr;
 	if (req_comp < 0 || req_comp > 4)
 	{
@@ -1591,18 +1574,18 @@ auto coyote_stbi_load_from_memory(
 				goto trueend;
 			}
 		}
-		if (x != nullptr)
+		if (out_wide != nullptr)
 		{
-			*x = p.context.image_wide;
+			*out_wide = p.context.image_wide;
 		}
-		if (y != nullptr)
+		if (out_tall != nullptr)
 		{
-			*y = p.context.image_tall;
+			*out_tall = p.context.image_tall;
 		}
 
-		if (comp != nullptr)
+		if (out_component_count != nullptr)
 		{
-			*comp = p.context.image_component_count;
+			*out_component_count = p.context.image_component_count;
 		}
 	}
 	stbi_free(p.out);
@@ -1613,7 +1596,7 @@ auto coyote_stbi_load_from_memory(
 	p.idata = nullptr;
 
 	true_result = result;
-	trueend:
+trueend:
 
 	if (true_result == nullptr)
 	{
@@ -1626,7 +1609,7 @@ auto coyote_stbi_load_from_memory(
 	if (bits_per_channel != 8)
 	{
 		auto orig = static_cast<uint16_t *>(true_result);
-		auto img_len = (*x) * (*y) * (req_comp == 0 ? *comp : req_comp);
+		auto img_len = (*out_wide) * (*out_tall) * (req_comp == 0 ? *out_component_count : req_comp);
 
 		auto reduced = s.allocate_t<uint8_t>(img_len);
 		if (reduced == nullptr)
@@ -1640,11 +1623,51 @@ auto coyote_stbi_load_from_memory(
 			reduced[i] = static_cast<uint8_t>((orig[i] >> 8) & 0xFF);
 		}
 		s.free(orig);
-		true_result = reduced;
 		bits_per_channel = 8;
+		return reduced;
+	}
+	return static_cast<uint8_t*>(true_result);
+}
+
+auto coyote_stbi_load_from_memory(
+	DllInterface* interface,
+	uint8_t const *source_png_buffer,
+	uint64_t source_length,
+	uint64_t* x,
+	uint64_t* y,
+	uint64_t* comp,
+	uint64_t req_comp) -> uint8_t*
+{
+	auto s = DecodeContext(source_png_buffer, source_length);
+
+	// default is 8 so most paths don't have to be changed
+	size_t bits_per_channel = 8;
+
+	// test the formats with a very explicit header first (at least a FOURCC
+	// or distinctive magic number first)
+
+	try
+	{
+		stbi__check_png_header(s);
+		s.rewind();
+		auto value = get_valuessss(
+			x,
+			y,
+			comp,
+			req_comp,
+			s,
+			bits_per_channel
+		);
+		if (value == nullptr)
+			return nullptr;
+		return value;
+	}
+	catch (STBIErr e)
+	{
+		interface->set_failure(e.reason);
+		return nullptr;
 	}
 
-	return static_cast<uint8_t*>(true_result);
 }
 
 auto coyote_stbi_info_from_memory(
