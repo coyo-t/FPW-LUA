@@ -554,7 +554,7 @@ static int stbi__create_png_image_raw(
 	return 1;
 }
 
-static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
+static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 {
 	DecodeContext *s = z->s;
 
@@ -1173,15 +1173,11 @@ auto coyote_stbi_load_from_memory(
 				if (a_req_comp && a_req_comp != a_p->s->img_out_n)
 				{
 					static constexpr auto COMBO = [](size_t a, size_t b) { return (a<<3)|b; };
-					static constexpr auto C2MB2 = [](auto a, auto b) { return ((a-1)<<2)|(b-1); };
+					const auto bpp = a_ri->bits_per_channel;
+					const size_t max_component = ((1<<(bpp-1))-1)|(1<<(bpp-1));
+
 					if (a_ri->bits_per_channel == 8)
 					{
-						// result = stbi__convert_format(
-						// 	static_cast<uint8_t*>(result),
-						// 	p->s->img_out_n,
-						// 	req_comp,
-						// 	p->s->img_x,
-						// 	p->s->img_y);
 						auto data = static_cast<uint8_t*>(result);
 						auto img_n = a_p->s->img_out_n;
 						auto xx = a_p->s->img_x;
@@ -1201,95 +1197,122 @@ auto coyote_stbi_load_from_memory(
 							goto endp;
 						}
 
-						auto (*CONV_FUNC)(uint8_t* src, uint8_t* dst) -> void;
+						auto (*CONV_FUNC)(uint8_t* src, uint8_t* dst) -> void = nullptr;
+						const auto src_ofs = img_n;
+						const auto dst_ofs = a_req_comp;
 
+						switch (COMBO(img_n, a_req_comp))
+						{
+							case COMBO(1,2): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = src[0];
+									dest[1] = 255;
+								};
+								break;
+							}
+							case COMBO(1,3): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = dest[1] = dest[2] = src[0];
+								};
+								break;
+							}
+							case COMBO(1,4): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = dest[1] = dest[2] = src[0];
+									dest[3] = 255;
+								};
+								break;
+							}
+							case COMBO(2,1): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = src[0];
+								};
+								break;
+							}
+							case COMBO(2,3): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = dest[1] = dest[2] = src[0];
+								};
+								break;
+							}
+							case COMBO(2,4): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = dest[1] = dest[2] = src[0];
+									dest[3] = src[1];
+								};
+								break;
+							}
+							case COMBO(3,4): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = src[0];
+									dest[1] = src[1];
+									dest[2] = src[2];
+									dest[3] = 255;
+								};
+								break;
+							}
+							case COMBO(3,1): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = compute_luma(src[0], src[1], src[2]);
+								};
+								break;
+							}
+							case COMBO(3,2): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = compute_luma(src[0], src[1], src[2]);
+									dest[1] = 255;
+								};
+								break;
+							}
+							case COMBO(4,1): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = compute_luma(src[0], src[1], src[2]);
+								};
+								break;
+							}
+							case COMBO(4,2): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = compute_luma(src[0], src[1], src[2]);
+									dest[1] = src[3];
+								};
+								break;
+							}
+							case COMBO(4,3): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = src[0];
+									dest[1] = src[1];
+									dest[2] = src[2];
+								};
+								break;
+							}
+							default: {
+								CONV_FUNC = nullptr;
+								break;
+							}
+						}
 
-						int i;
+						if (CONV_FUNC == nullptr)
+						{
+							stbi_free(data);
+							stbi_free(good);
+							result = stbi__errpuc("unsupported", "Unsupported format conversion");
+							goto endp;
+						}
+
 						for (auto j = 0; j < yy; ++j)
 						{
 							auto src = data + j * xx * img_n;
-							auto dest = good + j * xx * a_req_comp;
+							auto dst = good + j * xx * a_req_comp;
 
-							// convert source image with img_n components to one with req_comp components;
-							// avoid switch per pixel, so use switch per scanline and massive macros
-							switch ((img_n << 3) | a_req_comp)
+							// FIXME: ditch the scanline approach, do whole image at once
+							for(auto i=xx-1;; --i)
 							{
-								case COMBO(1,2):
-									for(i=xx-1; i >= 0; --i, src += 1, dest += 2) {
-										dest[0] = src[0];
-										dest[1] = 255;
-									}
+								CONV_FUNC(src, dst);
+								src += src_ofs;
+								dst += dst_ofs;
+								if (i == 0)
+								{
 									break;
-								case COMBO(1,3):
-									for(i=xx-1; i >= 0; --i, src += 1, dest += 3) {
-										dest[0] = dest[1] = dest[2] = src[0];
-									}
-									break;
-								case COMBO(1,4):
-									for(i=xx-1; i >= 0; --i, src += 1, dest += 4) {
-										dest[0] = dest[1] = dest[2] = src[0];
-										dest[3] = 255;
-									}
-									break;
-								case COMBO(2,1):
-									for(i=xx-1; i >= 0; --i, src += 2, dest += 1) {
-										dest[0] = src[0];
-									}
-									break;
-								case COMBO(2,3):
-									for(i=xx-1; i >= 0; --i, src += 2, dest += 3) {
-										dest[0] = dest[1] = dest[2] = src[0];
-									}
-									break;
-								case COMBO(2,4):
-									for(i=xx-1; i >= 0; --i, src += 2, dest += 4) {
-										dest[0] = dest[1] = dest[2] = src[0];
-										dest[3] = src[1];
-									}
-									break;
-								case COMBO(3,4):
-									for(i=xx-1; i >= 0; --i, src += 3, dest += 4) {
-										dest[0] = src[0];
-										dest[1] = src[1];
-										dest[2] = src[2];
-										dest[3] = 255;
-									}
-									break;
-								case COMBO(3,1):
-									for(i=xx-1; i >= 0; --i, src += 3, dest += 1) {
-										dest[0] = compute_luma(src[0], src[1], src[2]);
-									}
-									break;
-								case COMBO(3,2):
-									for(i=xx-1; i >= 0; --i, src += 3, dest += 2) {
-										dest[0] = compute_luma(src[0], src[1], src[2]);
-										dest[1] = 255;
-									}
-									break;
-								case COMBO(4,1):
-									for(i=xx-1; i >= 0; --i, src += 4, dest += 1) {
-										dest[0] = compute_luma(src[0], src[1], src[2]);
-									}
-									break;
-								case COMBO(4,2):
-									for(i=xx-1; i >= 0; --i, src += 4, dest += 2) {
-										dest[0] = compute_luma(src[0], src[1], src[2]);
-										dest[1] = src[3];
-									}
-									break;
-								case COMBO(4,3):
-									for(i=xx-1; i >= 0; --i, src += 4, dest += 3) {
-										dest[0] = src[0];
-										dest[1] = src[1];
-										dest[2] = src[2];
-									}
-									break;
-								default: {
-									STBI_ASSERT(0);
-									stbi_free(data);
-									stbi_free(good);
-									result = stbi__errpuc("unsupported", "Unsupported format conversion");
-									goto endp;
 								}
 							}
 						}
@@ -1318,103 +1341,122 @@ auto coyote_stbi_load_from_memory(
 							goto endp;
 						}
 
-						int i;
+						auto (*CONV_FUNC)(uint16_t* src, uint16_t* dst) -> void = nullptr;
+						const auto src_ofs = _img_n;
+						const auto dst_ofs = a_req_comp;
+
+						switch (COMBO(_img_n, a_req_comp))
+						{
+							case COMBO(1,2): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = src[0];
+									dest[1] = 0xffff;
+								};
+								break;
+							}
+							case COMBO(1,3): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = dest[1] = dest[2] = src[0];
+								};
+								break;
+							}
+							case COMBO(1,4): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = dest[1] = dest[2] = src[0];
+									dest[3] = 0xffff;
+								};
+								break;
+							}
+							case COMBO(2,1): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = src[0];
+								};
+								break;
+							}
+							case COMBO(2,3): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = dest[1] = dest[2] = src[0];
+								};
+								break;
+							}
+							case COMBO(2,4): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = dest[1] = dest[2] = src[0];
+									dest[3] = src[1];
+								};
+								break;
+							}
+							case COMBO(3,4): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = src[0];
+									dest[1] = src[1];
+									dest[2] = src[2];
+									dest[3] = 0xffff;
+								};
+								break;
+							}
+							case COMBO(3,1): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = compute_luma(src[0], src[1], src[2]);
+								};
+								break;
+							}
+							case COMBO(3,2): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = compute_luma(src[0], src[1], src[2]);
+									dest[1] = 0xffff;
+								};
+								break;
+							}
+							case COMBO(4,1): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = compute_luma(src[0], src[1], src[2]);
+								};
+								break;
+							}
+							case COMBO(4,2): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = compute_luma(src[0], src[1], src[2]);
+									dest[1] = src[3];
+								};
+								break;
+							}
+							case COMBO(4,3): {
+								CONV_FUNC = [](auto src, auto dest) {
+									dest[0] = src[0];
+									dest[1] = src[1];
+									dest[2] = src[2];
+								};
+								break;
+							}
+							default: {
+								CONV_FUNC = nullptr;
+							}
+						}
+
+						if (CONV_FUNC == nullptr)
+						{
+							stbi_free(_data);
+							stbi_free(good);
+							result = stbi__errpuc("unsupported", "Unsupported format conversion");
+							goto endp;
+						}
+
 						for (auto j = 0; j < yy; ++j)
 						{
 							auto src = _data + j * xx * _img_n;
 							auto dest = good + j * xx * a_req_comp;
 
-							// convert source image with img_n components to one with req_comp components;
-							// avoid switch per pixel, so use switch per scanline and massive macros
-							switch ((_img_n << 3) | a_req_comp)
+							// FIXME: ditch the scanline approach, do whole image at once
+							for(auto i=xx-1;; --i)
 							{
-								case COMBO(1,2):
-									for(i=xx-1; i >= 0; --i, src += 1, dest += 2)
-									{
-										dest[0] = src[0];
-										dest[1] = 0xffff;
-									}
+								CONV_FUNC(src, dest);
+								src += src_ofs;
+								dest += dst_ofs;
+								if (i == 0)
+								{
 									break;
-								case COMBO(1,3):
-									for(i=xx-1; i >= 0; --i, src += 1, dest += 3)
-									{
-										dest[0] = dest[1] = dest[2] = src[0];
-									}
-									break;
-								case COMBO(1,4):
-									for(i=xx-1; i >= 0; --i, src += 1, dest += 4)
-									{
-										dest[0] = dest[1] = dest[2] = src[0];
-										dest[3] = 0xffff;
-									}
-									break;
-								case COMBO(2,1):
-									for(i=xx-1; i >= 0; --i, src += 2, dest += 1)
-									{
-										dest[0] = src[0];
-									}
-									break;
-								case COMBO(2,3):
-									for(i=xx-1; i >= 0; --i, src += 2, dest += 3) { dest[0] = dest[1] = dest[2] = src[0]; }
-									break;
-								case COMBO(2,4):
-									for(i=xx-1; i >= 0; --i, src += 2, dest += 4)
-									{
-										dest[0] = dest[1] = dest[2] = src[0];
-										dest[3] = src[1];
-									}
-									break;
-								case COMBO(3,4):
-									for(i=xx-1; i >= 0; --i, src += 3, dest += 4)
-									{
-										dest[0] = src[0];
-										dest[1] = src[1];
-										dest[2] = src[2];
-										dest[3] = 0xffff;
-									}
-									break;
-								case COMBO(3,1):
-									for(i=xx-1; i >= 0; --i, src += 3, dest += 1)
-									{
-										dest[0] = compute_luma(src[0], src[1], src[2]);
-									}
-									break;
-								case COMBO(3,2):
-									for(i=xx-1; i >= 0; --i, src += 3, dest += 2)
-									{
-										dest[0] = compute_luma(src[0], src[1], src[2]);
-										dest[1] = 0xffff;
-									}
-									break;
-								case COMBO(4,1):
-									for(i=xx-1; i >= 0; --i, src += 4, dest += 1)
-									{
-										dest[0] = compute_luma(src[0], src[1], src[2]);
-									}
-									break;
-								case COMBO(4,2):
-									for(i=xx-1; i >= 0; --i, src += 4, dest += 2)
-									{
-										dest[0] = compute_luma(src[0], src[1], src[2]);
-										dest[1] = src[3];
-									}
-									break;
-								case COMBO(4,3):
-									for(i=xx-1; i >= 0; --i, src += 4, dest += 3)
-									{
-										dest[0] = src[0];
-										dest[1] = src[1];
-										dest[2] = src[2];
-									}
-									break;
-								default: {
-									STBI_ASSERT(0);
-									stbi_free(_data);
-									stbi_free(good);
-									result = stbi__errpuc("unsupported", "Unsupported format conversion");
-									goto endp;
 								}
-
 							}
 						}
 
