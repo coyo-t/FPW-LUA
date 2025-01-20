@@ -366,12 +366,12 @@ struct PNGChunk
 };
 
 
-static auto stbi__check_png_header (DecodeContext *s) -> void
+static auto stbi__check_png_header (DecodeContext &s) -> void
 {
 	static const uint8_t png_sig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 	for (const auto i: png_sig)
 	{
-		if (s->get8() != i)
+		if (s.get8() != i)
 		{
 			throw STBIErr("bad png sig"); // "Not a PNG"
 		}
@@ -716,7 +716,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 
 	try
 	{
-		stbi__check_png_header(s);
+		stbi__check_png_header(*s);
 	}
 	catch (STBIErr e)
 	{
@@ -1277,7 +1277,7 @@ auto coyote_stbi_load_from_memory(
 
 	try
 	{
-		stbi__check_png_header(&s);
+		stbi__check_png_header(s);
 		s.rewind();
 	}
 	catch (STBIErr e)
