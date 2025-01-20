@@ -1103,40 +1103,6 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 	}
 }
 
-
-uint32_t coyote_stbi_info_from_memory(
-	uint8_t const *buffer,
-	uint64_t len,
-	uint64_t *x,
-	uint64_t *y,
-	uint64_t *comp)
-{
-	DecodeContext s;
-	s.start_mem(buffer, len);
-
-	PNG p;
-	p.s = &s;
-
-	if (stbi__parse_png_file(&p, STBI__SCAN_header, 0))
-	{
-		if (x)
-		{
-			*x = p.s->img_x;
-		}
-		if (y)
-		{
-			*y = p.s->img_y;
-		}
-		if (comp)
-		{
-			*comp = p.s->img_n;
-		}
-		return true;
-	}
-	p.s->rewind();
-	return stbi__err("unknown image type", "Image not of any known type, or corrupt");
-}
-
 template<typename T>
 static auto compute_luma (T r, T g, T b) -> T
 {
@@ -1146,13 +1112,15 @@ static auto compute_luma (T r, T g, T b) -> T
 	return static_cast<T>((ir * 77 + ig * 150 + ib * 29) >> 8);
 }
 
-uint8_t *coyote_stbi_load_from_memory(
+
+
+auto coyote_stbi_load_from_memory(
 	uint8_t const *buffer,
 	uint64_t len,
 	uint64_t* x,
 	uint64_t* y,
 	uint64_t* comp,
-	uint64_t req_comp)
+	uint64_t req_comp) -> uint8_t*
 {
 	DecodeContext s;
 	s.start_mem(buffer, len);
@@ -1223,7 +1191,6 @@ uint8_t *coyote_stbi_load_from_memory(
 							result = data;
 							goto endp;
 						}
-						STBI_ASSERT(a_req_comp >= 1 && a_req_comp <= 4);
 
 						auto good = malloc_fma3<uint8_t>(a_req_comp, xx, yy, 0);
 						if (good == nullptr)
@@ -1355,7 +1322,7 @@ uint8_t *coyote_stbi_load_from_memory(
 
 							// convert source image with img_n components to one with req_comp components;
 							// avoid switch per pixel, so use switch per scanline and massive macros
-							switch (COMBO(_img_n, a_req_comp))
+							switch ((_img_n << 3) | a_req_comp)
 							{
 								case COMBO(1,2):
 									for(i=xx-1; i >= 0; --i, src += 1, dest += 2)
@@ -1515,6 +1482,38 @@ uint8_t *coyote_stbi_load_from_memory(
 	return static_cast<uint8_t*>(true_result);
 }
 
+auto coyote_stbi_info_from_memory(
+	uint8_t const *buffer,
+	uint64_t len,
+	uint64_t *x,
+	uint64_t *y,
+	uint64_t *comp) -> uint32_t
+{
+	DecodeContext s;
+	s.start_mem(buffer, len);
+
+	PNG p;
+	p.s = &s;
+
+	if (stbi__parse_png_file(&p, STBI__SCAN_header, 0))
+	{
+		if (x)
+		{
+			*x = p.s->img_x;
+		}
+		if (y)
+		{
+			*y = p.s->img_y;
+		}
+		if (comp)
+		{
+			*comp = p.s->img_n;
+		}
+		return true;
+	}
+	p.s->rewind();
+	return stbi__err("unknown image type", "Image not of any known type, or corrupt");
+}
 
 void coyote_stbi_image_free(void *retval_from_stbi_load)
 {

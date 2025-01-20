@@ -79,4 +79,5 @@ add_library(
 		  src/image/stb_image.cpp
 		  src/image/zlib.hpp
 		  src/image/zlib.cpp
+		  src/image/tha_combo_machine.hpp
 )
