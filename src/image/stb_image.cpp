@@ -474,18 +474,10 @@ struct PNGChunk
 	uint32_t type;
 };
 
-static PNGChunk stbi__get_chunk_header(DecodeContext *s)
-{
-	PNGChunk c;
-	c.length = s->get32be();
-	c.type = s->get32be();
-	return c;
-}
-
-static const uint8_t png_sig[8] = {137, 80, 78, 71, 13, 10, 26, 10};
 
 static int stbi__check_png_header(DecodeContext *s)
 {
+	static const uint8_t png_sig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 	for (const auto i: png_sig)
 	{
 		if (s->get8() != i)
@@ -981,7 +973,10 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 
 	while (true)
 	{
-		PNGChunk c = stbi__get_chunk_header(s);
+		// stbi__get_chunk_header
+		PNGChunk c;
+		c.length = s->get32be();
+		c.type = s->get32be();
 		switch (c.type)
 		{
 			case PNG_TYPE('C', 'g', 'B', 'I'): {
