@@ -4,6 +4,7 @@
 #define STBI_NO_LINEAR
 #define STBI_ONLY_PNG
 #define STBI_NO_STDIO
+#include <cstdint>
 
 enum
 {
@@ -15,37 +16,36 @@ enum
 	STBI_rgb_alpha = 4
 };
 
-typedef unsigned char stbi_uc;
-typedef unsigned short stbi_us;
 
 extern "C" {
-#define STBIDEF extern
+#define STBIDEF extern auto
 
-STBIDEF stbi_uc *coyote_stbi_load_from_memory(
-	stbi_uc const *buffer,
-	int len,
-	int *x,
-	int *y,
-	int *channels_in_file,
-	int desired_channels
-);
+STBIDEF coyote_stbi_load_from_memory(
+	std::uint8_t const *buffer,
+	std::size_t len,
+	std::size_t* x,
+	std::size_t* y,
+	std::size_t* channels_in_file,
+	std::size_t desired_channels
+) -> unsigned char*;
 
 
 // get a VERY brief reason for failure
 // on most compilers (and ALL modern mainstream compilers) this is threadsafe
-STBIDEF const char *coyote_stbi_failure_reason(void);
+STBIDEF coyote_stbi_failure_reason(void) -> const char*;
 
 // free the loaded image -- this is just free()
-STBIDEF void coyote_stbi_image_free(void *retval_from_stbi_load);
+STBIDEF coyote_stbi_image_free(void *retval_from_stbi_load) -> void;
 
 // get image dimensions & components without fully decoding
-STBIDEF int coyote_stbi_info_from_memory(
-	stbi_uc const *buffer,
+STBIDEF coyote_stbi_info_from_memory(
+	unsigned char const *buffer,
 	int len,
 	int *x,
 	int *y,
 	int *comp
-);
+) -> int;
+
 }
 
 #endif // STBI_INCLUDE_STB_IMAGE_H

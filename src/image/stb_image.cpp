@@ -87,10 +87,10 @@ struct stbi__context
 	}
 
 	// initialize a memory-decode context
-	auto start_mem(uint8_t const *buffer, int len) -> void
+	auto start_mem(uint8_t const *buffer, size_t len) -> void
 	{
-		this->img_buffer = this->img_buffer_original = (uint8_t *) buffer;
-		this->img_buffer_end = this->img_buffer_original_end = (uint8_t *) buffer + len;
+		this->img_buffer = this->img_buffer_original = const_cast<uint8_t *>(buffer);
+		this->img_buffer_end = this->img_buffer_original_end = const_cast<uint8_t *>(buffer) + len;
 	}
 };
 
@@ -111,14 +111,12 @@ struct stbi__result_info
 	int channel_order;
 };
 
-
-static int stbi__png_test(stbi__context *s);
-
-static void *stbi__png_load(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri);
+static void *stbi__png_load(
+	stbi__context *s, size_t *x, size_t *y, size_t *comp, size_t req_comp, stbi__result_info *ri);
 
 static const char *stbi__g_failure_reason;
 
-STBIDEF const char *coyote_stbi_failure_reason()
+const char *coyote_stbi_failure_reason()
 {
 	return stbi__g_failure_reason;
 }
@@ -202,69 +200,11 @@ static void *stbi__malloc_mad3(int a, int b, int c, int add)
 #define stbi__err(x,y)  stbi__err(x)
 #define stbi__errpuc(x,y)  ((unsigned char *)(size_t) (stbi__err(x,y)?NULL:NULL))
 
-STBIDEF void coyote_stbi_image_free(void *retval_from_stbi_load)
+void coyote_stbi_image_free(void *retval_from_stbi_load)
 {
 	STBI_FREE(retval_from_stbi_load);
 }
 
-
-static void *stbi__load_main(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri, int bpc)
-{
-	std::memset(ri, 0, sizeof(*ri)); // make sure it's initialized if we add new fields
-	ri->bits_per_channel = 8; // default is 8 so most paths don't have to be changed
-	ri->num_channels = 0;
-
-	// test the formats with a very explicit header first (at least a FOURCC
-	// or distinctive magic number first)
-	if (stbi__png_test(s))
-	{
-		return stbi__png_load(s, x, y, comp, req_comp, ri);
-	}
-	return stbi__errpuc("unknown image type", "Image not of any known type, or corrupt");
-}
-
-
-STBIDEF uint8_t *coyote_stbi_load_from_memory(uint8_t const *buffer, int len, int *x, int *y, int *comp, int req_comp)
-{
-	stbi__context s;
-	s.start_mem(buffer, len);
-
-
-	stbi__result_info ri;
-	void *result = stbi__load_main(&s, x, y, comp, req_comp, &ri, 8);
-
-	if (result == nullptr)
-	{
-		return nullptr;
-	}
-
-	// it is the responsibility of the loaders to make sure we get either 8 or 16 bit.
-	STBI_ASSERT(ri.bits_per_channel == 8 || ri.bits_per_channel == 16);
-
-	if (ri.bits_per_channel != 8)
-	{
-		auto orig = static_cast<uint16_t *>(result);
-		int img_len = (*x) * (*y) * (req_comp == 0 ? *comp : req_comp);
-
-		auto reduced = static_cast<uint8_t *>(stbi__malloc(img_len));
-		if (reduced == NULL)
-		{
-			return stbi__errpuc("outofmem", "Out of memory");
-		}
-
-		for (int i = 0; i < img_len; ++i)
-		{
-			// top half of each byte is sufficient approx of 16->8 bit scaling
-			reduced[i] = static_cast<uint8_t>((orig[i] >> 8) & 0xFF);
-		}
-
-		STBI_FREE(orig);
-		result = reduced;
-		ri.bits_per_channel = 8;
-	}
-
-	return (unsigned char *) result;
-}
 
 enum
 {
@@ -1361,7 +1301,13 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 	}
 }
 
-static void *stbi__do_png(stbi__png *p, int *x, int *y, int *n, int req_comp, stbi__result_info *ri)
+static void *stbi__do_png(
+	stbi__png *p,
+	size_t *x,
+	size_t *y,
+	size_t *n,
+	size_t req_comp,
+	stbi__result_info *ri)
 {
 	void *result = NULL;
 	if (req_comp < 0 || req_comp > 4)
@@ -1419,22 +1365,22 @@ static void *stbi__do_png(stbi__png *p, int *x, int *y, int *n, int req_comp, st
 	return result;
 }
 
-static void *stbi__png_load(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri)
+static void *stbi__png_load(
+	stbi__context *s,
+	size_t* x,
+	size_t* y,
+	size_t* comp,
+	size_t req_comp,
+	stbi__result_info *ri
+)
 {
 	stbi__png p;
 	p.s = s;
 	return stbi__do_png(&p, x, y, comp, req_comp, ri);
 }
 
-static int stbi__png_test(stbi__context *s)
-{
-	int r = stbi__check_png_header(s);
-	stbi__rewind(s);
-	return r;
-}
 
-
-STBIDEF int coyote_stbi_info_from_memory(uint8_t const *buffer, int len, int *x, int *y, int *comp)
+int coyote_stbi_info_from_memory(uint8_t const *buffer, int len, int *x, int *y, int *comp)
 {
 	stbi__context s;
 	s.start_mem(buffer, len);
@@ -1460,4 +1406,76 @@ STBIDEF int coyote_stbi_info_from_memory(uint8_t const *buffer, int len, int *x,
 	}
 	stbi__rewind(p.s);
 	return stbi__err("unknown image type", "Image not of any known type, or corrupt");
+}
+
+static void *stbi__load_main(
+	stbi__context *s,
+	size_t* x,
+	size_t* y,
+	size_t* comp,
+	size_t req_comp,
+	stbi__result_info *ri)
+{
+	std::memset(ri, 0, sizeof(*ri)); // make sure it's initialized if we add new fields
+	ri->bits_per_channel = 8; // default is 8 so most paths don't have to be changed
+	ri->num_channels = 0;
+
+	// test the formats with a very explicit header first (at least a FOURCC
+	// or distinctive magic number first)
+	const auto r = stbi__check_png_header(s);
+	stbi__rewind(s);
+	if (r)
+	{
+		return stbi__png_load(s, x, y, comp, req_comp, ri);
+	}
+	return stbi__errpuc("unknown image type", "Image not of any known type, or corrupt");
+}
+
+
+uint8_t *coyote_stbi_load_from_memory(
+	uint8_t const *buffer,
+	size_t len,
+	size_t* x,
+	size_t* y,
+	size_t* comp,
+	size_t req_comp)
+{
+	stbi__context s;
+	s.start_mem(buffer, len);
+
+
+	stbi__result_info ri;
+	void *result = stbi__load_main(&s, x, y, comp, req_comp, &ri);
+
+	if (result == nullptr)
+	{
+		return nullptr;
+	}
+
+	// it is the responsibility of the loaders to make sure we get either 8 or 16 bit.
+	STBI_ASSERT(ri.bits_per_channel == 8 || ri.bits_per_channel == 16);
+
+	if (ri.bits_per_channel != 8)
+	{
+		auto orig = static_cast<uint16_t *>(result);
+		auto img_len = (*x) * (*y) * (req_comp == 0 ? *comp : req_comp);
+
+		auto reduced = static_cast<uint8_t *>(stbi__malloc(img_len));
+		if (reduced == nullptr)
+		{
+			return stbi__errpuc("outofmem", "Out of memory");
+		}
+
+		for (int i = 0; i < img_len; ++i)
+		{
+			// top half of each byte is sufficient approx of 16->8 bit scaling
+			reduced[i] = static_cast<uint8_t>((orig[i] >> 8) & 0xFF);
+		}
+
+		STBI_FREE(orig);
+		result = reduced;
+		ri.bits_per_channel = 8;
+	}
+
+	return (unsigned char *) result;
 }
