@@ -1408,29 +1408,6 @@ int coyote_stbi_info_from_memory(uint8_t const *buffer, int len, int *x, int *y,
 	return stbi__err("unknown image type", "Image not of any known type, or corrupt");
 }
 
-static void *stbi__load_main(
-	stbi__context *s,
-	size_t* x,
-	size_t* y,
-	size_t* comp,
-	size_t req_comp,
-	stbi__result_info *ri)
-{
-	std::memset(ri, 0, sizeof(*ri)); // make sure it's initialized if we add new fields
-	ri->bits_per_channel = 8; // default is 8 so most paths don't have to be changed
-	ri->num_channels = 0;
-
-	// test the formats with a very explicit header first (at least a FOURCC
-	// or distinctive magic number first)
-	const auto r = stbi__check_png_header(s);
-	stbi__rewind(s);
-	if (r)
-	{
-		return stbi__png_load(s, x, y, comp, req_comp, ri);
-	}
-	return stbi__errpuc("unknown image type", "Image not of any known type, or corrupt");
-}
-
 
 uint8_t *coyote_stbi_load_from_memory(
 	uint8_t const *buffer,
@@ -1445,12 +1422,31 @@ uint8_t *coyote_stbi_load_from_memory(
 
 
 	stbi__result_info ri;
-	void *result = stbi__load_main(&s, x, y, comp, req_comp, &ri);
-
-	if (result == nullptr)
+	void* result;
 	{
-		return nullptr;
+		std::memset(&ri, 0, sizeof(ri)); // make sure it's initialized if we add new fields
+		ri.bits_per_channel = 8; // default is 8 so most paths don't have to be changed
+		ri.num_channels = 0;
+
+		// test the formats with a very explicit header first (at least a FOURCC
+		// or distinctive magic number first)
+		const auto r = stbi__check_png_header(&s);
+		stbi__rewind(&s);
+		if (r)
+		{
+			result = stbi__png_load(&s, x, y, comp, req_comp, &ri);
+		}
+		else
+		{
+			result = stbi__errpuc("unknown image type", "Image not of any known type, or corrupt");
+		}
+
+		if (result == nullptr)
+		{
+			return nullptr;
+		}
 	}
+
 
 	// it is the responsibility of the loaders to make sure we get either 8 or 16 bit.
 	STBI_ASSERT(ri.bits_per_channel == 8 || ri.bits_per_channel == 16);
