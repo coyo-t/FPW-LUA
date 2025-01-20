@@ -31,7 +31,7 @@ struct DecodeContext
 	size_t img_x;
 	size_t img_y;
 	size_t img_n;
-	size_t img_out_bytes;
+	size_t img_out_n;
 
 	uint8_t *img_buffer;
 	uint8_t *img_buffer_end;
@@ -879,16 +879,16 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				z->idata = nullptr;
 				if ((req_comp == s->img_n + 1 && req_comp != 3 && !pal_img_n) || has_trans)
 				{
-					s->img_out_bytes = s->img_n + 1;
+					s->img_out_n = s->img_n + 1;
 				}
 				else
 				{
-					s->img_out_bytes = s->img_n;
+					s->img_out_n = s->img_n;
 				}
 				{
 					auto _image_data = z->expanded;
 					auto _image_data_len = raw_len;
-					auto _out_n = s->img_out_bytes;
+					auto _out_n = s->img_out_n;
 					auto _depth = z->depth;
 					auto _color = color;
 					auto _interlaced = interlace;
@@ -955,7 +955,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					if (z->depth == 16)
 					{
 
-						auto outn = s->img_out_bytes;
+						auto outn = s->img_out_n;
 						auto pixel_count = z->s->img_x * z->s->img_y;
 						auto p = reinterpret_cast<uint16_t *>(z->out);
 
@@ -987,7 +987,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					}
 					else
 					{
-						auto outn = s->img_out_bytes;
+						auto outn = s->img_out_n;
 						auto pixel_count = z->s->img_x * z->s->img_y;
 						auto p = z->out;
 
@@ -1022,14 +1022,14 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				{
 					// pal_img_n == 3 or 4
 					s->img_n = pal_img_n; // record the actual colors we had
-					s->img_out_bytes = pal_img_n;
+					s->img_out_n = pal_img_n;
 					if (req_comp >= 3)
 					{
-						s->img_out_bytes = req_comp;
+						s->img_out_n = req_comp;
 					}
 					// stbi__expand_png_palette
 					{
-						auto pal_img_n2 = s->img_out_bytes;
+						auto pal_img_n2 = s->img_out_n;
 						auto pixel_count = z->s->img_x * z->s->img_y;
 						auto orig = z->out;
 
@@ -1168,10 +1168,10 @@ auto coyote_stbi_load_from_memory(
 		}
 		result = p.out;
 		p.out = nullptr;
-		if (req_comp && req_comp != p.s->img_out_bytes)
+		if (req_comp && req_comp != p.s->img_out_n)
 		{
 			static constexpr auto COMBO = [](size_t a, size_t b) { return (a<<3)|b; };
-			const auto img_n = p.s->img_out_bytes;
+			const auto img_n = p.s->img_out_n;
 			const auto src_ofs = img_n;
 			const auto dst_ofs = req_comp;
 			const auto xx = p.s->img_x;
@@ -1318,17 +1318,17 @@ auto coyote_stbi_load_from_memory(
 			}
 			else
 			{
-				auto _data = static_cast<uint16_t*>(result);
+				auto data = static_cast<uint16_t*>(result);
 				if (req_comp == img_n)
 				{
-					result = _data;
+					result = data;
 					goto endp;
 				}
 
 				auto good = stbi_malloc_t<uint16_t>(req_comp * xx * yy * 2);
 				if (good == nullptr)
 				{
-					stbi_free(_data);
+					stbi_free(data);
 					result = stbi__errpuc("outofmem", "Out of memory");
 					goto endp;
 				}
@@ -1426,7 +1426,7 @@ auto coyote_stbi_load_from_memory(
 
 				if (CONV_FUNC == nullptr)
 				{
-					stbi_free(_data);
+					stbi_free(data);
 					stbi_free(good);
 					result = stbi__errpuc("unsupported", "Unsupported format conversion");
 					goto endp;
@@ -1434,7 +1434,7 @@ auto coyote_stbi_load_from_memory(
 
 				for (auto j = 0; j < yy; ++j)
 				{
-					auto src = _data + j * xx * img_n;
+					auto src = data + j * xx * img_n;
 					auto dest = good + j * xx * req_comp;
 
 					// FIXME: ditch the scanline approach, do whole image at once
@@ -1450,11 +1450,11 @@ auto coyote_stbi_load_from_memory(
 					}
 				}
 
-				stbi_free(_data);
+				stbi_free(data);
 				result = good;
 			endp:
 			}
-			p.s->img_out_bytes = req_comp;
+			p.s->img_out_n = req_comp;
 			if (result == nullptr)
 			{
 				true_result = result;
