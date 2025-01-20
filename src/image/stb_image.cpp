@@ -899,8 +899,7 @@ static int stbi__expand_png_palette(stbi__png *a, uint8_t *palette, int len, int
 	return 1;
 }
 
-
-#define STBI__PNG_TYPE(a,b,c,d)  (((unsigned) (a) << 24) + ((unsigned) (b) << 16) + ((unsigned) (c) << 8) + (unsigned) (d))
+// #define STBI__PNG_TYPE(a,b,c,d)  (((unsigned) (a) << 24) + ((unsigned) (b) << 16) + ((unsigned) (c) << 8) + (unsigned) (d))
 
 static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 {
@@ -934,17 +933,24 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 		return 1;
 	}
 
+	static constexpr auto PNG_TYPE = [](char a, char b, char c, char d) -> uint32_t {
+		return (
+			(static_cast<uint32_t>(a) << 24) | (static_cast<uint32_t>(b) << 16) |
+			(static_cast<uint32_t>(c) << 8) | static_cast<uint32_t>(d)
+		);
+	};
+
 	while (true)
 	{
 		stbi__pngchunk c = stbi__get_chunk_header(s);
 		switch (c.type)
 		{
-			case STBI__PNG_TYPE('C', 'g', 'B', 'I'): {
+			case PNG_TYPE('C', 'g', 'B', 'I'): {
 				is_iphone = 1;
 				s->skip(c.length);
 				break;
 			}
-			case STBI__PNG_TYPE('I', 'H', 'D', 'R'): {
+			case PNG_TYPE('I', 'H', 'D', 'R'): {
 				if (!first)
 				{
 					return stbi__err("multiple IHDR", "Corrupt PNG");
@@ -1026,7 +1032,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				break;
 			}
 
-			case STBI__PNG_TYPE('P', 'L', 'T', 'E'): {
+			case PNG_TYPE('P', 'L', 'T', 'E'): {
 				if (first)
 				{
 					return stbi__err("first not IHDR", "Corrupt PNG");
@@ -1050,7 +1056,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				break;
 			}
 
-			case STBI__PNG_TYPE('t', 'R', 'N', 'S'): {
+			case PNG_TYPE('t', 'R', 'N', 'S'): {
 				if (first)
 				{
 					return stbi__err("first not IHDR", "Corrupt PNG");
@@ -1116,7 +1122,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				break;
 			}
 
-			case STBI__PNG_TYPE('I', 'D', 'A', 'T'): {
+			case PNG_TYPE('I', 'D', 'A', 'T'): {
 				if (first)
 				{
 					return stbi__err("first not IHDR", "Corrupt PNG");
@@ -1174,7 +1180,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 				break;
 			}
 
-			case STBI__PNG_TYPE('I', 'E', 'N', 'D'): {
+			case PNG_TYPE('I', 'E', 'N', 'D'): {
 				uint32_t raw_len, bpl;
 				if (first)
 				{
@@ -1365,20 +1371,6 @@ static void *stbi__do_png(
 	return result;
 }
 
-static void *stbi__png_load(
-	stbi__context *s,
-	size_t* x,
-	size_t* y,
-	size_t* comp,
-	size_t req_comp,
-	stbi__result_info *ri
-)
-{
-	stbi__png p;
-	p.s = s;
-	return stbi__do_png(&p, x, y, comp, req_comp, ri);
-}
-
 
 int coyote_stbi_info_from_memory(uint8_t const *buffer, int len, int *x, int *y, int *comp)
 {
@@ -1434,7 +1426,9 @@ uint8_t *coyote_stbi_load_from_memory(
 		stbi__rewind(&s);
 		if (r)
 		{
-			result = stbi__png_load(&s, x, y, comp, req_comp, &ri);
+			stbi__png p;
+			p.s = &s;
+			result = stbi__do_png(&p, x, y, comp, req_comp, &ri);
 		}
 		else
 		{
