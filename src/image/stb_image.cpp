@@ -1171,9 +1171,6 @@ auto coyote_stbi_load_from_memory(
 		if (req_comp && req_comp != p.s->img_out_bytes)
 		{
 			static constexpr auto COMBO = [](size_t a, size_t b) { return (a<<3)|b; };
-			const auto bpp = ri.bits_per_channel;
-			const size_t max_component = ((1<<(bpp-1))-1)|(1<<(bpp-1));
-
 			const auto img_n = p.s->img_out_bytes;
 			const auto src_ofs = img_n;
 			const auto dst_ofs = req_comp;
@@ -1332,7 +1329,7 @@ auto coyote_stbi_load_from_memory(
 				if (good == nullptr)
 				{
 					stbi_free(_data);
-					result = reinterpret_cast<uint16_t *>(stbi__errpuc("outofmem", "Out of memory"));
+					result = stbi__errpuc("outofmem", "Out of memory");
 					goto endp;
 				}
 
@@ -1488,12 +1485,10 @@ auto coyote_stbi_load_from_memory(
 	true_result = result;
 	trueend:
 
-
 	if (true_result == nullptr)
 	{
 		return nullptr;
 	}
-
 
 	// it is the responsibility of the loaders to make sure we get either 8 or 16 bit.
 	STBI_ASSERT(ri.bits_per_channel == 8 || ri.bits_per_channel == 16);
