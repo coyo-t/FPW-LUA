@@ -1137,6 +1137,14 @@ uint32_t coyote_stbi_info_from_memory(
 	return stbi__err("unknown image type", "Image not of any known type, or corrupt");
 }
 
+template<typename T>
+static auto compute_luma (T r, T g, T b) -> T
+{
+	const auto ir =static_cast<uint64_t>(r);
+	const auto ig =static_cast<uint64_t>(g);
+	const auto ib =static_cast<uint64_t>(b);
+	return static_cast<T>((ir * 77 + ig * 150 + ib * 29) >> 8);
+}
 
 uint8_t *coyote_stbi_load_from_memory(
 	uint8_t const *buffer,
@@ -1224,11 +1232,6 @@ uint8_t *coyote_stbi_load_from_memory(
 							result = stbi__errpuc("outofmem", "Out of memory");
 							goto endp;
 						}
-
-						static auto compute_luma = [](int r, int g, int b) -> uint8_t
-						{
-							return static_cast<uint8_t>((r * 77 + g * 150 + 29 * b) >> 8);
-						};
 
 						int i;
 						for (auto j = 0; j < yy; ++j)
@@ -1344,10 +1347,6 @@ uint8_t *coyote_stbi_load_from_memory(
 							goto endp;
 						}
 
-						static auto compute_y_16 = [](int r, int g, int b) {
-							return static_cast<uint16_t>(((r * 77) + (g * 150) + (29 * b)) >> 8);
-						};
-
 						int i;
 						for (auto j = 0; j < yy; ++j)
 						{
@@ -1406,26 +1405,26 @@ uint8_t *coyote_stbi_load_from_memory(
 								case COMBO(3,1):
 									for(i=xx-1; i >= 0; --i, src += 3, dest += 1)
 									{
-										dest[0] = compute_y_16(src[0], src[1], src[2]);
+										dest[0] = compute_luma(src[0], src[1], src[2]);
 									}
 									break;
 								case COMBO(3,2):
 									for(i=xx-1; i >= 0; --i, src += 3, dest += 2)
 									{
-										dest[0] = compute_y_16(src[0], src[1], src[2]);
+										dest[0] = compute_luma(src[0], src[1], src[2]);
 										dest[1] = 0xffff;
 									}
 									break;
 								case COMBO(4,1):
 									for(i=xx-1; i >= 0; --i, src += 4, dest += 1)
 									{
-										dest[0] = compute_y_16(src[0], src[1], src[2]);
+										dest[0] = compute_luma(src[0], src[1], src[2]);
 									}
 									break;
 								case COMBO(4,2):
 									for(i=xx-1; i >= 0; --i, src += 4, dest += 2)
 									{
-										dest[0] = compute_y_16(src[0], src[1], src[2]);
+										dest[0] = compute_luma(src[0], src[1], src[2]);
 										dest[1] = src[3];
 									}
 									break;
@@ -1441,7 +1440,7 @@ uint8_t *coyote_stbi_load_from_memory(
 									STBI_ASSERT(0);
 									stbi_free(_data);
 									stbi_free(good);
-									result = reinterpret_cast<uint16_t *>(stbi__errpuc("unsupported", "Unsupported format conversion"));
+									result = stbi__errpuc("unsupported", "Unsupported format conversion");
 									goto endp;
 								}
 
