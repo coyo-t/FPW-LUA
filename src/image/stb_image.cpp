@@ -1263,14 +1263,14 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 }
 
 auto coyote_stbi_load_from_memory(
-	uint8_t const *buffer,
-	uint64_t len,
+	uint8_t const *source_png_buffer,
+	uint64_t source_length,
 	uint64_t* x,
 	uint64_t* y,
 	uint64_t* comp,
 	uint64_t req_comp) -> uint8_t*
 {
-	auto s = DecodeContext(buffer, len);
+	auto s = DecodeContext(source_png_buffer, source_length);
 
 	ResultInfo ri;
 	void* true_result;
@@ -1667,13 +1667,13 @@ auto coyote_stbi_load_from_memory(
 }
 
 auto coyote_stbi_info_from_memory(
-	uint8_t const *buffer,
-	uint64_t len,
+	uint8_t const *source_png_buffer,
+	uint64_t source_length,
 	uint64_t *x,
 	uint64_t *y,
 	uint64_t *comp) -> uint32_t
 {
-	auto s = DecodeContext(buffer, len);
+	auto s = DecodeContext(source_png_buffer, source_length);
 
 	auto p = PNG(s);
 
@@ -1702,7 +1702,37 @@ void coyote_stbi_image_free(void *retval_from_stbi_load)
 	stbi_free(retval_from_stbi_load);
 }
 
-auto coyote_stbi_failure_reason () -> const char *
+auto coyote_stbi_result_is_success(DecodeResult *res) -> uint8_t
 {
-	return stbi__g_failure_reason;
+	return res->is_success != 0;
+}
+
+auto coyote_stbi_failure_get_info(DecodeResult *res) -> const char *
+{
+	if (res->is_success)
+	{
+		return "not actually a failure dingus!!!";
+	}
+	return res->failure.reason;
+}
+
+
+auto coyote_stbi_result_sizeof() -> std::uint64_t
+{
+	return sizeof(DecodeResult);
+}
+
+auto coyote_stbi_success_get_pic(DecodeResult *res, uint64_t *out_size) -> uint8_t *
+{
+	if (!res->is_success)
+	{
+		return nullptr;
+	}
+
+	auto [s, p] = res->success;
+	if (out_size != nullptr)
+	{
+		*out_size = s;
+	}
+	return p;
 }

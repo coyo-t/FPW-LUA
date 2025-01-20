@@ -16,10 +16,6 @@ enum
 	STBI_rgb_alpha = 4
 };
 
-
-extern "C" {
-#define STBIDEF extern auto
-
 struct SuccessResult
 {
 	size_t pic_data_size;
@@ -54,63 +50,36 @@ struct DecodeResult
 	}
 };
 
-STBIDEF coyote_stbi_result_is_success (DecodeResult* res) -> uint8_t
-{
-	return res->is_success != 0;
-}
+extern "C" {
+#define STBIDEF extern auto
 
-STBIDEF coyote_stbi_failure_get_info (DecodeResult* res) -> const char*
-{
-	if (res->is_success)
-	{
-		return "not actually a failure dingus!!!";
-	}
-	return res->failure.reason;
-}
 
-STBIDEF coyote_stbi_success_get_info (
-	DecodeResult* res,
-	size_t* out_size
-) -> uint8_t*
-{
-	if (!res->is_success)
-	{
-		return nullptr;
-	}
+STBIDEF coyote_stbi_result_sizeof () -> std::uint64_t;
+STBIDEF coyote_stbi_result_is_success (DecodeResult* res) -> uint8_t;
+STBIDEF coyote_stbi_failure_get_info (DecodeResult* res) -> const char*;
 
-	auto [pic_data_size, pic_data] = res->success;
-	if (out_size != nullptr)
-	{
-		*out_size = pic_data_size;
-	}
-	return pic_data;
-}
+STBIDEF coyote_stbi_success_get_pic (DecodeResult* res, uint64_t* out_size) -> uint8_t*;
+
 
 STBIDEF coyote_stbi_load_from_memory(
-	std::uint8_t const *buffer,
-	std::uint64_t len,
+	std::uint8_t const *source_png_buffer,
+	std::uint64_t source_length,
 	std::uint64_t* x,
 	std::uint64_t* y,
 	std::uint64_t* channels_in_file,
 	std::uint64_t desired_channels
 ) -> std::uint8_t*;
 
-
-// get a VERY brief reason for failure
-// on most compilers (and ALL modern mainstream compilers) this is threadsafe
-STBIDEF coyote_stbi_failure_reason(void) -> const char*;
-
-// free the loaded image -- this is just free()
-STBIDEF coyote_stbi_image_free(void *retval_from_stbi_load) -> void;
-
-// get image dimensions & components without fully decoding
 STBIDEF coyote_stbi_info_from_memory(
-	std::uint8_t const *buffer,
-	std::uint64_t len,
+	std::uint8_t const *source_png_buffer,
+	std::uint64_t source_length,
 	std::uint64_t* x,
 	std::uint64_t* y,
 	std::uint64_t* comp
 ) -> std::uint32_t;
+
+// free the loaded image -- this is just free()
+STBIDEF coyote_stbi_image_free(void *retval_from_stbi_load) -> void;
 
 }
 
