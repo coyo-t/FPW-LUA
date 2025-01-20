@@ -316,13 +316,6 @@ auto BYTECAST (T x) -> uint8_t
 	return static_cast<uint8_t>(x & 0xFF);
 }
 
-struct PNGChunk
-{
-	uint32_t length;
-	uint32_t type;
-};
-
-
 static auto check_png_header (DecodeContext &s) -> void
 {
 	static const uint8_t png_sig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
@@ -438,7 +431,7 @@ static int create_png_image_raw(
 		throw STBIErr("assertion error: out_n != component count");
 	}
 	a->out = s.allocate_t<uint8_t>(x * y * output_bytes);
-	if (!a->out)
+	if (a->out == nullptr)
 	{
 		throw STBIErr("out of memory");
 	}
@@ -700,14 +693,12 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 	while (true)
 	{
 		// stbi__get_chunk_header
-		PNGChunk chunkc;
-		chunkc.length = s.get32be();
-		chunkc.type = s.get32be();
-		switch (chunkc.type)
+		auto chunkc_length = s.get32be();
+		switch (auto chunkc_type = s.get32be())
 		{
 			case FOURCC("CgBI"): {
 				is_iphone = 1;
-				s.skip(chunkc.length);
+				s.skip(chunkc_length);
 				break;
 			}
 			case FOURCC("IHDR"): {
@@ -716,7 +707,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 					throw stbi__err("multiple IHDR", "Corrupt PNG");
 				}
 				first = 0;
-				if (chunkc.length != 13)
+				if (chunkc_length != 13)
 				{
 					throw stbi__err("bad IHDR len", "Corrupt PNG");
 				}
@@ -797,12 +788,12 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				{
 					throw stbi__err("first not IHDR", "Corrupt PNG");
 				}
-				if (chunkc.length > 256 * 3)
+				if (chunkc_length > 256 * 3)
 				{
 					throw stbi__err("invalid PLTE", "Corrupt PNG");
 				}
-				pal_len = chunkc.length / 3;
-				if (pal_len * 3 != chunkc.length)
+				pal_len = chunkc_length / 3;
+				if (pal_len * 3 != chunkc_length)
 				{
 					throw stbi__err("invalid PLTE", "Corrupt PNG");
 				}
@@ -835,12 +826,12 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 					{
 						throw stbi__err("tRNS before PLTE", "Corrupt PNG");
 					}
-					if (chunkc.length > pal_len)
+					if (chunkc_length > pal_len)
 					{
 						throw stbi__err("bad tRNS len", "Corrupt PNG");
 					}
 					pal_img_n = 4;
-					for (i = 0; i < chunkc.length; ++i)
+					for (i = 0; i < chunkc_length; ++i)
 					{
 						palette[i * 4 + 3] = s.get8();
 					}
@@ -851,7 +842,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 					{
 						throw stbi__err("tRNS with alpha", "Corrupt PNG");
 					}
-					if (chunkc.length != s.image_component_count * 2)
+					if (chunkc_length != s.image_component_count * 2)
 					{
 						throw stbi__err("bad tRNS len", "Corrupt PNG");
 					}
@@ -898,22 +889,22 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 					}
 					return true;
 				}
-				if (chunkc.length > (1u << 30))
+				if (chunkc_length > (1u << 30))
 				{
 					throw stbi__err("IDAT size limit", "IDAT section larger than 2^30 bytes");
 				}
-				if ((int) (ioff + chunkc.length) < (int) ioff)
+				if ((int) (ioff + chunkc_length) < (int) ioff)
 				{
 					return false;
 				}
-				if (ioff + chunkc.length > idata_limit)
+				if (ioff + chunkc_length > idata_limit)
 				{
 					uint32_t idata_limit_old = idata_limit;
 					if (idata_limit == 0)
 					{
-						idata_limit = chunkc.length > 4096 ? chunkc.length : 4096;
+						idata_limit = chunkc_length > 4096 ? chunkc_length : 4096;
 					}
-					while (ioff + chunkc.length > idata_limit)
+					while (ioff + chunkc_length > idata_limit)
 					{
 						idata_limit *= 2;
 					}
@@ -925,7 +916,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 					}
 					z.idata = p;
 				}
-				const auto n = chunkc.length;
+				const auto n = chunkc_length;
 				const auto buffer = z.idata + ioff;
 				if (s.img_buffer + n > s.img_buffer_end)
 				{
@@ -933,7 +924,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				}
 				std::memcpy(buffer, s.img_buffer, n);
 				s.img_buffer += n;
-				ioff += chunkc.length;
+				ioff += chunkc_length;
 				break;
 			}
 			case FOURCC("IEND"): {
@@ -1197,7 +1188,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 				{
 					throw stbi__err("first not IHDR", "Corrupt PNG");
 				}
-				if ((chunkc.type & (1 << 29)) == 0)
+				if ((chunkc_type & (1 << 29)) == 0)
 				{
 					// invalid_chunk[0] = STBI__BYTECAST(c.type >> 24);
 					// invalid_chunk[1] = STBI__BYTECAST(c.type >> 16);
@@ -1205,7 +1196,7 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 					// invalid_chunk[3] = STBI__BYTECAST(c.type >> 0);
 					throw stbi__err("XXXX PNG chunk not known", "PNG not supported: unknown PNG chunk type");
 				}
-				s.skip(chunkc.length);
+				s.skip(chunkc_length);
 				break;
 			}
 		}
