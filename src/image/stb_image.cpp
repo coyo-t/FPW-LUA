@@ -334,8 +334,6 @@ static int fma3sizes_valid(size_t a, size_t b, size_t c, size_t add)
 
 
 #define stbi__err(x,y)  STBIErr(x)
-#define stbi__errpuc(x,y)  ((unsigned char *)(size_t) (stbi__err(x,y)?NULL:NULL))
-
 
 enum
 {
@@ -1671,10 +1669,7 @@ auto coyote_stbi_info_from_memory(
 
 	try
 	{
-		if (!parse_png_file(p, STBI__SCAN_header, 0))
-		{
-			throw STBIErr("image isn't a PNG or is corrupted");
-		}
+		parse_png_file(p, STBI__SCAN_header, 0);
 	}
 	catch (STBIErr e)
 	{
