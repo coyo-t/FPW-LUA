@@ -139,19 +139,19 @@ static auto stb_realloc (void* p, size_t oldsz, size_t newsz) -> void*
 
 // return 1 if the sum is valid, 0 on overflow.
 // negative terms are considered invalid.
-static int stbi__addsizes_valid(int a, int b)
+static int stbi__addsizes_valid(size_t a, size_t b)
 {
 	if (b < 0) return 0;
 	// now 0 <= b <= INT_MAX, hence also
 	// 0 <= INT_MAX - b <= INTMAX.
 	// And "a + b <= INT_MAX" (which might overflow) is the
 	// same as a <= INT_MAX - b (no overflow)
-	return a <= INT_MAX - b;
+	return a <= SIZE_MAX - b;
 }
 
 // returns 1 if the product is valid, 0 on overflow.
 // negative factors are considered invalid.
-static int stbi__mul2sizes_valid(int a, int b)
+static int stbi__mul2sizes_valid(size_t a, size_t b)
 {
 	if (a < 0 || b < 0)
 	{
@@ -159,17 +159,17 @@ static int stbi__mul2sizes_valid(int a, int b)
 	}
 	// mul-by-0 is always safe
 	// portable way to check for no overflows in a*b
-	return b == 0 || (a <= INT_MAX / b);
+	return b == 0 || (a <= SIZE_MAX / b);
 }
 
 // returns 1 if "a*b + add" has no negative terms/factors and doesn't overflow
-static int stbi__mad2sizes_valid(int a, int b, int add)
+static int stbi__mad2sizes_valid(size_t a, size_t b, size_t add)
 {
 	return stbi__mul2sizes_valid(a, b) && stbi__addsizes_valid(a * b, add);
 }
 
 // returns 1 if "a*b*c + add" has no negative terms/factors and doesn't overflow
-static int stbi__mad3sizes_valid(int a, int b, int c, int add)
+static int stbi__mad3sizes_valid(size_t a, size_t b, size_t c, size_t add)
 {
 	return (
 		stbi__mul2sizes_valid(a, b) &&
@@ -179,22 +179,24 @@ static int stbi__mad3sizes_valid(int a, int b, int c, int add)
 }
 
 // mallocs with size overflow checking
-static void *stbi__malloc_mad2(int a, int b, int add)
+template<typename T>
+static auto stbi__malloc_mad2(size_t a, size_t b, size_t add) -> T*
 {
 	if (!stbi__mad2sizes_valid(a, b, add))
 	{
 		return nullptr;
 	}
-	return stbi_malloc(a * b + add);
+	return stbi_malloc_t<T>(a * b + add);
 }
 
-static void *stbi__malloc_mad3(int a, int b, int c, int add)
+template<typename T>
+static auto stbi__malloc_mad3(size_t a, size_t b, size_t c, size_t add) -> T*
 {
 	if (!stbi__mad3sizes_valid(a, b, c, add))
 	{
 		return nullptr;
 	}
-	return stbi_malloc(a * b * c + add);
+	return stbi_malloc_t<T>(a * b * c + add);
 }
 
 
@@ -244,7 +246,7 @@ static uint8_t* stbi__convert_format(
 	}
 	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
 
-	auto good = static_cast<uint8_t*>(stbi__malloc_mad3(req_comp, x, y, 0));
+	auto good = stbi__malloc_mad3<uint8_t>(req_comp, x, y, 0);
 	if (good == nullptr)
 	{
 		stbi_free(data);
@@ -566,7 +568,7 @@ static int stbi__create_png_image_raw(PNG *a, uint8_t *raw, uint32_t raw_len, in
 
 	STBI_ASSERT(out_n == s->img_n || out_n == s->img_n+1);
 	// extra bytes to write off the end into
-	a->out = static_cast<uint8_t *>(stbi__malloc_mad3(x, y, output_bytes, 0));
+	a->out = stbi__malloc_mad3<uint8_t>(x, y, output_bytes, 0);
 	if (!a->out)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -594,7 +596,7 @@ static int stbi__create_png_image_raw(PNG *a, uint8_t *raw, uint32_t raw_len, in
 	}
 
 	// Allocate two scan lines worth of filter workspace buffer.
-	auto filter_buf = static_cast<uint8_t*>(stbi__malloc_mad2(img_width_bytes, 2, 0));
+	auto filter_buf = stbi__malloc_mad2<uint8_t>(img_width_bytes, 2, 0);
 	if (!filter_buf)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -784,7 +786,7 @@ static int stbi__create_png_image(PNG *a, uint8_t *image_data, uint32_t image_da
 	}
 
 	// de-interlacing
-	auto *final = (uint8_t *) stbi__malloc_mad3(a->s->img_x, a->s->img_y, out_bytes, 0);
+	auto *final = stbi__malloc_mad3<uint8_t>(a->s->img_x, a->s->img_y, out_bytes, 0);
 	if (!final)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -893,7 +895,7 @@ static int stbi__expand_png_palette(PNG *a, uint8_t *palette, int len, int pal_i
 	uint32_t i, pixel_count = a->s->img_x * a->s->img_y;
 	uint8_t *orig = a->out;
 
-	auto *p = (uint8_t *) stbi__malloc_mad2(pixel_count, pal_img_n, 0);
+	auto p = stbi__malloc_mad2<uint8_t>(pixel_count, pal_img_n, 0);
 	if (p == nullptr)
 	{
 		return stbi__err("outofmem", "Out of memory");
