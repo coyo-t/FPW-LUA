@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <stdexcept>
 #include <climits>
 #include <cassert>
 #include <cstdint>
@@ -12,86 +13,17 @@
 #include "./zlib.hpp"
 
 
+struct STBIErr final : std::exception
+{
+	const char* reason;
+
+	STBIErr() = default;
+
+	explicit STBIErr(const char * str);
+};
+
+
 static_assert(sizeof(uint32_t) == 4);
-
-#define STBI_ASSERT(x) assert(x)
-#define STBI_NOTUSED(v)  (void)sizeof(v)
-
-static constexpr auto STBI_MAX_DIMENSIONS = 1 << 24;
-
-
-///////////////////////////////////////////////
-//
-//  stbi__context struct and start_xxx functions
-
-// stbi__context structure is our basic context used by all images, so it
-// contains all the IO context, plus some basic image information
-struct DecodeContext
-{
-	size_t img_x;
-	size_t img_y;
-	size_t img_n;
-	size_t img_out_n;
-
-	uint8_t *img_buffer;
-	uint8_t *img_buffer_end;
-	uint8_t *img_buffer_original;
-	uint8_t *img_buffer_original_end;
-
-	auto get8() -> uint8_t
-	{
-		if (img_buffer < img_buffer_end)
-			return *img_buffer++;
-		return 0;
-	}
-	auto get16be() -> uint16_t
-	{
-		const auto z = get8();
-		return (static_cast<uint16_t>(z) << 8) | get8();
-	}
-	auto get32be() -> uint32_t
-	{
-		const auto z = get16be();
-		return (static_cast<uint32_t>(z) << 16) | get16be();
-	}
-	auto skip (int count) -> void
-	{
-		if (count == 0)
-		{
-			return;
-		}
-		if (count < 0)
-		{
-			img_buffer = img_buffer_end;
-			return;
-		}
-		img_buffer += count;
-	}
-	auto start_mem(uint8_t const *buffer, size_t size) -> void
-	{
-		// initialize a memory-decode context
-		const auto cbi = const_cast<uint8_t*>(buffer);
-		img_buffer = img_buffer_original = cbi;
-		img_buffer_end = img_buffer_original_end = cbi + size;
-	}
-	auto rewind () -> void
-	{
-		// conceptually rewind SHOULD rewind to the beginning of the stream,
-		// but we just rewind to the beginning of the initial buffer, because
-		// we only use it after doing 'test', which only ever looks at at most 92 bytes
-		img_buffer = img_buffer_original;
-		img_buffer_end = img_buffer_original_end;
-}
-};
-
-
-
-struct ResultInfo
-{
-	int bits_per_channel;
-	int num_channels;
-	int channel_order;
-};
 
 static const char *stbi__g_failure_reason;
 
@@ -130,6 +62,165 @@ static auto stb_realloc (void* p, size_t oldsz, size_t newsz) -> void*
 {
 	return std::realloc(p,newsz);
 }
+
+#define STBI_ASSERT(x) assert(x)
+#define STBI_NOTUSED(v)  (void)sizeof(v)
+
+static constexpr auto STBI_MAX_DIMENSIONS = 1 << 24;
+
+constexpr size_t MAX_ALLOCATIONS = 128;
+
+struct Allocation
+{
+	uint32_t magic = 292202;
+	bool freed = true;
+	size_t size = 0;
+	Allocation* next;
+
+	Allocation()
+	{
+		next = this;
+	}
+
+	auto data () -> void*
+	{
+		return reinterpret_cast<uint8_t*>(this) + sizeof(Allocation);
+	}
+
+	static auto get_address (void* from) -> Allocation*
+	{
+		return reinterpret_cast<Allocation*>(static_cast<uint8_t*>(from) - sizeof(Allocation));
+	}
+};
+
+struct DecodeContext
+{
+	size_t img_x = 0;
+	size_t img_y = 0;
+	size_t img_n = 0;
+	size_t img_out_n = 0;
+
+	uint8_t* img_buffer;
+	uint8_t* img_buffer_end;
+	uint8_t* img_buffer_original;
+	uint8_t* img_buffer_original_end;
+
+	size_t allocate_index = 0;
+	Allocation head;
+
+	DecodeContext (uint8_t const *buffer, size_t size)
+	{
+		// initialize a memory-decode context
+		const auto cbi = const_cast<uint8_t *>(buffer);
+		const auto cbe = cbi + size;
+		img_buffer = cbi;
+		img_buffer_original = cbi;
+		img_buffer_end = cbe;
+		img_buffer_original_end = cbe;
+		head.next = &head;
+	}
+
+	auto get8() -> uint8_t
+	{
+		if (img_buffer < img_buffer_end)
+			return *img_buffer++;
+		return 0;
+	}
+	auto get16be() -> uint16_t
+	{
+		const auto z = get8();
+		return (static_cast<uint16_t>(z) << 8) | get8();
+	}
+	auto get32be() -> uint32_t
+	{
+		const auto z = get16be();
+		return (static_cast<uint32_t>(z) << 16) | get16be();
+	}
+	auto skip (int count) -> void
+	{
+		if (count == 0)
+		{
+			return;
+		}
+		if (count < 0)
+		{
+			img_buffer = img_buffer_end;
+			return;
+		}
+		img_buffer += count;
+	}
+	auto rewind () -> void
+	{
+		// conceptually rewind SHOULD rewind to the beginning of the stream,
+		// but we just rewind to the beginning of the initial buffer, because
+		// we only use it after doing 'test', which only ever looks at at most 92 bytes
+		img_buffer = img_buffer_original;
+		img_buffer_end = img_buffer_original_end;
+	}
+
+	auto allocate (size_t size) -> void*
+	{
+		if (allocate_index >= MAX_ALLOCATIONS)
+		{
+			throw STBIErr("out of allocations");
+		}
+
+		auto node = &head;
+		Allocation* maybe_freed = nullptr;
+		while (true)
+		{
+			node = node->next;
+			if (node == &head)
+			{
+				break;
+			}
+			if (node->freed && node->size <= size)
+			{
+				maybe_freed = node;
+				break;
+			}
+		}
+
+		if (maybe_freed != nullptr)
+		{
+			maybe_freed->freed = false;
+			return maybe_freed->data();
+		}
+
+		const auto outs = stbi_malloc(size + sizeof(Allocation));
+		const auto entry = static_cast<Allocation*>(outs);
+		entry->size = size;
+		entry->freed = false;
+		entry->next = head.next;
+		head.next = entry;
+		allocate_index++;
+		return static_cast<uint8_t*>(outs) + sizeof(Allocation);
+	}
+
+	auto free (void* thing) -> void
+	{
+		auto entry = Allocation::get_address(thing);
+		if (entry->magic != 292202)
+		{
+			throw STBIErr("tried freeing a bogus block!");
+		}
+		if (entry->freed)
+		{
+			throw STBIErr("tried freeing an already freed block! this is a mistake!");
+		}
+		entry->freed = true;
+	}
+};
+
+
+
+struct ResultInfo
+{
+	int bits_per_channel;
+	int num_channels;
+	int channel_order;
+};
+
 
 // stb_image uses ints pervasively, including for offset calculations.
 // therefore the largest decoded image size we can support with the
@@ -434,7 +525,8 @@ static int stbi__create_png_image_raw(
 		// expand decoded bits in cur to dest, also adding an extra alpha channel if desired
 		if (depth < 8)
 		{
-			auto scale = (color == 0) ? DEPTH_SCALE_TABLE[depth] : 1; // scale grayscale values to 0..255 range
+			// scale grayscale values to 0..255 range
+			auto scale = (color == 0) ? DEPTH_SCALE_TABLE[depth] : 1;
 			auto in = cur;
 			auto out = dest;
 			uint8_t inb = 0;
@@ -535,7 +627,7 @@ static int stbi__create_png_image_raw(
 
 static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 {
-	DecodeContext *s = z->s;
+	auto s = z->s;
 
 	z->expanded = nullptr;
 	z->idata = nullptr;
@@ -546,17 +638,6 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 		return 0;
 	}
 
-	// if (scan == STBI__SCAN_type)
-	// {
-	// 	return 1;
-	// }
-
-	static constexpr auto PNG_TYPE = [](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint32_t {
-		return (
-			(static_cast<uint32_t>(a) << 24) | (static_cast<uint32_t>(b) << 16) |
-			(static_cast<uint32_t>(c) << 8) | static_cast<uint32_t>(d)
-		);
-	};
 
 	uint8_t palette[1024];
 	uint8_t pal_img_n = 0;
@@ -572,17 +653,25 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 	int interlace = 0;
 	int color = 0;
 	int is_iphone = 0;
+
+	static constexpr auto
+	PNG_TYPE = [](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint32_t {
+		return (
+			(static_cast<uint32_t>(a) << 24) | (static_cast<uint32_t>(b) << 16) |
+			(static_cast<uint32_t>(c) << 8) | static_cast<uint32_t>(d)
+		);
+	};
 	while (true)
 	{
 		// stbi__get_chunk_header
-		PNGChunk c;
-		c.length = s->get32be();
-		c.type = s->get32be();
-		switch (c.type)
+		PNGChunk chunkc;
+		chunkc.length = s->get32be();
+		chunkc.type = s->get32be();
+		switch (chunkc.type)
 		{
 			case PNG_TYPE('C', 'g', 'B', 'I'): {
 				is_iphone = 1;
-				s->skip(c.length);
+				s->skip(chunkc.length);
 				break;
 			}
 			case PNG_TYPE('I', 'H', 'D', 'R'): {
@@ -591,7 +680,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					return stbi__err("multiple IHDR", "Corrupt PNG");
 				}
 				first = 0;
-				if (c.length != 13) return stbi__err("bad IHDR len", "Corrupt PNG");
+				if (chunkc.length != 13) return stbi__err("bad IHDR len", "Corrupt PNG");
 				s->img_x = s->get32be();
 				s->img_y = s->get32be();
 				if (s->img_y > STBI_MAX_DIMENSIONS)
@@ -671,12 +760,12 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				{
 					return stbi__err("first not IHDR", "Corrupt PNG");
 				}
-				if (c.length > 256 * 3)
+				if (chunkc.length > 256 * 3)
 				{
 					return stbi__err("invalid PLTE", "Corrupt PNG");
 				}
-				pal_len = c.length / 3;
-				if (pal_len * 3 != c.length)
+				pal_len = chunkc.length / 3;
+				if (pal_len * 3 != chunkc.length)
 				{
 					return stbi__err("invalid PLTE", "Corrupt PNG");
 				}
@@ -709,12 +798,12 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					{
 						return stbi__err("tRNS before PLTE", "Corrupt PNG");
 					}
-					if (c.length > pal_len)
+					if (chunkc.length > pal_len)
 					{
 						return stbi__err("bad tRNS len", "Corrupt PNG");
 					}
 					pal_img_n = 4;
-					for (i = 0; i < c.length; ++i)
+					for (i = 0; i < chunkc.length; ++i)
 					{
 						palette[i * 4 + 3] = s->get8();
 					}
@@ -725,7 +814,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					{
 						return stbi__err("tRNS with alpha", "Corrupt PNG");
 					}
-					if (c.length != (uint32_t) s->img_n * 2)
+					if (chunkc.length != (uint32_t) s->img_n * 2)
 					{
 						return stbi__err("bad tRNS len", "Corrupt PNG");
 					}
@@ -772,22 +861,22 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					}
 					return 1;
 				}
-				if (c.length > (1u << 30))
+				if (chunkc.length > (1u << 30))
 				{
 					return stbi__err("IDAT size limit", "IDAT section larger than 2^30 bytes");
 				}
-				if ((int) (ioff + c.length) < (int) ioff)
+				if ((int) (ioff + chunkc.length) < (int) ioff)
 				{
 					return 0;
 				}
-				if (ioff + c.length > idata_limit)
+				if (ioff + chunkc.length > idata_limit)
 				{
 					uint32_t idata_limit_old = idata_limit;
 					if (idata_limit == 0)
 					{
-						idata_limit = c.length > 4096 ? c.length : 4096;
+						idata_limit = chunkc.length > 4096 ? chunkc.length : 4096;
 					}
-					while (ioff + c.length > idata_limit)
+					while (ioff + chunkc.length > idata_limit)
 					{
 						idata_limit *= 2;
 					}
@@ -800,7 +889,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					z->idata = p;
 				}
 				{
-					const auto n = c.length;
+					const auto n = chunkc.length;
 					const auto buffer = z->idata + ioff;
 					if (s->img_buffer + n > s->img_buffer_end)
 					{
@@ -809,7 +898,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					std::memcpy(buffer, s->img_buffer, n);
 					s->img_buffer += n;
 				}
-				ioff += c.length;
+				ioff += chunkc.length;
 				break;
 			}
 			case PNG_TYPE('I', 'E', 'N', 'D'): {
@@ -1067,7 +1156,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				{
 					return stbi__err("first not IHDR", "Corrupt PNG");
 				}
-				if ((c.type & (1 << 29)) == 0)
+				if ((chunkc.type & (1 << 29)) == 0)
 				{
 					// invalid_chunk[0] = STBI__BYTECAST(c.type >> 24);
 					// invalid_chunk[1] = STBI__BYTECAST(c.type >> 16);
@@ -1075,7 +1164,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					// invalid_chunk[3] = STBI__BYTECAST(c.type >> 0);
 					return stbi__err("XXXX PNG chunk not known", "PNG not supported: unknown PNG chunk type");
 				}
-				s->skip(c.length);
+				s->skip(chunkc.length);
 				break;
 			}
 		}
@@ -1118,9 +1207,7 @@ auto coyote_stbi_load_from_memory(
 	uint64_t* comp,
 	uint64_t req_comp) -> uint8_t*
 {
-	DecodeContext s;
-	s.start_mem(buffer, len);
-
+	auto s = DecodeContext(buffer, len);
 
 	ResultInfo ri;
 	void* true_result;
@@ -1521,8 +1608,7 @@ auto coyote_stbi_info_from_memory(
 	uint64_t *y,
 	uint64_t *comp) -> uint32_t
 {
-	DecodeContext s;
-	s.start_mem(buffer, len);
+	auto s = DecodeContext(buffer, len);
 
 	PNG p;
 	p.s = &s;
