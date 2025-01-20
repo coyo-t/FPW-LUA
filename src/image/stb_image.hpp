@@ -20,6 +20,63 @@ enum
 extern "C" {
 #define STBIDEF extern auto
 
+struct SuccessResult
+{
+	size_t pic_data_size;
+	uint8_t* pic_data;
+};
+
+struct FailureResult
+{
+	const char* reason;
+};
+
+struct DecodeResult
+{
+
+	bool is_success;
+	union
+	{
+		SuccessResult success;
+		FailureResult failure;
+	};
+
+	explicit DecodeResult (const SuccessResult result):
+		is_success(true),
+		success(result)
+	{
+	}
+
+	explicit DecodeResult (const FailureResult result):
+		is_success(false),
+		failure(result)
+	{
+	}
+};
+
+STBIDEF coyote_stbi_result_is_success (DecodeResult* res) -> uint8_t
+{
+	return res->is_success != 0;
+}
+
+STBIDEF coyote_stbi_result_get_info (
+	DecodeResult* res,
+	size_t* out_size
+) -> uint8_t*
+{
+	if (!res->is_success)
+	{
+		return nullptr;
+	}
+
+	auto [pic_data_size, pic_data] = res->success;
+	if (out_size != nullptr)
+	{
+		*out_size = pic_data_size;
+	}
+	return pic_data;
+}
+
 STBIDEF coyote_stbi_load_from_memory(
 	std::uint8_t const *buffer,
 	std::uint64_t len,
