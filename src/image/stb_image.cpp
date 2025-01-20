@@ -459,7 +459,6 @@ static int stbi__create_png_image_raw(
 	auto s = a->context;
 	uint32_t i;
 	auto stride = x * out_n * bytes;
-	int all_ok = 1;
 	int k;
 	auto img_n = s.image_component_count; // copy it into a local for later
 
@@ -471,19 +470,19 @@ static int stbi__create_png_image_raw(
 	a->out = s.allocate_t<uint8_t>(x * y * output_bytes);
 	if (!a->out)
 	{
-		return stbi__err("outofmem", "Out of memory");
+		throw STBIErr("out of memory");
 	}
 
 	// note: error exits here don't need to clean up a->out individually,
 	// stbi__do_png always does on error.
 	if (!fma3sizes_valid(img_n, x, depth, 7))
 	{
-		return stbi__err("too large", "Corrupt PNG");
+		throw STBIErr("image too large");
 	}
 	auto img_width_bytes = (((img_n * x * depth) + 7) >> 3);
 	if (!fma2sizes_valid(img_width_bytes, y, img_width_bytes))
 	{
-		return stbi__err("too large", "Corrupt PNG");
+		throw STBIErr("image too large");
 	}
 	auto img_len = (img_width_bytes + 1) * y;
 
@@ -492,14 +491,14 @@ static int stbi__create_png_image_raw(
 	// so just check for raw_len < img_len always.
 	if (raw_len < img_len)
 	{
-		return stbi__err("not enough pixels", "Corrupt PNG");
+		throw STBIErr("not enough pixels");
 	}
 
 	// Allocate two scan lines worth of filter workspace buffer.
 	auto filter_buf = stbi_malloc_t<uint8_t>(img_width_bytes * 2);
 	if (!filter_buf)
 	{
-		return stbi__err("outofmem", "Out of memory");
+		throw STBIErr("out of memory");
 	}
 
 	// Filtering for low-bit-depth images
@@ -532,8 +531,7 @@ static int stbi__create_png_image_raw(
 		// check filter type
 		if (filter > 4)
 		{
-			all_ok = stbi__err("invalid filter", "Corrupt PNG");
-			break;
+			throw STBIErr("invalid filter");
 		}
 
 		// if first row, use special filter that doesn't sample previous row
@@ -695,11 +693,6 @@ static int stbi__create_png_image_raw(
 	}
 
 	stbi_free(filter_buf);
-	if (!all_ok)
-	{
-		return 0;
-	}
-
 	return 1;
 }
 
@@ -1280,7 +1273,7 @@ auto coyote_stbi_load_from_memory(
 	catch (STBIErr e)
 	{
 		s.rewind();
-		return stbi__errpuc("unknown image type", "Image not of any known type, or corrupt");
+		throw;
 	}
 
 	auto p = PNG(s);
@@ -1288,7 +1281,7 @@ auto coyote_stbi_load_from_memory(
 	void *result = nullptr;
 	if (req_comp < 0 || req_comp > 4)
 	{
-		true_result = stbi__errpuc("bad req_comp", "Internal error");
+		throw STBIErr("requested component count out of range");
 		goto trueend;
 	}
 	if (parse_png_file(p, STBI__SCAN_load, req_comp))
@@ -1303,7 +1296,7 @@ auto coyote_stbi_load_from_memory(
 		}
 		else
 		{
-			true_result = stbi__errpuc("bad bits_per_channel", "PNG not supported: unsupported color depth");
+			throw STBIErr("PNG not supported: unsupported color depth");
 			goto trueend;
 		}
 		result = p.out;
@@ -1331,8 +1324,7 @@ auto coyote_stbi_load_from_memory(
 				if (good == nullptr)
 				{
 					stbi_free(data);
-					result = stbi__errpuc("outofmem", "Out of memory");
-					goto endp;
+					throw STBIErr("out of memory");
 				}
 
 				auto (*CONV_FUNC)(uint8_t* src, uint8_t* dst) -> void = nullptr;
@@ -1431,8 +1423,7 @@ auto coyote_stbi_load_from_memory(
 				{
 					stbi_free(data);
 					stbi_free(good);
-					result = stbi__errpuc("unsupported", "Unsupported format conversion");
-					goto endp;
+					throw STBIErr("unsupported format conversion");
 				}
 
 				for (auto j = 0; j < yy; ++j)
@@ -1470,8 +1461,7 @@ auto coyote_stbi_load_from_memory(
 				if (good == nullptr)
 				{
 					stbi_free(data);
-					result = stbi__errpuc("outofmem", "Out of memory");
-					goto endp;
+					throw STBIErr("out of memory");
 				}
 
 				auto (*CONV_FUNC)(uint16_t* src, uint16_t* dst) -> void = nullptr;
@@ -1569,8 +1559,7 @@ auto coyote_stbi_load_from_memory(
 				{
 					stbi_free(data);
 					stbi_free(good);
-					result = stbi__errpuc("unsupported", "Unsupported format conversion");
-					goto endp;
+					throw STBIErr("unsupported format conversion");
 				}
 
 				for (auto j = 0; j < yy; ++j)
@@ -1642,7 +1631,7 @@ auto coyote_stbi_load_from_memory(
 		auto reduced = s.allocate_t<uint8_t>(img_len);
 		if (reduced == nullptr)
 		{
-			return stbi__errpuc("outofmem", "Out of memory");
+			throw STBIErr("out of memory");
 		}
 
 		for (int i = 0; i < img_len; ++i)
