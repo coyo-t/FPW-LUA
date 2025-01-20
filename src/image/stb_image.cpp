@@ -237,6 +237,26 @@ struct DecodeContext
 	{
 		return static_cast<T*>(allocate(count * sizeof(T)));
 	}
+
+	auto free_all_blocks () -> void
+	{
+		auto node = &head;
+		auto next = node->next;
+		// no stale reference
+		head.next = &head;
+		while (true)
+		{
+			if (next == &head)
+			{
+				break;
+			}
+			// weirdo way of walking the list because if we free
+			// node, then node.next may or may not poof out of existance
+			node = next;
+			next = node->next;
+			stbi_free(node);
+		}
+	}
 };
 
 
