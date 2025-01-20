@@ -97,17 +97,17 @@ struct DecodeContext
 		img_buffer = img_buffer_original = cbi;
 		img_buffer_end = img_buffer_original_end = cbi + size;
 	}
+	auto rewind () -> void
+	{
+		// conceptually rewind SHOULD rewind to the beginning of the stream,
+		// but we just rewind to the beginning of the initial buffer, because
+		// we only use it after doing 'test', which only ever looks at at most 92 bytes
+		img_buffer = img_buffer_original;
+		img_buffer_end = img_buffer_original_end;
+}
 };
 
 
-static void stbi__rewind(DecodeContext *s)
-{
-	// conceptually rewind SHOULD rewind to the beginning of the stream,
-	// but we just rewind to the beginning of the initial buffer, because
-	// we only use it after doing 'test', which only ever looks at at most 92 bytes
-	s->img_buffer = s->img_buffer_original;
-	s->img_buffer_end = s->img_buffer_original_end;
-}
 
 struct ResultInfo
 {
@@ -1433,7 +1433,7 @@ int coyote_stbi_info_from_memory(uint8_t const *buffer, int len, int *x, int *y,
 		}
 		return 1;
 	}
-	stbi__rewind(p.s);
+	p.s->rewind();
 	return stbi__err("unknown image type", "Image not of any known type, or corrupt");
 }
 
@@ -1460,7 +1460,7 @@ uint8_t *coyote_stbi_load_from_memory(
 		// test the formats with a very explicit header first (at least a FOURCC
 		// or distinctive magic number first)
 		const auto r = stbi__check_png_header(&s);
-		stbi__rewind(&s);
+		s.rewind();
 		if (r)
 		{
 			PNG p;
