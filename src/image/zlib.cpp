@@ -5,29 +5,6 @@
 #include<cstring>
 #include<climits>
 
-template<typename T, size_t S>
-struct ThaArray
-{
-	template<typename T, size_t S>
-	explicit ThaArray (const T (&items)[S]): items(items)
-	{
-	}
-
-	auto size () -> size_t
-	{
-		return S;
-	}
-
-	T items[S];
-};
-
-template<typename T, typename... A>
-constexpr auto arrayOf (const A... items) {
-	return ThaArray<T, sizeof...(items)>({&items...});
-}
-
-constexpr auto test = arrayOf<uint8_t>(10, 20);
-
 // public domain zlib decode    v0.2  Sean Barrett 2006-11-18
 //    simple implementation
 //      - all input must be provided in an upfront buffer
@@ -55,8 +32,7 @@ Init algorithm:
 	for (i=0; i <=  31; ++i)     stbi__zdefault_distance[i] = 5;
 }
 */
-static const uint8_t DEFAULT_LENGTH[ZNSYMS] =
-{
+static const uint8_t DEFAULT_LENGTH[ZNSYMS] = {
 	8, 8, 8, 8, 8, 8, 8, 8,
 	8, 8, 8, 8, 8, 8, 8, 8,
 	8, 8, 8, 8, 8, 8, 8, 8,
@@ -128,8 +104,12 @@ static const int ZDIST_BASE[32] = {
 	257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577, 0, 0
 };
 
-static const int ZDIST_EXTRA[32] =
-		{0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13};
+static const int ZDIST_EXTRA[32] = {
+	0,  0,  0,  0,  1,  1, 2,
+	2,  3,  3,  4,  4,  5, 5,
+	6,  6,  7,  7,  8,  8, 9,
+	9, 10, 10, 11, 11, 12, 12, 13, 13
+};
 
 static int bitreverse16(int n)
 {
