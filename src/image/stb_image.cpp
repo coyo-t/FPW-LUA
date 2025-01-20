@@ -1113,6 +1113,30 @@ static auto compute_luma (T r, T g, T b) -> T
 }
 
 
+// template<size_t BPP, typename T>
+// auto convfuck (
+// 	T* source_data,
+// 	size_t source_size,
+// 	size_t wide,
+// 	size_t tall,
+// 	size_t from_comp_count,
+// 	size_t to_comp_count,
+// 	size_t* out_new_buffer_size
+// ) -> T*
+// {
+// 	if (from_comp_count == to_comp_count)
+// 	{
+// 		*out_new_buffer_size = source_size;
+// 		return source_data;
+// 	}
+// 	auto good = static_cast<T*>(stbi_malloc(wide*tall*to_comp_count*sizeof(T)));
+// 	if (good == nullptr)
+// 	{
+// 	}
+//
+//
+// }
+
 
 auto coyote_stbi_load_from_memory(
 	uint8_t const *buffer,
@@ -1171,8 +1195,8 @@ auto coyote_stbi_load_from_memory(
 		if (req_comp && req_comp != p.s->img_out_n)
 		{
 			static constexpr auto COMBO = [](size_t a, size_t b) { return (a<<3)|b; };
-			const auto img_n = p.s->img_out_n;
-			const auto src_ofs = img_n;
+			const auto img_components = p.s->img_out_n;
+			const auto src_ofs = img_components;
 			const auto dst_ofs = req_comp;
 			const auto xx = p.s->img_x;
 			const auto yy = p.s->img_y;
@@ -1180,7 +1204,7 @@ auto coyote_stbi_load_from_memory(
 			{
 				auto data = static_cast<uint8_t*>(result);
 
-				if (req_comp == img_n)
+				if (req_comp == img_components)
 				{
 					result = data;
 					goto endp;
@@ -1196,7 +1220,7 @@ auto coyote_stbi_load_from_memory(
 
 				auto (*CONV_FUNC)(uint8_t* src, uint8_t* dst) -> void = nullptr;
 
-				switch (COMBO(img_n, req_comp))
+				switch (COMBO(img_components, req_comp))
 				{
 					case COMBO(1,2): {
 						CONV_FUNC = [](auto src, auto dest) {
@@ -1296,7 +1320,7 @@ auto coyote_stbi_load_from_memory(
 
 				for (auto j = 0; j < yy; ++j)
 				{
-					auto src = data + j * xx * img_n;
+					auto src = data + j * xx * img_components;
 					auto dst = good + j * xx * req_comp;
 
 					// FIXME: ditch the scanline approach, do whole image at once
@@ -1319,7 +1343,7 @@ auto coyote_stbi_load_from_memory(
 			else
 			{
 				auto data = static_cast<uint16_t*>(result);
-				if (req_comp == img_n)
+				if (req_comp == img_components)
 				{
 					result = data;
 					goto endp;
@@ -1335,7 +1359,7 @@ auto coyote_stbi_load_from_memory(
 
 				auto (*CONV_FUNC)(uint16_t* src, uint16_t* dst) -> void = nullptr;
 
-				switch (COMBO(img_n, req_comp))
+				switch (COMBO(img_components, req_comp))
 				{
 					case COMBO(1,2): {
 						CONV_FUNC = [](auto src, auto dest) {
@@ -1434,7 +1458,7 @@ auto coyote_stbi_load_from_memory(
 
 				for (auto j = 0; j < yy; ++j)
 				{
-					auto src = data + j * xx * img_n;
+					auto src = data + j * xx * img_components;
 					auto dest = good + j * xx * req_comp;
 
 					// FIXME: ditch the scanline approach, do whole image at once
