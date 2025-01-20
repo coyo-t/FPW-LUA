@@ -938,7 +938,7 @@ static auto stbi__compute_transparency16(PNG *z, uint16_t tc[3], size_t out_n) -
 	return true;
 }
 
-static int stbi__expand_png_palette(PNG *a, uint8_t *palette, int len, int pal_img_n)
+static int stbi__expand_png_palette(PNG *a, uint8_t *palette, int pal_img_n)
 {
 	uint32_t i, pixel_count = a->s->img_x * a->s->img_y;
 	uint8_t *orig = a->out;
@@ -980,8 +980,6 @@ static int stbi__expand_png_palette(PNG *a, uint8_t *palette, int len, int pal_i
 
 	return 1;
 }
-
-// #define STBI__PNG_TYPE(a,b,c,d)  (((unsigned) (a) << 24) + ((unsigned) (b) << 16) + ((unsigned) (c) << 8) + (unsigned) (d))
 
 static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 {
@@ -1348,11 +1346,51 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 					{
 						s->img_out_n = req_comp;
 					}
-
-					if (!stbi__expand_png_palette(z, palette, pal_len, s->img_out_n))
+					// stbi__expand_png_palette
 					{
-						return 0;
+						auto pal_img_n2 = s->img_out_n;
+						auto pixel_count = z->s->img_x * z->s->img_y;
+						auto orig = z->out;
+
+						auto p = malloc_fma2<uint8_t>(pixel_count, pal_img_n2, 0);
+						if (p == nullptr)
+						{
+							return stbi__err("outofmem", "Out of memory");
+						}
+
+						// between here and free(out) below, exitting would leak
+						auto temp_out = p;
+
+						if (pal_img_n2 == 3)
+						{
+							for (auto ii = 0; ii < pixel_count; ++ii)
+							{
+								int nn = orig[ii] * 4;
+								p[0] = palette[nn];
+								p[1] = palette[nn + 1];
+								p[2] = palette[nn + 2];
+								p += 3;
+							}
+						}
+						else
+						{
+							for (auto ii = 0; ii < pixel_count; ++ii)
+							{
+								auto nn = orig[ii] * 4;
+								p[0] = palette[nn];
+								p[1] = palette[nn + 1];
+								p[2] = palette[nn + 2];
+								p[3] = palette[nn + 3];
+								p += 4;
+							}
+						}
+						stbi_free(z->out);
+						z->out = temp_out;
 					}
+					// if (!stbi__expand_png_palette(z, palette, s->img_out_n))
+					// {
+					// 	return 0;
+					// }
 				}
 				else if (has_trans)
 				{
