@@ -1173,7 +1173,7 @@ auto coyote_stbi_load_from_memory(
 				if (a_req_comp && a_req_comp != a_p->s->img_out_n)
 				{
 					static constexpr auto COMBO = [](size_t a, size_t b) { return (a<<3)|b; };
-					static constexpr auto C2MB2 = [](auto a, auto b) { return ((a-1)<<3)|(b-1); };
+					static constexpr auto C2MB2 = [](auto a, auto b) { return ((a-1)<<2)|(b-1); };
 					if (a_ri->bits_per_channel == 8)
 					{
 						// result = stbi__convert_format(

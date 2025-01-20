@@ -2,6 +2,8 @@
 #define THA_COMBO_MACHINE_HPP
 #include <cstdint>
 
+#include <array>
+
 namespace Wowee {
 
 	template<typename T>
@@ -13,91 +15,90 @@ namespace Wowee {
 		return static_cast<T>((ir * 77 + ig * 150 + ib * 29) >> 8);
 	}
 
-	template<
-		size_t SRC_SIZE,
-		size_t DST_SIZE,
-		typename T,
-		auto (*CALLBACK)(T* src, T* dst) -> void
-	>
-	struct Combo
+	template<typename T, size_t S>
+	struct ThaArray
 	{
-		static_assert(0 < SRC_SIZE && (SRC_SIZE & 0b111) == SRC_SIZE);
-		static_assert(0 < DST_SIZE && (DST_SIZE & 0b111) == DST_SIZE);
-		static_assert(CALLBACK != nullptr);
+		T items[S];
 
-		constexpr auto key = (SRC_SIZE << 3) | DST_SIZE;
-
-		auto get_key () -> decltype(key)
+		auto size () -> size_t
 		{
-			return key;
+			return S;
 		}
 
-		auto get_callback () -> decltype(CALLBACK)
+		auto get (size_t i) -> T*
 		{
-			return CALLBACK;
-		}
-
-		auto test (size_t xx, T* src, T* dest) -> void
-		{
-			for (size_t i=xx-1;; --i, src += SRC_SIZE, dest += DST_SIZE)
+			if (i >= S)
 			{
-				CALLBACK(src, dest);
-				if (i == 0)
-				{
-					break;
-				}
+				return nullptr;
 			}
+			return items[i];
 		}
 	};
 
-	const Combo u8makers[] = {
-		Combo<1, 2, uint8_t, [](auto src, auto dest) {
+	static constexpr auto
+	COMBO = [](auto a, auto b) -> size_t { return ((a-1)<<2)|(b-1); };
+
+	static constexpr auto MAXS = COMBO(4,4);
+
+	template<typename T>
+	auto AAAA ()
+	{
+		static constexpr auto
+		ALPHA_VALUE = static_cast<T>((1<<(sizeof(T)-1))-1)|(1<<(sizeof(T)-1));
+
+		static ThaArray<auto(*)(T*src, T*dst)->void, MAXS> stuffs;
+
+		stuffs[COMBO(1,2)] = [](auto src, auto dest) {
 			dest[0] = src[0];
-			dest[1] = 255;
-		}>(),
-		Combo<1, 3, uint8_t, [](auto src, auto dest) {
+			dest[1] = ALPHA_VALUE;
+		};
+		stuffs[COMBO(1,3)] = [](auto src, auto dest) {
 			dest[0] = dest[1] = dest[2] = src[0];
-		}>(),
-		Combo<1, 4, uint8_t, [](auto src, auto dest) {
+		};
+		stuffs[COMBO(1,4)] = [](auto src, auto dest) {
 			dest[0] = dest[1] = dest[2] = src[0];
-			dest[3] = 255;
-		}>(),
-		Combo<2, 1, uint8_t, [](auto src, auto dest) {
+			dest[3] = ALPHA_VALUE;
+		};
+		stuffs[COMBO(2,1)] = [](auto src, auto dest) {
 			dest[0] = src[0];
-		}>(),
-		Combo<2, 3, uint8_t, [](auto src, auto dest) {
+		};
+		stuffs[COMBO(2,3)] = [](auto src, auto dest) {
 			dest[0] = dest[1] = dest[2] = src[0];
-		}>(),
-		Combo<2, 4, uint8_t, [](auto src, auto dest) {
+		};
+		stuffs[COMBO(2,4)] = [](auto src, auto dest) {
 			dest[0] = dest[1] = dest[2] = src[0];
 			dest[3] = src[1];
-		}>(),
-		Combo<3, 4, uint8_t, [](auto src, auto dest) {
+		};
+		stuffs[COMBO(3,4)] = [](auto src, auto dest) {
 			dest[0] = src[0];
 			dest[1] = src[1];
 			dest[2] = src[2];
-			dest[3] = 255;
-		}>(),
-		Combo<3, 1, uint8_t, [](auto src, auto dest) {
-			dest[0] = luma(src[0], src[1], src[2]);
-		}>(),
-		Combo<3, 2, uint8_t, [](auto src, auto dest) {
-			dest[0] = luma(src[0], src[1], src[2]);
-			dest[1] = 255;
-		}>(),
-		Combo<4, 1, uint8_t, [](auto src, auto dest) {
-			dest[0] = luma(src[0], src[1], src[2]);
-		}>(),
-		Combo<4, 2, uint8_t, [](auto src, auto dest) {
-			dest[0] = luma(src[0], src[1], src[2]);
+			dest[3] = ALPHA_VALUE;
+		};
+		stuffs[COMBO(3,1)] = [](auto src, auto dest) {
+			dest[0] = compute_luma(src[0], src[1], src[2]);
+		};
+		stuffs[COMBO(3,2)] = [](auto src, auto dest) {
+			dest[0] = compute_luma(src[0], src[1], src[2]);
+			dest[1] = ALPHA_VALUE;
+		};
+		stuffs[COMBO(4,1)] = [](auto src, auto dest) {
+			dest[0] = compute_luma(src[0], src[1], src[2]);
+		};
+		stuffs[COMBO(4,2)] = [](auto src, auto dest) {
+			dest[0] = compute_luma(src[0], src[1], src[2]);
 			dest[1] = src[3];
-		}>(),
-		Combo<4, 3, uint8_t, [](auto src, auto dest) {
+		};
+		stuffs[COMBO(4,3)] = [](auto src, auto dest) {
 			dest[0] = src[0];
 			dest[1] = src[1];
 			dest[2] = src[2];
-		}>(),
-	};
+		};
+		return stuffs;
+	}
+
+	const static auto MAKERU8 = AAAA<uint8_t>();
+
 }
 
 
