@@ -95,6 +95,14 @@ struct ResultInfo
 
 static const char *stbi__g_failure_reason;
 
+template<typename T>
+static auto compute_luma (T r, T g, T b) -> T
+{
+	const auto ir =static_cast<uint64_t>(r);
+	const auto ig =static_cast<uint64_t>(g);
+	const auto ib =static_cast<uint64_t>(b);
+	return static_cast<T>((ir * 77 + ig * 150 + ib * 29) >> 8);
+}
 
 static auto stbi__err(const char *str) -> bool
 {
@@ -210,23 +218,15 @@ static auto malloc_fma3(size_t a, size_t b, size_t c, size_t add) -> T*
 enum
 {
 	STBI__SCAN_load = 0,
-	STBI__SCAN_type,
 	STBI__SCAN_header
 };
 
 
-#define STBI__BYTECAST(x)  ((uint8_t) ((x) & 255))  // truncate int to byte without warnings
-
-
-// public domain "baseline" PNG decoder   v0.10  Sean Barrett 2006-11-18
-//    simple implementation
-//      - only 8-bit samples
-//      - no CRC checking
-//      - allocates lots of intermediate memory
-//        - avoids problem of streaming data between subsystems
-//        - avoids explicit window management
-//    performance
-//      - uses stb_zlib, a PD zlib implementation with fast huffman decoding
+template<typename T>
+auto BYTECAST (T x) -> uint8_t
+{
+	return static_cast<uint8_t>(x & 0xFF);
+}
 
 struct PNGChunk
 {
@@ -425,28 +425,28 @@ static int stbi__create_png_image_raw(
 			case STBI__F_sub:
 				memcpy(cur, raw, filter_bytes);
 				for (k = filter_bytes; k < nk; ++k)
-					cur[k] = STBI__BYTECAST(raw[k] + cur[k-filter_bytes]);
+					cur[k] = BYTECAST(raw[k] + cur[k-filter_bytes]);
 				break;
 			case STBI__F_up:
 				for (k = 0; k < nk; ++k)
-					cur[k] = STBI__BYTECAST(raw[k] + prior[k]);
+					cur[k] = BYTECAST(raw[k] + prior[k]);
 				break;
 			case STBI__F_avg:
 				for (k = 0; k < filter_bytes; ++k)
-					cur[k] = STBI__BYTECAST(raw[k] + (prior[k]>>1));
+					cur[k] = BYTECAST(raw[k] + (prior[k]>>1));
 				for (k = filter_bytes; k < nk; ++k)
-					cur[k] = STBI__BYTECAST(raw[k] + ((prior[k] + cur[k-filter_bytes])>>1));
+					cur[k] = BYTECAST(raw[k] + ((prior[k] + cur[k-filter_bytes])>>1));
 				break;
 			case STBI__F_paeth:
 				for (k = 0; k < filter_bytes; ++k)
-					cur[k] = STBI__BYTECAST(raw[k] + prior[k]); // prior[k] == stbi__paeth(0,prior[k],0)
+					cur[k] = BYTECAST(raw[k] + prior[k]); // prior[k] == stbi__paeth(0,prior[k],0)
 				for (k = filter_bytes; k < nk; ++k)
-					cur[k] = STBI__BYTECAST(raw[k] + paeth(cur[k-filter_bytes], prior[k], prior[k-filter_bytes]));
+					cur[k] = BYTECAST(raw[k] + paeth(cur[k-filter_bytes], prior[k], prior[k-filter_bytes]));
 				break;
 			case STBI__F_avg_first:
 				memcpy(cur, raw, filter_bytes);
 				for (k = filter_bytes; k < nk; ++k)
-					cur[k] = STBI__BYTECAST(raw[k] + (cur[k-filter_bytes] >> 1));
+					cur[k] = BYTECAST(raw[k] + (cur[k-filter_bytes] >> 1));
 				break;
 		}
 
@@ -567,10 +567,10 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 		return 0;
 	}
 
-	if (scan == STBI__SCAN_type)
-	{
-		return 1;
-	}
+	// if (scan == STBI__SCAN_type)
+	// {
+	// 	return 1;
+	// }
 
 	static constexpr auto PNG_TYPE = [](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint32_t {
 		return (
@@ -1101,15 +1101,6 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 		// end of PNG chunk, read and skip CRC
 		s->get32be();
 	}
-}
-
-template<typename T>
-static auto compute_luma (T r, T g, T b) -> T
-{
-	const auto ir =static_cast<uint64_t>(r);
-	const auto ig =static_cast<uint64_t>(g);
-	const auto ib =static_cast<uint64_t>(b);
-	return static_cast<T>((ir * 77 + ig * 150 + ib * 29) >> 8);
 }
 
 
