@@ -972,9 +972,16 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				zctx.initial_size = raw_len;
 				zctx.parse_header = !is_iphone;
 
-				zctx.malloc = &stbi_malloc;
-				zctx.free = [](void *p) { stbi_free(p); };
-				zctx.realloc = [](void *p, size_t olds, size_t news) { return stb_realloc(p, olds, news); };
+				zctx.allocation_self = s;
+				zctx.malloc = [](auto self, auto size) {
+					return static_cast<DecodeContext*>(self)->allocate(size);
+				};
+				zctx.free = [](auto self, auto p) {
+					static_cast<DecodeContext*>(self)->free(p);
+				};
+				zctx.realloc = [](auto self, auto p, auto olds, auto news) {
+					return static_cast<DecodeContext*>(self)->reallocate(p, news);
+				};
 
 				try
 				{

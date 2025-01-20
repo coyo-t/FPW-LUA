@@ -19,13 +19,16 @@ namespace Zlib {
 
 	struct Context
 	{
-		using MallocCallback = auto (size_t size) -> void*;
-		using FreeCallback = auto (void* addr) -> void;
+		using MallocCallback = auto (void* self, size_t size) -> void*;
+		using FreeCallback = auto (void* self, void* addr) -> void;
 		using ReallocCallback = auto (
+			void* self,
 			void* addr,
 			size_t old_size,
 			size_t new_size
 		) -> void*;
+
+		void* allocation_self = nullptr;
 
 		MallocCallback*
 		malloc = nullptr;
@@ -57,7 +60,7 @@ namespace Zlib {
 			{
 				if (p != nullptr)
 				{
-					free(p);
+					free(allocation_self, p);
 				}
 			}
 		}
@@ -67,13 +70,17 @@ namespace Zlib {
 		{
 			if (p == nullptr)
 				return nullptr;
-			return realloc != nullptr ? static_cast<T*>(realloc(p, olds, news)) : nullptr;
+			return realloc != nullptr
+				? static_cast<T*>(realloc(allocation_self, p, olds, news))
+				: nullptr;
 		}
 
 		template<typename T>
 		auto malloc_t (size_t count) -> T*
 		{
-			return malloc != nullptr ? static_cast<T*>(malloc(sizeof(T) * count)) : nullptr;
+			return malloc != nullptr
+				? static_cast<T*>(malloc(allocation_self, sizeof(T) * count))
+				: nullptr;
 		}
 
 		auto decode_malloc_guesssize_headerflag() -> uint8_t*;
