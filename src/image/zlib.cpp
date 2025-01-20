@@ -143,7 +143,6 @@ struct ZHuffman
 		int next_code[16];
 		int sizes[17] = {};
 
-		std::memset(sizes, 0, sizeof(sizes));
 		std::memset(this->fast, 0, sizeof(this->fast));
 		for (i = 0; i < num; ++i)
 		{
@@ -307,7 +306,7 @@ struct ZBuffer
 		this->zout = q + cur;
 		this->zout_end = q + limit;
 	}
-	auto zhuffman_decode(ZHuffman& z) -> int
+	auto zhuffman_decode(const ZHuffman& z) -> int
 	{
 		if (num_bits < 16)
 		{
@@ -513,7 +512,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 						}
 						if (c < 16)
 						{
-							lencodes[n++] = (uint8_t) c;
+							lencodes[n++] = static_cast<uint8_t>(c);
 						}
 						else
 						{
@@ -575,7 +574,6 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 					}
 					else
 					{
-						int dist;
 						if (z == 256)
 						{
 							a.zout = zout;
@@ -607,7 +605,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 								throw Zlib::Er("bad huffman code");
 							}
 							// per DEFLATE, distance codes 30 and 31 must not appear in compressed data
-							dist = ZDIST_BASE[z];
+							int dist = ZDIST_BASE[z];
 							if (ZDIST_EXTRA[z])
 							{
 								dist += a.read_bits(ZDIST_EXTRA[z]);

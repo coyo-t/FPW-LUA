@@ -1163,47 +1163,45 @@ static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 					{
 						s.img_out_n = req_comp;
 					}
-					// stbi__expand_png_palette
+
+					auto pal_img_n2 = s.img_out_n;
+					auto pixel_count = pic_wide * pic_tall;
+					auto orig = z.out;
+
+					auto p = stbi_malloc_t<uint8_t>(pixel_count * pal_img_n2);
+					if (p == nullptr)
 					{
-						auto pal_img_n2 = s.img_out_n;
-						auto pixel_count = pic_wide * pic_tall;
-						auto orig = z.out;
-
-						auto p = stbi_malloc_t<uint8_t>(pixel_count * pal_img_n2);
-						if (p == nullptr)
-						{
-							throw STBIErr("out of memory");
-						}
-
-						// between here and free(out) below, exitting would leak
-						auto temp_out = p;
-
-						if (pal_img_n2 == 3)
-						{
-							for (auto ii = 0; ii < pixel_count; ++ii)
-							{
-								int nn = orig[ii] * 4;
-								p[0] = palette[nn];
-								p[1] = palette[nn + 1];
-								p[2] = palette[nn + 2];
-								p += 3;
-							}
-						}
-						else
-						{
-							for (auto ii = 0; ii < pixel_count; ++ii)
-							{
-								auto nn = orig[ii] * 4;
-								p[0] = palette[nn];
-								p[1] = palette[nn + 1];
-								p[2] = palette[nn + 2];
-								p[3] = palette[nn + 3];
-								p += 4;
-							}
-						}
-						s.free(z.out);
-						z.out = temp_out;
+						throw STBIErr("out of memory");
 					}
+
+					// between here and free(out) below, exitting would leak
+					auto temp_out = p;
+
+					if (pal_img_n2 == 3)
+					{
+						for (auto ii = 0; ii < pixel_count; ++ii)
+						{
+							int nn = orig[ii] * 4;
+							p[0] = palette[nn];
+							p[1] = palette[nn + 1];
+							p[2] = palette[nn + 2];
+							p += 3;
+						}
+					}
+					else
+					{
+						for (auto ii = 0; ii < pixel_count; ++ii)
+						{
+							auto nn = orig[ii] * 4;
+							p[0] = palette[nn];
+							p[1] = palette[nn + 1];
+							p[2] = palette[nn + 2];
+							p[3] = palette[nn + 3];
+							p += 4;
+						}
+					}
+					s.free(z.out);
+					z.out = temp_out;
 				}
 				else if (has_trans)
 				{
@@ -1251,7 +1249,7 @@ auto get_valuessss (
 	void *true_result;
 	auto p = PNG(s);
 	void *result = nullptr;
-	if (req_comp > 4)
+	if (req_comp == 0 || req_comp > 4)
 	{
 		throw STBIErr("requested component count out of range");
 	}
@@ -1619,17 +1617,16 @@ trueend:
 }
 
 auto coyote_stbi_load_from_memory(
-	DllInterface* interface,
-	uint8_t const *source_png_buffer,
-	uint64_t source_length,
-	uint64_t* x,
-	uint64_t* y,
-	uint64_t* comp,
-	uint64_t req_comp) -> uint8_t*
+	DllInterface *interface,
+	uint64_t *out_wide,
+	uint64_t *out_tall) -> uint8_t*
 {
 	try
 	{
-		auto s = DecodeContext(source_png_buffer, source_length);
+		auto s = DecodeContext(
+			interface->source_png_buffer,
+			interface->source_png_size
+		);
 
 		// default is 8 so most paths don't have to be changed
 		size_t bits_per_channel = 8;
@@ -1639,10 +1636,10 @@ auto coyote_stbi_load_from_memory(
 		stbi__check_png_header(s);
 		s.rewind();
 		auto value = get_valuessss(
-			x,
-			y,
-			comp,
-			req_comp,
+			out_wide,
+			out_tall,
+			nullptr,
+			4,
 			s,
 			bits_per_channel
 		);
@@ -1661,33 +1658,31 @@ auto coyote_stbi_info_from_memory(
 	DllInterface *interface,
 	uint64_t *out_pic_wide,
 	uint64_t *out_pic_tall,
-	uint64_t *out_pic_component_count,
 	uint64_t *out_required_output_size) -> uint32_t
 {
-	auto s = DecodeContext(interface->source_png_buffer, interface->source_png_size);
-	auto p = PNG(s);
-
 	try
 	{
+		auto s = DecodeContext(
+			interface->source_png_buffer,
+			interface->source_png_size
+		);
+		auto p = PNG(s);
 		parse_png_file(p, STBI__SCAN_header, 0);
+
+		if (out_pic_wide != nullptr)
+		{
+			*out_pic_wide = p.context.image_wide;
+		}
+		if (out_pic_tall != nullptr)
+		{
+			*out_pic_tall = p.context.image_tall;
+		}
 	}
 	catch (STBIErr e)
 	{
 		return interface->set_failure(e.reason);
 	}
 
-	if (out_pic_wide != nullptr)
-	{
-		*out_pic_wide = p.context.image_wide;
-	}
-	if (out_pic_tall != nullptr)
-	{
-		*out_pic_tall = p.context.image_tall;
-	}
-	if (out_pic_component_count != nullptr)
-	{
-		*out_pic_component_count = p.context.image_component_count;
-	}
 	return true;
 }
 
