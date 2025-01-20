@@ -1111,7 +1111,7 @@ static void *stbi__do_png(
 	size_t req_comp,
 	ResultInfo *ri)
 {
-	void *result = NULL;
+	void *result = nullptr;
 	if (req_comp < 0 || req_comp > 4)
 	{
 		return stbi__errpuc("bad req_comp", "Internal error");
@@ -1179,62 +1179,59 @@ static void *stbi__do_png(
 					// avoid switch per pixel, so use switch per scanline and massive macros
 					switch (COMBO(img_n, req_comp))
 					{
-						STBI__CASE(1, 2)
-							{
+						STBI__CASE(1, 2) {
 								dest[0] = src[0];
 								dest[1] = 255;
 							}
 							break;
-						STBI__CASE(1, 3) { dest[0] = dest[1] = dest[2] = src[0]; }
+						STBI__CASE(1, 3) {
+								dest[0] = dest[1] = dest[2] = src[0];
+							}
 							break;
-						STBI__CASE(1, 4)
-							{
+						STBI__CASE(1, 4) {
 								dest[0] = dest[1] = dest[2] = src[0];
 								dest[3] = 255;
 							}
 							break;
-						STBI__CASE(2, 1) { dest[0] = src[0]; }
+						STBI__CASE(2, 1) {
+								dest[0] = src[0];
+							}
 							break;
-						STBI__CASE(2, 3) { dest[0] = dest[1] = dest[2] = src[0]; }
+						STBI__CASE(2, 3) {
+								dest[0] = dest[1] = dest[2] = src[0];
+							}
 							break;
-						STBI__CASE(2, 4)
-							{
+						STBI__CASE(2, 4) {
 								dest[0] = dest[1] = dest[2] = src[0];
 								dest[3] = src[1];
 							}
 							break;
-						STBI__CASE(3, 4)
-							{
+						STBI__CASE(3, 4) {
 								dest[0] = src[0];
 								dest[1] = src[1];
 								dest[2] = src[2];
 								dest[3] = 255;
 							}
 							break;
-						STBI__CASE(3, 1)
-							{
+						STBI__CASE(3, 1) {
 								dest[0] = compute_luma(src[0], src[1], src[2]);
 							}
 							break;
-						STBI__CASE(3, 2)
-							{
+						STBI__CASE(3, 2) {
 								dest[0] = compute_luma(src[0], src[1], src[2]);
 								dest[1] = 255;
 							}
 							break;
-						STBI__CASE(4, 1)
-							{
+						STBI__CASE(4, 1) {
 								dest[0] = compute_luma(src[0], src[1], src[2]);
 							}
 							break;
-						STBI__CASE(4, 2)
-							{
+						STBI__CASE(4, 2) {
 								dest[0] = compute_luma(src[0], src[1], src[2]);
 								dest[1] = src[3];
 							}
 							break;
-						STBI__CASE(4, 3)
-							{
+						STBI__CASE(4, 3) {
 								dest[0] = src[0];
 								dest[1] = src[1];
 								dest[2] = src[2];
@@ -1385,17 +1382,22 @@ static void *stbi__do_png(
 		}
 	}
 	stbi_free(p->out);
-	p->out = NULL;
+	p->out = nullptr;
 	stbi_free(p->expanded);
-	p->expanded = NULL;
+	p->expanded = nullptr;
 	stbi_free(p->idata);
-	p->idata = NULL;
+	p->idata = nullptr;
 
 	return result;
 }
 
 
-int coyote_stbi_info_from_memory(uint8_t const *buffer, int len, int *x, int *y, int *comp)
+uint32_t coyote_stbi_info_from_memory(
+	uint8_t const *buffer,
+	uint64_t len,
+	uint64_t *x,
+	uint64_t *y,
+	uint64_t *comp)
 {
 	DecodeContext s;
 	s.start_mem(buffer, len);
@@ -1417,7 +1419,7 @@ int coyote_stbi_info_from_memory(uint8_t const *buffer, int len, int *x, int *y,
 		{
 			*comp = p.s->img_n;
 		}
-		return 1;
+		return true;
 	}
 	p.s->rewind();
 	return stbi__err("unknown image type", "Image not of any known type, or corrupt");
@@ -1426,11 +1428,11 @@ int coyote_stbi_info_from_memory(uint8_t const *buffer, int len, int *x, int *y,
 
 uint8_t *coyote_stbi_load_from_memory(
 	uint8_t const *buffer,
-	size_t len,
-	size_t* x,
-	size_t* y,
-	size_t* comp,
-	size_t req_comp)
+	uint64_t len,
+	uint64_t* x,
+	uint64_t* y,
+	uint64_t* comp,
+	uint64_t req_comp)
 {
 	DecodeContext s;
 	s.start_mem(buffer, len);

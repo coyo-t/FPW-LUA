@@ -22,12 +22,12 @@ extern "C" {
 
 STBIDEF coyote_stbi_load_from_memory(
 	std::uint8_t const *buffer,
-	std::size_t len,
-	std::size_t* x,
-	std::size_t* y,
-	std::size_t* channels_in_file,
-	std::size_t desired_channels
-) -> unsigned char*;
+	std::uint64_t len,
+	std::uint64_t* x,
+	std::uint64_t* y,
+	std::uint64_t* channels_in_file,
+	std::uint64_t desired_channels
+) -> std::uint8_t*;
 
 
 // get a VERY brief reason for failure
@@ -39,12 +39,12 @@ STBIDEF coyote_stbi_image_free(void *retval_from_stbi_load) -> void;
 
 // get image dimensions & components without fully decoding
 STBIDEF coyote_stbi_info_from_memory(
-	unsigned char const *buffer,
-	int len,
-	int *x,
-	int *y,
-	int *comp
-) -> int;
+	std::uint8_t const *buffer,
+	std::uint64_t len,
+	std::uint64_t* x,
+	std::uint64_t* y,
+	std::uint64_t* comp
+) -> std::uint32_t;
 
 }
 
