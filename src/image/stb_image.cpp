@@ -712,13 +712,13 @@ static int stbi__create_png_image_raw(
 	return 1;
 }
 
-static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
+static int stbi__parse_png_file(PNG& z, size_t scan, size_t req_comp)
 {
-	auto s = z->s;
+	auto s = z.s;
 
-	z->expanded = nullptr;
-	z->idata = nullptr;
-	z->out = nullptr;
+	z.expanded = nullptr;
+	z.idata = nullptr;
+	z.out = nullptr;
 
 	try
 	{
@@ -774,8 +774,8 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				{
 					return stbi__err("too large", "Very large image (corrupt?)");
 				}
-				z->depth = s.get8();
-				if (z->depth != 1 && z->depth != 2 && z->depth != 4 && z->depth != 8 && z->depth != 16)
+				z.depth = s.get8();
+				if (z.depth != 1 && z.depth != 2 && z.depth != 4 && z.depth != 8 && z.depth != 16)
 				{
 					return stbi__err(
 						"1/2/4/8/16-bit only", "PNG not supported: 1/2/4/8/16-bit only");
@@ -785,7 +785,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				{
 					return stbi__err("bad ctype", "Corrupt PNG");
 				}
-				if (color == 3 && z->depth == 16)
+				if (color == 3 && z.depth == 16)
 				{
 					return stbi__err("bad ctype", "Corrupt PNG");
 				}
@@ -866,7 +866,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				{
 					return stbi__err("first not IHDR", "Corrupt PNG");
 				}
-				if (z->idata)
+				if (z.idata)
 				{
 					return stbi__err("tRNS after IDAT", "Corrupt PNG");
 				}
@@ -908,7 +908,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 						++s.img_n;
 						return 1;
 					}
-					if (z->depth == 16)
+					if (z.depth == 16)
 					{
 						for (k = 0; k < s.img_n && k < 3; ++k) // extra loop test to suppress false GCC warning
 						{
@@ -919,7 +919,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					{
 						for (k = 0; k < s.img_n && k < 3; ++k)
 						{
-							tc[k] = static_cast<uint8_t>(s.get16be() & 255) * DEPTH_SCALE_TABLE[z->depth];
+							tc[k] = static_cast<uint8_t>(s.get16be() & 255) * DEPTH_SCALE_TABLE[z.depth];
 						}
 						// non 8-bit images will be larger
 					}
@@ -964,15 +964,15 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 						idata_limit *= 2;
 					}
 
-					auto p = static_cast<uint8_t*>(stb_realloc(z->idata, idata_limit_old, idata_limit));
+					auto p = static_cast<uint8_t*>(stb_realloc(z.idata, idata_limit_old, idata_limit));
 					if (p == nullptr)
 					{
 						return stbi__err("outofmem", "Out of memory");
 					}
-					z->idata = p;
+					z.idata = p;
 				}
 				const auto n = chunkc.length;
-				const auto buffer = z->idata + ioff;
+				const auto buffer = z.idata + ioff;
 				if (s.img_buffer + n > s.img_buffer_end)
 				{
 					return stbi__err("outofdata", "Corrupt PNG");
@@ -992,16 +992,16 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				{
 					return 1;
 				}
-				if (z->idata == nullptr)
+				if (z.idata == nullptr)
 				{
 					return stbi__err("no IDAT", "Corrupt PNG");
 				}
 				// initial guess for decoded data size to avoid unnecessary reallocs
-				bpl = (s.img_x * z->depth + 7) / 8; // bytes per line, per component
+				bpl = (s.img_x * z.depth + 7) / 8; // bytes per line, per component
 				raw_len = bpl * s.img_y * s.img_n /* pixels */ + s.img_y /* filter mode per row */;
 
 				auto zctx = Zlib::Context();
-				zctx.buffer = z->idata;
+				zctx.buffer = z.idata;
 				zctx.len = ioff;
 				zctx.initial_size = raw_len;
 				zctx.parse_header = !is_iphone;
@@ -1019,7 +1019,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 
 				try
 				{
-					z->expanded = zctx.decode_malloc_guesssize_headerflag();
+					z.expanded = zctx.decode_malloc_guesssize_headerflag();
 				}
 				catch (Zlib::Er er)
 				{
@@ -1028,12 +1028,12 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 
 				raw_len = zctx.out_len;
 
-				if (z->expanded == nullptr)
+				if (z.expanded == nullptr)
 				{
 					return stbi__err("z->expanded == nullptr", "");
 				}
-				stbi_free(z->idata);
-				z->idata = nullptr;
+				stbi_free(z.idata);
+				z.idata = nullptr;
 				if ((req_comp == s.img_n + 1 && req_comp != 3 && !pal_img_n) || has_trans)
 				{
 					s.img_out_n = s.img_n + 1;
@@ -1042,19 +1042,19 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				{
 					s.img_out_n = s.img_n;
 				}
-				const auto pic_wide = z->s.img_x;
-				const auto pic_tall = z->s.img_y;
+				const auto pic_wide = z.s.img_x;
+				const auto pic_tall = z.s.img_y;
 				{
-					auto _image_data = z->expanded;
+					auto _image_data = z.expanded;
 					auto _image_data_len = raw_len;
 					auto _out_n = s.img_out_n;
-					auto _depth = z->depth;
+					auto _depth = z.depth;
 					auto _color = color;
 					auto _interlaced = interlace;
 					if (!_interlaced)
 					{
 						return stbi__create_png_image_raw(
-							z,
+							&z,
 							_image_data,
 							_image_data_len,
 							_out_n,
@@ -1083,8 +1083,8 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 						auto y = (pic_tall - yorig[p] + yspc[p] - 1) / yspc[p];
 						if (x && y)
 						{
-							auto img_len = ((((z->s.img_n * x * _depth) + 7) >> 3) + 1) * y;
-							if (!stbi__create_png_image_raw(z, _image_data, _image_data_len, _out_n, x, y, _depth, _color))
+							auto img_len = ((((z.s.img_n * x * _depth) + 7) >> 3) + 1) * y;
+							if (!stbi__create_png_image_raw(&z, _image_data, _image_data_len, _out_n, x, y, _depth, _color))
 							{
 								stbi_free(final);
 								return false;
@@ -1097,26 +1097,26 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 									auto out_x = ii * xspc[p] + xorig[p];
 									std::memcpy(
 										final + out_y * pic_wide * out_bytes + out_x * out_bytes,
-										z->out + (jj * x + ii) * out_bytes,
+										z.out + (jj * x + ii) * out_bytes,
 										out_bytes
 									);
 								}
 							}
-							stbi_free(z->out);
+							stbi_free(z.out);
 							_image_data += img_len;
 							_image_data_len -= img_len;
 						}
 					}
-					z->out = final;
+					z.out = final;
 				}
 				if (has_trans)
 				{
-					if (z->depth == 16)
+					if (z.depth == 16)
 					{
 
 						auto outn = s.img_out_n;
 						auto pixel_count = pic_wide * pic_tall;
-						auto p = reinterpret_cast<uint16_t *>(z->out);
+						auto p = reinterpret_cast<uint16_t *>(z.out);
 
 						// compute color-based transparency, assuming we've
 						// already got 65535 as the alpha value in the output
@@ -1148,7 +1148,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					{
 						auto outn = s.img_out_n;
 						auto pixel_count = pic_wide * pic_tall;
-						auto p = z->out;
+						auto p = z.out;
 
 						// compute color-based transparency, assuming we've
 						// already got 255 as the alpha value in the output
@@ -1190,7 +1190,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					{
 						auto pal_img_n2 = s.img_out_n;
 						auto pixel_count = pic_wide * pic_tall;
-						auto orig = z->out;
+						auto orig = z.out;
 
 						auto p = stbi_malloc_t<uint8_t>(pixel_count * pal_img_n2);
 						if (p == nullptr)
@@ -1224,8 +1224,8 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 								p += 4;
 							}
 						}
-						stbi_free(z->out);
-						z->out = temp_out;
+						s.free(z.out);
+						z.out = temp_out;
 					}
 				}
 				else if (has_trans)
@@ -1233,8 +1233,8 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					// non-paletted image with tRNS -> source image has (constant) alpha
 					++s.img_n;
 				}
-				stbi_free(z->expanded);
-				z->expanded = NULL;
+				s.free(z.expanded);
+				z.expanded = nullptr;
 				// end of PNG chunk, read and skip CRC
 				s.get32be();
 				return 1;
@@ -1299,7 +1299,7 @@ auto coyote_stbi_load_from_memory(
 		true_result = stbi__errpuc("bad req_comp", "Internal error");
 		goto trueend;
 	}
-	if (stbi__parse_png_file(&p, STBI__SCAN_load, req_comp))
+	if (stbi__parse_png_file(p, STBI__SCAN_load, req_comp))
 	{
 		if (p.depth <= 8)
 		{
@@ -1677,7 +1677,7 @@ auto coyote_stbi_info_from_memory(
 
 	auto p = PNG(s);
 
-	if (stbi__parse_png_file(&p, STBI__SCAN_header, 0))
+	if (stbi__parse_png_file(p, STBI__SCAN_header, 0))
 	{
 		if (x)
 		{
