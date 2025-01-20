@@ -712,7 +712,7 @@ static int stbi__create_png_image_raw(
 	return 1;
 }
 
-static int stbi__parse_png_file(PNG& z, size_t scan, size_t req_comp)
+static int parse_png_file(PNG& z, size_t scan, size_t req_comp)
 {
 	auto s = z.s;
 
@@ -1299,7 +1299,7 @@ auto coyote_stbi_load_from_memory(
 		true_result = stbi__errpuc("bad req_comp", "Internal error");
 		goto trueend;
 	}
-	if (stbi__parse_png_file(p, STBI__SCAN_load, req_comp))
+	if (parse_png_file(p, STBI__SCAN_load, req_comp))
 	{
 		if (p.depth <= 8)
 		{
@@ -1677,7 +1677,7 @@ auto coyote_stbi_info_from_memory(
 
 	auto p = PNG(s);
 
-	if (stbi__parse_png_file(p, STBI__SCAN_header, 0))
+	if (parse_png_file(p, STBI__SCAN_header, 0))
 	{
 		if (x)
 		{

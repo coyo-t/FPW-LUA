@@ -59,7 +59,16 @@ STBIDEF coyote_stbi_result_is_success (DecodeResult* res) -> uint8_t
 	return res->is_success != 0;
 }
 
-STBIDEF coyote_stbi_result_get_info (
+STBIDEF coyote_stbi_failure_get_info (DecodeResult* res) -> const char*
+{
+	if (res->is_success)
+	{
+		return "not actually a failure dingus!!!";
+	}
+	return res->failure.reason;
+}
+
+STBIDEF coyote_stbi_success_get_info (
 	DecodeResult* res,
 	size_t* out_size
 ) -> uint8_t*
