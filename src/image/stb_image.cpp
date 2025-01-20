@@ -1241,18 +1241,14 @@ auto get_valuessss (
 	uint64_t *out_wide,
 	uint64_t *out_tall,
 	uint64_t *out_component_count,
-	uint64_t req_comp,
 	DecodeContext s,
 	size_t bits_per_channel
 ) -> uint8_t*
 {
+	auto req_comp = 4;
 	void *true_result;
 	auto p = PNG(s);
 	void *result = nullptr;
-	if (req_comp == 0 || req_comp > 4)
-	{
-		throw STBIErr("requested component count out of range");
-	}
 	if (parse_png_file(p, STBI__SCAN_load, req_comp))
 	{
 		if (p.pixel_bit_depth <= 8)
@@ -1596,7 +1592,7 @@ trueend:
 	if (bits_per_channel != 8)
 	{
 		auto orig = static_cast<uint16_t *>(true_result);
-		auto img_len = (*out_wide) * (*out_tall) * (req_comp == 0 ? *out_component_count : req_comp);
+		auto img_len = p.context.image_wide * p.context.image_tall * req_comp;
 
 		auto reduced = s.allocate_t<uint8_t>(img_len);
 		if (reduced == nullptr)
@@ -1610,7 +1606,6 @@ trueend:
 			reduced[i] = static_cast<uint8_t>((orig[i] >> 8) & 0xFF);
 		}
 		s.free(orig);
-		bits_per_channel = 8;
 		return reduced;
 	}
 	return static_cast<uint8_t*>(true_result);
@@ -1639,7 +1634,6 @@ auto coyote_stbi_load_from_memory(
 			out_wide,
 			out_tall,
 			nullptr,
-			4,
 			s,
 			bits_per_channel
 		);
