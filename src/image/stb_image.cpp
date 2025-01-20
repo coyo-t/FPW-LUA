@@ -1609,7 +1609,7 @@ auto coyote_stbi_load_from_memory(
 		auto orig = static_cast<uint16_t *>(true_result);
 		auto img_len = (*x) * (*y) * (req_comp == 0 ? *comp : req_comp);
 
-		auto reduced = stbi_malloc_t<uint8_t>(img_len);
+		auto reduced = s.allocate_t<uint8_t>(img_len);
 		if (reduced == nullptr)
 		{
 			return stbi__errpuc("outofmem", "Out of memory");
@@ -1620,8 +1620,7 @@ auto coyote_stbi_load_from_memory(
 			// top half of each byte is sufficient approx of 16->8 bit scaling
 			reduced[i] = static_cast<uint8_t>((orig[i] >> 8) & 0xFF);
 		}
-
-		stbi_free(orig);
+		s.free(orig);
 		true_result = reduced;
 		ri.bits_per_channel = 8;
 	}
