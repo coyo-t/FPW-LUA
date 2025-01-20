@@ -552,19 +552,27 @@ static void stbi__create_png_alpha_expand8(uint8_t *dest, uint8_t *src, uint32_t
 }
 
 // create the png data from post-deflated data
-static int stbi__create_png_image_raw(PNG *a, uint8_t *raw, uint32_t raw_len, int out_n, uint32_t x,
-                                      uint32_t y, int depth, int color)
+static int stbi__create_png_image_raw(
+	PNG *a,
+	uint8_t *raw,
+	size_t raw_len,
+	size_t out_n,
+	size_t x,
+	size_t y,
+	size_t depth,
+	size_t color)
 {
-	int bytes = (depth == 16 ? 2 : 1);
-	DecodeContext *s = a->s;
-	uint32_t i, stride = x * out_n * bytes;
+	auto bytes = (depth == 16 ? 2 : 1);
+	auto s = a->s;
+	uint32_t i;
+	auto stride = x * out_n * bytes;
 	int all_ok = 1;
 	int k;
-	int img_n = s->img_n; // copy it into a local for later
+	auto img_n = s->img_n; // copy it into a local for later
 
-	int output_bytes = out_n * bytes;
-	int filter_bytes = img_n * bytes;
-	int width = x;
+	auto output_bytes = out_n * bytes;
+	auto filter_bytes = img_n * bytes;
+	auto width = x;
 
 	STBI_ASSERT(out_n == s->img_n || out_n == s->img_n+1);
 	// extra bytes to write off the end into
@@ -580,12 +588,12 @@ static int stbi__create_png_image_raw(PNG *a, uint8_t *raw, uint32_t raw_len, in
 	{
 		return stbi__err("too large", "Corrupt PNG");
 	}
-	uint32_t img_width_bytes = (((img_n * x * depth) + 7) >> 3);
+	auto img_width_bytes = (((img_n * x * depth) + 7) >> 3);
 	if (!stbi__mad2sizes_valid(img_width_bytes, y, img_width_bytes))
 	{
 		return stbi__err("too large", "Corrupt PNG");
 	}
-	uint32_t img_len = (img_width_bytes + 1) * y;
+	auto img_len = (img_width_bytes + 1) * y;
 
 	// we used to check for exact match between raw_len and img_len on non-interlaced PNGs,
 	// but issue #276 reported a PNG in the wild that had extra data at the end (all zeros),
@@ -620,14 +628,14 @@ static int stbi__create_png_image_raw(PNG *a, uint8_t *raw, uint32_t raw_len, in
 		return thresh <= lo ? hi : t0;
 	};
 
-	for (uint32_t j = 0; j < y; ++j)
+	for (auto j = 0; j < y; ++j)
 	{
 		// cur/prior filter buffers alternate
-		uint8_t *cur = filter_buf + (j & 1) * img_width_bytes;
-		uint8_t *prior = filter_buf + (~j & 1) * img_width_bytes;
-		uint8_t *dest = a->out + stride * j;
-		int nk = width * filter_bytes;
-		int filter = *raw++;
+		auto cur = filter_buf + (j & 1) * img_width_bytes;
+		auto prior = filter_buf + (~j & 1) * img_width_bytes;
+		auto dest = a->out + stride * j;
+		auto nk = width * filter_bytes;
+		auto filter = *raw++;
 
 		// check filter type
 		if (filter > 4)
@@ -637,7 +645,10 @@ static int stbi__create_png_image_raw(PNG *a, uint8_t *raw, uint32_t raw_len, in
 		}
 
 		// if first row, use special filter that doesn't sample previous row
-		if (j == 0) filter = first_row_filter[filter];
+		if (j == 0)
+		{
+			filter = first_row_filter[filter];
+		}
 
 		// perform actual filtering
 		switch (filter)
@@ -679,10 +690,10 @@ static int stbi__create_png_image_raw(PNG *a, uint8_t *raw, uint32_t raw_len, in
 		if (depth < 8)
 		{
 			auto scale = (color == 0) ? stbi__depth_scale_table[depth] : 1; // scale grayscale values to 0..255 range
-			auto* in = cur;
-			auto* out = dest;
+			auto in = cur;
+			auto out = dest;
 			uint8_t inb = 0;
-			uint32_t nsmp = x * img_n;
+			auto nsmp = x * img_n;
 
 			// expand bits to bytes first
 			if (depth == 4)
@@ -735,7 +746,7 @@ static int stbi__create_png_image_raw(PNG *a, uint8_t *raw, uint32_t raw_len, in
 		{
 			// convert the image data from big-endian to platform-native
 			auto dest16 = reinterpret_cast<uint16_t *>(dest);
-			uint32_t nsmp = x * img_n;
+			auto nsmp = x * img_n;
 
 			if (img_n == out_n)
 			{
@@ -769,40 +780,48 @@ static int stbi__create_png_image_raw(PNG *a, uint8_t *raw, uint32_t raw_len, in
 	}
 
 	stbi_free(filter_buf);
-	if (!all_ok) return 0;
+	if (!all_ok)
+	{
+		return 0;
+	}
 
 	return 1;
 }
 
-static int stbi__create_png_image(PNG *a, uint8_t *image_data, uint32_t image_data_len, int out_n, int depth,
-                                  int color, int interlaced)
+static int stbi__create_png_image(
+	PNG *a,
+	uint8_t *image_data,
+	size_t image_data_len,
+	size_t out_n,
+	size_t depth,
+	size_t color,
+	bool interlaced)
 {
-	int bytes = (depth == 16 ? 2 : 1);
-	int out_bytes = out_n * bytes;
-	int p;
+	auto bytes = (depth == 16 ? 2 : 1);
+	auto out_bytes = out_n * bytes;
 	if (!interlaced)
 	{
 		return stbi__create_png_image_raw(a, image_data, image_data_len, out_n, a->s->img_x, a->s->img_y, depth, color);
 	}
 
 	// de-interlacing
-	auto *final = stbi__malloc_mad3<uint8_t>(a->s->img_x, a->s->img_y, out_bytes, 0);
+	auto final = stbi__malloc_mad3<uint8_t>(a->s->img_x, a->s->img_y, out_bytes, 0);
 	if (!final)
 	{
 		return stbi__err("outofmem", "Out of memory");
 	}
-	for (p = 0; p < 7; ++p)
+	for (int p = 0; p < 7; ++p)
 	{
 		int xorig[] = {0, 4, 0, 2, 0, 1, 0};
 		int yorig[] = {0, 0, 4, 0, 2, 0, 1};
 		int xspc[] = {8, 8, 4, 4, 2, 2, 1};
 		int yspc[] = {8, 8, 8, 4, 4, 2, 2};
 		// pass1_x[4] = 0, pass1_x[5] = 1, pass1_x[12] = 1
-		int x = (a->s->img_x - xorig[p] + xspc[p] - 1) / xspc[p];
-		int y = (a->s->img_y - yorig[p] + yspc[p] - 1) / yspc[p];
+		auto x = (a->s->img_x - xorig[p] + xspc[p] - 1) / xspc[p];
+		auto y = (a->s->img_y - yorig[p] + yspc[p] - 1) / yspc[p];
 		if (x && y)
 		{
-			uint32_t img_len = ((((a->s->img_n * x * depth) + 7) >> 3) + 1) * y;
+			auto img_len = ((((a->s->img_n * x * depth) + 7) >> 3) + 1) * y;
 			if (!stbi__create_png_image_raw(a, image_data, image_data_len, out_n, x, y, depth, color))
 			{
 				stbi_free(final);
@@ -812,10 +831,13 @@ static int stbi__create_png_image(PNG *a, uint8_t *image_data, uint32_t image_da
 			{
 				for (int i = 0; i < x; ++i)
 				{
-					int out_y = j * yspc[p] + yorig[p];
-					int out_x = i * xspc[p] + xorig[p];
-					std::memcpy(final + out_y * a->s->img_x * out_bytes + out_x * out_bytes,
-					            a->out + (j * x + i) * out_bytes, out_bytes);
+					auto out_y = j * yspc[p] + yorig[p];
+					auto out_x = i * xspc[p] + xorig[p];
+					std::memcpy(
+						final + out_y * a->s->img_x * out_bytes + out_x * out_bytes,
+						a->out + (j * x + i) * out_bytes,
+						out_bytes
+					);
 				}
 			}
 			stbi_free(a->out);
@@ -828,11 +850,11 @@ static int stbi__create_png_image(PNG *a, uint8_t *image_data, uint32_t image_da
 	return 1;
 }
 
-static int stbi__compute_transparency(PNG *z, uint8_t tc[3], int out_n)
+static auto stbi__compute_transparency(PNG *z, uint8_t tc[3], size_t out_n) -> bool
 {
-	DecodeContext *s = z->s;
-	uint32_t i, pixel_count = s->img_x * s->img_y;
-	uint8_t *p = z->out;
+	auto s = z->s;
+	auto pixel_count = s->img_x * s->img_y;
+	auto p = z->out;
 
 	// compute color-based transparency, assuming we've
 	// already got 255 as the alpha value in the output
@@ -840,43 +862,13 @@ static int stbi__compute_transparency(PNG *z, uint8_t tc[3], int out_n)
 
 	if (out_n == 2)
 	{
-		for (i = 0; i < pixel_count; ++i)
+		for (auto i = 0; i < pixel_count; ++i)
 		{
 			p[1] = (p[0] == tc[0] ? 0 : 255);
 			p += 2;
 		}
 	}
-	else
-	{
-		for (i = 0; i < pixel_count; ++i)
-		{
-			if (p[0] == tc[0] && p[1] == tc[1] && p[2] == tc[2])
-				p[3] = 0;
-			p += 4;
-		}
-	}
-	return 1;
-}
-
-static int stbi__compute_transparency16(PNG *z, uint16_t tc[3], int out_n)
-{
-	DecodeContext *s = z->s;
-	uint32_t pixel_count = s->img_x * s->img_y;
-	auto p = reinterpret_cast<uint16_t *>(z->out);
-
-	// compute color-based transparency, assuming we've
-	// already got 65535 as the alpha value in the output
-	STBI_ASSERT(out_n == 2 || out_n == 4);
-
-	if (out_n == 2)
-	{
-		for (auto i = 0; i < pixel_count; ++i)
-		{
-			p[1] = (p[0] == tc[0] ? 0 : 0xFFFF);
-			p += 2;
-		}
-	}
-	else
+	else if (out_n == 4)
 	{
 		for (auto i = 0; i < pixel_count; ++i)
 		{
@@ -887,7 +879,46 @@ static int stbi__compute_transparency16(PNG *z, uint16_t tc[3], int out_n)
 			p += 4;
 		}
 	}
-	return 1;
+	else
+	{
+		return false;
+	}
+	return true;
+}
+
+static auto stbi__compute_transparency16(PNG *z, uint16_t tc[3], size_t out_n) -> bool
+{
+	auto s = z->s;
+	auto pixel_count = s->img_x * s->img_y;
+	auto p = reinterpret_cast<uint16_t *>(z->out);
+
+	// compute color-based transparency, assuming we've
+	// already got 65535 as the alpha value in the output
+	if (out_n == 2)
+	{
+		for (auto i = 0; i < pixel_count; ++i)
+		{
+			p[1] = (p[0] == tc[0] ? 0 : 0xFFFF);
+			p += 2;
+		}
+	}
+	else if (out_n == 4)
+	{
+		for (auto i = 0; i < pixel_count; ++i)
+		{
+			if (p[0] == tc[0] && p[1] == tc[1] && p[2] == tc[2])
+			{
+				p[3] = 0;
+			}
+			p += 4;
+		}
+	}
+	else
+	{
+		return false;
+	}
+
+	return true;
 }
 
 static int stbi__expand_png_palette(PNG *a, uint8_t *palette, int len, int pal_img_n)
