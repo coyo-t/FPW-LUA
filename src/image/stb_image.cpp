@@ -23,6 +23,24 @@ struct STBIErr final : std::exception
 };
 
 
+static constexpr auto FOURCC (const char (&items)[5]) -> uint32_t
+{
+	static constexpr auto
+	PNG_TYPE = [](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint32_t {
+		return (
+			(static_cast<uint32_t>(a) << 24) | (static_cast<uint32_t>(b) << 16) |
+			(static_cast<uint32_t>(c) << 8) | static_cast<uint32_t>(d)
+		);
+	};
+	return PNG_TYPE(
+		static_cast<uint8_t>(items[0]),
+		static_cast<uint8_t>(items[1]),
+		static_cast<uint8_t>(items[2]),
+		static_cast<uint8_t>(items[3])
+	);
+}
+
+
 static_assert(sizeof(uint32_t) == 4);
 
 static const char *stbi__g_failure_reason;
@@ -701,13 +719,6 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 	int color = 0;
 	int is_iphone = 0;
 
-	static constexpr auto
-	PNG_TYPE = [](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint32_t {
-		return (
-			(static_cast<uint32_t>(a) << 24) | (static_cast<uint32_t>(b) << 16) |
-			(static_cast<uint32_t>(c) << 8) | static_cast<uint32_t>(d)
-		);
-	};
 	while (true)
 	{
 		// stbi__get_chunk_header
@@ -716,12 +727,12 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 		chunkc.type = s->get32be();
 		switch (chunkc.type)
 		{
-			case PNG_TYPE('C', 'g', 'B', 'I'): {
+			case FOURCC("CgBI"): {
 				is_iphone = 1;
 				s->skip(chunkc.length);
 				break;
 			}
-			case PNG_TYPE('I', 'H', 'D', 'R'): {
+			case FOURCC("IHDR"): {
 				if (!first)
 				{
 					return stbi__err("multiple IHDR", "Corrupt PNG");
@@ -802,7 +813,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				// even with SCAN_header, have to scan to see if we have a tRNS
 				break;
 			}
-			case PNG_TYPE('P', 'L', 'T', 'E'): {
+			case FOURCC("PLTE"): {
 				if (first)
 				{
 					return stbi__err("first not IHDR", "Corrupt PNG");
@@ -825,7 +836,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				}
 				break;
 			}
-			case PNG_TYPE('t', 'R', 'N', 'S'): {
+			case FOURCC("tRNS"): {
 				if (first)
 				{
 					return stbi__err("first not IHDR", "Corrupt PNG");
@@ -890,7 +901,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				}
 				break;
 			}
-			case PNG_TYPE('I', 'D', 'A', 'T'): {
+			case FOURCC("IDAT"): {
 				if (first)
 				{
 					return stbi__err("first not IHDR", "Corrupt PNG");
@@ -935,20 +946,18 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					}
 					z->idata = p;
 				}
+				const auto n = chunkc.length;
+				const auto buffer = z->idata + ioff;
+				if (s->img_buffer + n > s->img_buffer_end)
 				{
-					const auto n = chunkc.length;
-					const auto buffer = z->idata + ioff;
-					if (s->img_buffer + n > s->img_buffer_end)
-					{
-						return stbi__err("outofdata", "Corrupt PNG");
-					}
-					std::memcpy(buffer, s->img_buffer, n);
-					s->img_buffer += n;
+					return stbi__err("outofdata", "Corrupt PNG");
 				}
+				std::memcpy(buffer, s->img_buffer, n);
+				s->img_buffer += n;
 				ioff += chunkc.length;
 				break;
 			}
-			case PNG_TYPE('I', 'E', 'N', 'D'): {
+			case FOURCC("IEND"): {
 				uint32_t raw_len, bpl;
 				if (first)
 				{
@@ -986,7 +995,8 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				try
 				{
 					z->expanded = zctx.decode_malloc_guesssize_headerflag();
-				} catch (Zlib::Er er)
+				}
+				catch (Zlib::Er er)
 				{
 					return stbi__err(er.reason, "");
 				}
