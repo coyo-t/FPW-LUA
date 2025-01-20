@@ -366,17 +366,16 @@ struct PNGChunk
 };
 
 
-static int stbi__check_png_header(DecodeContext *s)
+static auto stbi__check_png_header (DecodeContext *s) -> void
 {
 	static const uint8_t png_sig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 	for (const auto i: png_sig)
 	{
 		if (s->get8() != i)
 		{
-			return stbi__err("bad png sig", "Not a PNG");
+			throw STBIErr("bad png sig"); // "Not a PNG"
 		}
 	}
-	return 1;
 }
 
 struct PNG
@@ -715,11 +714,14 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 	z->idata = nullptr;
 	z->out = nullptr;
 
-	if (!stbi__check_png_header(s))
+	try
+	{
+		stbi__check_png_header(s);
+	}
+	catch (STBIErr e)
 	{
 		return 0;
 	}
-
 
 	uint8_t palette[1024];
 	uint8_t pal_img_n = 0;
@@ -1272,14 +1274,17 @@ auto coyote_stbi_load_from_memory(
 
 	// test the formats with a very explicit header first (at least a FOURCC
 	// or distinctive magic number first)
-	const auto r = stbi__check_png_header(&s);
-	s.rewind();
 
-	if (!r)
+	try
 	{
+		stbi__check_png_header(&s);
+		s.rewind();
+	}
+	catch (STBIErr e)
+	{
+		s.rewind();
 		return stbi__errpuc("unknown image type", "Image not of any known type, or corrupt");
 	}
-
 
 	PNG p;
 	p.s = &s;
