@@ -185,27 +185,6 @@ static int fma3sizes_valid(size_t a, size_t b, size_t c, size_t add)
 	);
 }
 
-// mallocs with size overflow checking
-template<typename T>
-static auto malloc_fma2(size_t a, size_t b, size_t add) -> T*
-{
-	if (!fma2sizes_valid(a, b, add))
-	{
-		return nullptr;
-	}
-	return stbi_malloc_t<T>(a * b + add);
-}
-
-template<typename T>
-static auto malloc_fma3(size_t a, size_t b, size_t c, size_t add) -> T*
-{
-	if (!fma3sizes_valid(a, b, c, add))
-	{
-		return nullptr;
-	}
-	return stbi_malloc_t<T>(a * b * c + add);
-}
-
 
 // stbi__err - error
 // stbi__errpuc - error returning pointer to unsigned char
@@ -342,7 +321,7 @@ static int stbi__create_png_image_raw(
 
 	STBI_ASSERT(out_n == s->img_n || out_n == s->img_n+1);
 	// extra bytes to write off the end into
-	a->out = malloc_fma3<uint8_t>(x, y, output_bytes, 0);
+	a->out = stbi_malloc_t<uint8_t>(x * y * output_bytes);
 	if (!a->out)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -370,7 +349,7 @@ static int stbi__create_png_image_raw(
 	}
 
 	// Allocate two scan lines worth of filter workspace buffer.
-	auto filter_buf = malloc_fma2<uint8_t>(img_width_bytes, 2, 0);
+	auto filter_buf = stbi_malloc_t<uint8_t>(img_width_bytes * 2);
 	if (!filter_buf)
 	{
 		return stbi__err("outofmem", "Out of memory");
@@ -885,6 +864,8 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 				{
 					s->img_out_n = s->img_n;
 				}
+				const auto pic_wide = z->s->img_x;
+				const auto pic_tall = z->s->img_y;
 				{
 					auto _image_data = z->expanded;
 					auto _image_data_len = raw_len;
@@ -899,8 +880,8 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 							_image_data,
 							_image_data_len,
 							_out_n,
-							z->s->img_x,
-							z->s->img_y,
+							pic_wide,
+							pic_tall,
 							_depth,
 							_color
 						);
@@ -908,7 +889,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 
 					// de-interlacing
 					auto out_bytes = _out_n * (_depth == 16 ? 2 : 1);
-					auto final = malloc_fma3<uint8_t>(z->s->img_x, z->s->img_y, out_bytes, 0);
+					auto final = stbi_malloc_t<uint8_t>(pic_wide * pic_tall * out_bytes);
 					if (!final)
 					{
 						return stbi__err("outofmem", "Out of memory");
@@ -920,8 +901,8 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 						int xspc[] = {8, 8, 4, 4, 2, 2, 1};
 						int yspc[] = {8, 8, 8, 4, 4, 2, 2};
 						// pass1_x[4] = 0, pass1_x[5] = 1, pass1_x[12] = 1
-						auto x = (z->s->img_x - xorig[p] + xspc[p] - 1) / xspc[p];
-						auto y = (z->s->img_y - yorig[p] + yspc[p] - 1) / yspc[p];
+						auto x = (pic_wide - xorig[p] + xspc[p] - 1) / xspc[p];
+						auto y = (pic_tall - yorig[p] + yspc[p] - 1) / yspc[p];
 						if (x && y)
 						{
 							auto img_len = ((((z->s->img_n * x * _depth) + 7) >> 3) + 1) * y;
@@ -937,7 +918,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 									auto out_y = jj * yspc[p] + yorig[p];
 									auto out_x = ii * xspc[p] + xorig[p];
 									std::memcpy(
-										final + out_y * z->s->img_x * out_bytes + out_x * out_bytes,
+										final + out_y * pic_wide * out_bytes + out_x * out_bytes,
 										z->out + (jj * x + ii) * out_bytes,
 										out_bytes
 									);
@@ -956,7 +937,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					{
 
 						auto outn = s->img_out_n;
-						auto pixel_count = z->s->img_x * z->s->img_y;
+						auto pixel_count = pic_wide * pic_tall;
 						auto p = reinterpret_cast<uint16_t *>(z->out);
 
 						// compute color-based transparency, assuming we've
@@ -988,7 +969,7 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					else
 					{
 						auto outn = s->img_out_n;
-						auto pixel_count = z->s->img_x * z->s->img_y;
+						auto pixel_count = pic_wide * pic_tall;
 						auto p = z->out;
 
 						// compute color-based transparency, assuming we've
@@ -1030,10 +1011,10 @@ static int stbi__parse_png_file(PNG *z, size_t scan, size_t req_comp)
 					// stbi__expand_png_palette
 					{
 						auto pal_img_n2 = s->img_out_n;
-						auto pixel_count = z->s->img_x * z->s->img_y;
+						auto pixel_count = pic_wide * pic_tall;
 						auto orig = z->out;
 
-						auto p = malloc_fma2<uint8_t>(pixel_count, pal_img_n2, 0);
+						auto p = stbi_malloc_t<uint8_t>(pixel_count * pal_img_n2);
 						if (p == nullptr)
 						{
 							return stbi__err("outofmem", "Out of memory");
@@ -1201,7 +1182,7 @@ auto coyote_stbi_load_from_memory(
 					goto endp;
 				}
 
-				auto good = malloc_fma3<uint8_t>(req_comp, xx, yy, 0);
+				auto good = stbi_malloc_t<uint8_t>(req_comp * xx * yy);
 				if (good == nullptr)
 				{
 					stbi_free(data);
