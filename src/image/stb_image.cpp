@@ -106,9 +106,15 @@ static auto stbi__err(const char *str) -> bool
 	return false;
 }
 
-static void *stbi_malloc(size_t size)
+static auto stbi_malloc(size_t size) -> void*
 {
 	return std::malloc(size);
+}
+
+template<typename T>
+static auto stbi_malloc_t (size_t size) -> T*
+{
+	return static_cast<T*>(stbi_malloc(size));
 }
 
 static auto stbi_free (void* p) -> void
@@ -147,10 +153,13 @@ static int stbi__addsizes_valid(int a, int b)
 // negative factors are considered invalid.
 static int stbi__mul2sizes_valid(int a, int b)
 {
-	if (a < 0 || b < 0) return 0;
-	if (b == 0) return 1; // mul-by-0 is always safe
+	if (a < 0 || b < 0)
+	{
+		return 0;
+	}
+	// mul-by-0 is always safe
 	// portable way to check for no overflows in a*b
-	return a <= INT_MAX / b;
+	return b == 0 || (a <= INT_MAX / b);
 }
 
 // returns 1 if "a*b + add" has no negative terms/factors and doesn't overflow
@@ -162,20 +171,29 @@ static int stbi__mad2sizes_valid(int a, int b, int add)
 // returns 1 if "a*b*c + add" has no negative terms/factors and doesn't overflow
 static int stbi__mad3sizes_valid(int a, int b, int c, int add)
 {
-	return stbi__mul2sizes_valid(a, b) && stbi__mul2sizes_valid(a * b, c) &&
-	       stbi__addsizes_valid(a * b * c, add);
+	return (
+		stbi__mul2sizes_valid(a, b) &&
+		stbi__mul2sizes_valid(a * b, c) &&
+		stbi__addsizes_valid(a * b * c, add)
+	);
 }
 
 // mallocs with size overflow checking
 static void *stbi__malloc_mad2(int a, int b, int add)
 {
-	if (!stbi__mad2sizes_valid(a, b, add)) return NULL;
+	if (!stbi__mad2sizes_valid(a, b, add))
+	{
+		return nullptr;
+	}
 	return stbi_malloc(a * b + add);
 }
 
 static void *stbi__malloc_mad3(int a, int b, int c, int add)
 {
-	if (!stbi__mad3sizes_valid(a, b, c, add)) return NULL;
+	if (!stbi__mad3sizes_valid(a, b, c, add))
+	{
+		return nullptr;
+	}
 	return stbi_malloc(a * b * c + add);
 }
 
@@ -337,7 +355,7 @@ static uint16_t *stbi__convert_format16 (
 	if (req_comp == img_n) return data;
 	STBI_ASSERT(req_comp >= 1 && req_comp <= 4);
 
-	auto good = static_cast<uint16_t *>(stbi_malloc(req_comp * x * y * 2));
+	auto good = stbi_malloc_t<uint16_t>(req_comp * x * y * 2);
 	if (good == nullptr)
 	{
 		stbi_free(data);
@@ -910,8 +928,6 @@ static int stbi__expand_png_palette(PNG *a, uint8_t *palette, int len, int pal_i
 	stbi_free(a->out);
 	a->out = temp_out;
 
-	STBI_NOTUSED(len);
-
 	return 1;
 }
 
@@ -1178,14 +1194,15 @@ static int stbi__parse_png_file(PNG *z, int scan, int req_comp)
 					{
 						idata_limit *= 2;
 					}
-					STBI_NOTUSED(idata_limit_old);
-					uint8_t *p = (uint8_t *) stb_realloc(z->idata, idata_limit_old, idata_limit);
-					if (p == NULL)
+
+					auto p = static_cast<uint8_t*>(stb_realloc(z->idata, idata_limit_old, idata_limit));
+					if (p == nullptr)
 					{
 						return stbi__err("outofmem", "Out of memory");
 					}
 					z->idata = p;
-				} {
+				}
+				{
 					const auto n = c.length;
 					const auto buffer = z->idata + ioff;
 					if (s->img_buffer + n > s->img_buffer_end)
@@ -1467,7 +1484,7 @@ uint8_t *coyote_stbi_load_from_memory(
 		auto orig = static_cast<uint16_t *>(result);
 		auto img_len = (*x) * (*y) * (req_comp == 0 ? *comp : req_comp);
 
-		auto reduced = static_cast<uint8_t *>(stbi_malloc(img_len));
+		auto reduced = stbi_malloc_t<uint8_t>(img_len);
 		if (reduced == nullptr)
 		{
 			return stbi__errpuc("outofmem", "Out of memory");
