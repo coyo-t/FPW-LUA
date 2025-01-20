@@ -274,15 +274,6 @@ struct DecodeContext
 };
 
 
-
-struct ResultInfo
-{
-	int bits_per_channel;
-	int num_channels;
-	int channel_order;
-};
-
-
 // stb_image uses ints pervasively, including for offset calculations.
 // therefore the largest decoded image size we can support with the
 // current code, even on 64-bit targets, is INT_MAX. this is not a
@@ -1272,11 +1263,8 @@ auto coyote_stbi_load_from_memory(
 {
 	auto s = DecodeContext(source_png_buffer, source_length);
 
-	ResultInfo ri;
-	void* true_result;
-	std::memset(&ri, 0, sizeof(ri)); // make sure it's initialized if we add new fields
-	ri.bits_per_channel = 8; // default is 8 so most paths don't have to be changed
-	ri.num_channels = 0;
+	// default is 8 so most paths don't have to be changed
+	size_t bits_per_channel = 8;
 
 	// test the formats with a very explicit header first (at least a FOURCC
 	// or distinctive magic number first)
@@ -1293,6 +1281,7 @@ auto coyote_stbi_load_from_memory(
 	}
 
 	auto p = PNG(s);
+	void* true_result;
 	void *result = nullptr;
 	if (req_comp < 0 || req_comp > 4)
 	{
@@ -1303,11 +1292,11 @@ auto coyote_stbi_load_from_memory(
 	{
 		if (p.depth <= 8)
 		{
-			ri.bits_per_channel = 8;
+			bits_per_channel = 8;
 		}
 		else if (p.depth == 16)
 		{
-			ri.bits_per_channel = 16;
+			bits_per_channel = 16;
 		}
 		else
 		{
@@ -1324,7 +1313,7 @@ auto coyote_stbi_load_from_memory(
 			const auto dst_ofs = req_comp;
 			const auto xx = p.s.image_wide;
 			const auto yy = p.s.image_tall;
-			if (ri.bits_per_channel == 8)
+			if (bits_per_channel == 8)
 			{
 				auto data = static_cast<uint8_t*>(result);
 
@@ -1640,9 +1629,9 @@ auto coyote_stbi_load_from_memory(
 	}
 
 	// it is the responsibility of the loaders to make sure we get either 8 or 16 bit.
-	STBI_ASSERT(ri.bits_per_channel == 8 || ri.bits_per_channel == 16);
+	STBI_ASSERT(bits_per_channel == 8 || bits_per_channel == 16);
 
-	if (ri.bits_per_channel != 8)
+	if (bits_per_channel != 8)
 	{
 		auto orig = static_cast<uint16_t *>(true_result);
 		auto img_len = (*x) * (*y) * (req_comp == 0 ? *comp : req_comp);
@@ -1660,7 +1649,7 @@ auto coyote_stbi_load_from_memory(
 		}
 		s.free(orig);
 		true_result = reduced;
-		ri.bits_per_channel = 8;
+		bits_per_channel = 8;
 	}
 
 	return static_cast<uint8_t*>(true_result);
