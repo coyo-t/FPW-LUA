@@ -43,10 +43,10 @@ namespace Zlib {
 		realloc = nullptr;
 
 		uint8_t* buffer = nullptr;
-		uint8_t parse_header = false;
 		size_t len = 0;
 		size_t initial_size = 0;
 		size_t out_len = 0;
+		uint8_t parse_header = false;
 
 		template<typename T>
 		auto free_t (T* p)

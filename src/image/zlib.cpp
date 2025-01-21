@@ -139,25 +139,24 @@ struct ZHuffman
 
 	auto zbuild_huffman(const uint8_t *sizelist, int num) -> void
 	{
-		int i, k = 0;
-		int next_code[16];
 		int sizes[17] = {};
-
 		std::memset(this->fast, 0, sizeof(this->fast));
-		for (i = 0; i < num; ++i)
+		for (int i = 0; i < num; ++i)
 		{
 			++sizes[sizelist[i]];
 		}
 		sizes[0] = 0;
-		for (i = 1; i < 16; ++i)
+		for (int i = 1; i < 16; ++i)
 		{
 			if (sizes[i] > (1 << i))
 			{
 				throw Zlib::Err("bad sizes");
 			}
 		}
+		int next_code[16];
 		int code = 0;
-		for (i = 1; i < 16; ++i)
+		int k = 0;
+		for (int i = 1; i < 16; ++i)
 		{
 			next_code[i] = code;
 			this->firstcode[i] = static_cast<uint16_t>(code);
@@ -175,7 +174,7 @@ struct ZHuffman
 			k += sizes[i];
 		}
 		this->maxcode[16] = 0x10000; // sentinel
-		for (i = 0; i < num; ++i)
+		for (int i = 0; i < num; ++i)
 		{
 			const int s = sizelist[i];
 			if (!s)
@@ -208,7 +207,7 @@ struct ZHuffman
 
 struct ZBuffer
 {
-	uint8_t * zbuffer;
+	uint8_t *zbuffer;
 	uint8_t *zbuffer_end;
 	size_t num_bits;
 	int hit_zeof_once;
@@ -238,14 +237,13 @@ struct ZBuffer
 		{
 			if (code_buffer >= (1U << num_bits))
 			{
-				zbuffer = zbuffer_end; /* treat this as EOF so we fail. */
+				zbuffer = zbuffer_end; // treat this as EOF so we fail.
 				return;
 			}
 			code_buffer |= static_cast<unsigned int>(read_u8()) << num_bits;
 			num_bits += 8;
 		} while (num_bits <= 24);
 	}
-
 	template<size_t N, size_t OFS = 0>
 	auto read_bits_t () -> uint32_t
 	{
@@ -261,7 +259,6 @@ struct ZBuffer
 		num_bits -= N;
 		return k + OFS;
 	}
-
 	auto read_bits (size_t n) -> uint32_t
 	{
 		if (num_bits < n)
@@ -273,16 +270,16 @@ struct ZBuffer
 		num_bits -= n;
 		return k;
 	}
-	auto zexpand(uint8_t*zout, int n) -> void
+	auto zexpand (uint8_t* zout, int n) -> void
 	{
 		// need to make room for n bytes
-		unsigned int old_limit;
 		this->zout = zout;
 		if (!this->z_expandable)
 		{
 			throw Zlib::Err("output buffer limit");
 		}
 		auto cur = (this->zout - this->zout_start);
+		unsigned int old_limit;
 		auto limit = old_limit = (this->zout_end - this->zout_start);
 		if (UINT_MAX - cur < n)
 		{
@@ -302,8 +299,8 @@ struct ZBuffer
 		{
 			throw Zlib::Err("outofmem");
 		}
-		this->zout_start = q;
 		this->zout = q + cur;
+		this->zout_start = q;
 		this->zout_end = q + limit;
 	}
 	auto zhuffman_decode(const ZHuffman& z) -> int
@@ -343,7 +340,7 @@ struct ZBuffer
 		int s2;
 		// not resolved by fast table, so compute it the slow way
 		// use jpeg approach, which requires MSbits at top
-		auto k2 = bit_reverse(code_buffer, 16);
+		const auto k2 = bit_reverse(code_buffer, 16);
 		for (s2 = ZFAST_BITS + 1; ; ++s2)
 		{
 			if (k2 < z.maxcode[s2])
@@ -356,7 +353,7 @@ struct ZBuffer
 			return -1; // invalid code!
 		}
 		// code size is s, so:
-		int b2 = (k2 >> (16 - s2)) - z.firstcode[s2] + z.firstsymbol[s2];
+		const int b2 = (k2 >> (16 - s2)) - z.firstcode[s2] + z.firstsymbol[s2];
 		if (b2 >= ZNSYMS)
 		{
 			return -1; // some data was corrupt somewhere!
