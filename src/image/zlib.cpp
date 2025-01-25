@@ -227,7 +227,7 @@ struct ZBuffer
 	{
 		return zbuffer >= zbuffer_end;
 	}
-	auto read_u8() -> uint8_t
+	auto read_byte () -> uint8_t
 	{
 		return eof() ? 0 : *zbuffer++;
 	}
@@ -237,38 +237,24 @@ struct ZBuffer
 		{
 			if (code_buffer >= (1U << num_bits))
 			{
-				zbuffer = zbuffer_end; // treat this as EOF so we fail.
+				// treat this as EOF so we fail.
+				zbuffer = zbuffer_end;
 				return;
 			}
-			code_buffer |= static_cast<unsigned int>(read_u8()) << num_bits;
+			code_buffer |= static_cast<unsigned int>(read_byte()) << num_bits;
 			num_bits += 8;
 		} while (num_bits <= 24);
 	}
-	template<size_t N, size_t OFS = 0>
-	auto read_bits_t () -> uint32_t
-	{
-		static_assert(0 < N && N <= 32);
-		if (num_bits < N)
-		{
-			zfill_bits();
-		}
-		static constexpr auto NSH = 1 << (N-1);
-		static constexpr auto MASK = (NSH - 1) | NSH;
-		const auto k = code_buffer & MASK;
-		code_buffer >>= N;
-		num_bits -= N;
-		return k + OFS;
-	}
-	auto read_bits (size_t n) -> uint32_t
+	auto read_bits (size_t n, size_t offset = 0) -> uint32_t
 	{
 		if (num_bits < n)
 		{
 			zfill_bits();
 		}
-		auto k = code_buffer & ((1 << n) - 1);
+		const auto k = code_buffer & ((1 << n) - 1);
 		code_buffer >>= n;
 		num_bits -= n;
-		return k;
+		return k + offset;
 	}
 	auto zexpand (uint8_t* zout, int n) -> void
 	{
@@ -371,30 +357,29 @@ struct ZBuffer
 
 auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 {
-	const auto p = this->malloc_t<uint8_t>(this->initial_size);
-	if (p == nullptr)
+	const auto inital_buffer_ptr = this->malloc_t<uint8_t>(this->initial_size);
+	if (inital_buffer_ptr == nullptr)
 	{
 		throw Zlib::Err("Out of memory");
 	}
-	ZBuffer a;
-	a.zbuffer = this->buffer;
-	a.zbuffer_end = this->buffer + this->len;
+	ZBuffer zbuffer;
+	zbuffer.zbuffer = this->buffer;
+	zbuffer.zbuffer_end = this->buffer + this->len;
 	try
 	{
 		// zdo_zlib(&a, p, this->initial_size, true, this->parse_header);
-		a.zout_start = p;
-		a.zout = p;
-		a.zout_end = p + this->initial_size;
-		a.z_expandable = this->parse_header;
+		zbuffer.zout_start = inital_buffer_ptr;
+		zbuffer.zout = inital_buffer_ptr;
+		zbuffer.zout_end = inital_buffer_ptr + this->initial_size;
+		zbuffer.z_expandable = this->parse_header;
 
 
 		if (parse_header)
 		{
-			int cmf = a.read_u8();
-			int cm = cmf & 15;
+			const auto cmf = zbuffer.read_byte();
 			/* int cinfo = cmf >> 4; */
-			int flg = a.read_u8();
-			if (a.eof())
+			int flg = zbuffer.read_byte();
+			if (zbuffer.eof())
 			{
 				// zlib spec
 				throw Zlib::Err("bad zlib header");
@@ -409,6 +394,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 				// preset dictionary not allowed in png
 				throw Zlib::Err("no preset dict");
 			}
+			const auto cm = cmf & 15;
 			if (cm != 8)
 			{
 				// DEFLATE required for png
@@ -416,31 +402,31 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 			}
 			// window = 1 << (8 + cinfo)... but who cares, we fully buffer output
 		}
-		a.num_bits = 0;
-		a.code_buffer = 0;
-		a.hit_zeof_once = 0;
+		zbuffer.num_bits = 0;
+		zbuffer.code_buffer = 0;
+		zbuffer.hit_zeof_once = 0;
 		uint8_t final;
 		do
 		{
-			final = a.read_bits_t<1>();
-			if (const auto type = a.read_bits_t<2>(); type == 0)
+			final = zbuffer.read_bits(1);
+			if (const auto type = zbuffer.read_bits(2); type == 0)
 			{
 				uint8_t header[4];
-				if (a.num_bits & 7)
+				if (zbuffer.num_bits & 7)
 				{
-					a.read_bits(a.num_bits & 7); // discard
+					zbuffer.read_bits(zbuffer.num_bits & 7); // discard
 				}
 				// drain the bit-packed data into header
 
-				auto pev_bits = a.num_bits;
+				auto pev_bits = zbuffer.num_bits;
 				int k = 0;
-				while (a.num_bits > 0)
+				while (zbuffer.num_bits > 0)
 				{
 					// suppress MSVC run-time check
-					header[k++] = static_cast<uint8_t>(a.code_buffer & 255);
-					a.code_buffer >>= 8;
-					a.num_bits -= 8;
-					if (a.num_bits > pev_bits)
+					header[k++] = static_cast<uint8_t>(zbuffer.code_buffer & 255);
+					zbuffer.code_buffer >>= 8;
+					zbuffer.num_bits -= 8;
+					if (zbuffer.num_bits > pev_bits)
 					{
 						throw Zlib::Err("zlib corrupt");
 					}
@@ -448,7 +434,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 				// now fill header the normal way
 				while (k < 4)
 				{
-					header[k++] = a.read_u8();
+					header[k++] = zbuffer.read_byte();
 				}
 				int len = header[1] * 256 + header[0];
 				int nlen = header[3] * 256 + header[2];
@@ -456,17 +442,17 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 				{
 					throw Zlib::Err("zlib corrupt");
 				}
-				if (a.zbuffer + len > a.zbuffer_end)
+				if (zbuffer.zbuffer + len > zbuffer.zbuffer_end)
 				{
 					throw Zlib::Err("read past buffer");
 				}
-				if (a.zout + len > a.zout_end)
+				if (zbuffer.zout + len > zbuffer.zout_end)
 				{
-					a.zexpand(a.zout, len);
+					zbuffer.zexpand(zbuffer.zout, len);
 				}
-				std::memcpy(a.zout, a.zbuffer, len);
-				a.zbuffer += len;
-				a.zout += len;
+				std::memcpy(zbuffer.zout, zbuffer.zbuffer, len);
+				zbuffer.zbuffer += len;
+				zbuffer.zout += len;
 			}
 			else if (type == 3)
 			{
@@ -477,8 +463,8 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 				if (type == 1)
 				{
 					// use fixed code lengths
-					a.z_length.zbuild_huffman(DEFAULT_LENGTH, ZNSYMS);
-					a.z_distance.zbuild_huffman(DEFAULT_DISTANCE, 32);
+					zbuffer.z_length.zbuild_huffman(DEFAULT_LENGTH, ZNSYMS);
+					zbuffer.z_distance.zbuild_huffman(DEFAULT_DISTANCE, 32);
 				}
 				else
 				{
@@ -486,15 +472,15 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 					ZHuffman z_codelength;
 					uint8_t lencodes[286 + 32 + 137]; //padding for maximum single op
 
-					const int hlit  = a.read_bits_t<5, 257>();
-					const int hdist = a.read_bits_t<5, 1>();
-					const int hclen = a.read_bits_t<4, 4>();
+					const int hlit  = zbuffer.read_bits(5, 257);
+					const int hdist = zbuffer.read_bits(5, 1);
+					const int hclen = zbuffer.read_bits(4, 4);
 					const int ntot = hlit + hdist;
 
 					uint8_t codelength_sizes[19] = {};
 					for (int i = 0; i < hclen; ++i)
 					{
-						int s = a.read_bits(3);
+						int s = zbuffer.read_bits(3);
 						codelength_sizes[LENGTH_DE_ZIGZAG[i]] = (uint8_t) s;
 					}
 					z_codelength.zbuild_huffman(codelength_sizes, 19);
@@ -502,7 +488,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 					int n = 0;
 					while (n < ntot)
 					{
-						int c = a.zhuffman_decode(z_codelength);
+						int c = zbuffer.zhuffman_decode(z_codelength);
 						if (c < 0 || c >= 19)
 						{
 							throw Zlib::Err("bad codelengths");
@@ -516,7 +502,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 							uint8_t fill = 0;
 							if (c == 16)
 							{
-								c = a.read_bits_t<2, 3>();
+								c = zbuffer.read_bits(2, 3);
 								if (n == 0)
 								{
 									throw Zlib::Err("bad codelengths");
@@ -525,11 +511,11 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 							}
 							else if (c == 17)
 							{
-								c = a.read_bits_t<3, 3>();
+								c = zbuffer.read_bits(3, 3);
 							}
 							else if (c == 18)
 							{
-								c = a.read_bits_t<7, 11>();
+								c = zbuffer.read_bits(7, 11);
 							}
 							else
 							{
@@ -547,25 +533,25 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 					{
 						throw Zlib::Err("bad codelengths");
 					}
-					a.z_length.zbuild_huffman(lencodes, hlit);
-					a.z_distance.zbuild_huffman(lencodes + hlit, hdist);
+					zbuffer.z_length.zbuild_huffman(lencodes, hlit);
+					zbuffer.z_distance.zbuild_huffman(lencodes + hlit, hdist);
 				}
 
 				// zparse_huffman_block
-				auto zout = a.zout;
+				auto zout = zbuffer.zout;
 				for (;;)
 				{
-					if (int z = a.zhuffman_decode(a.z_length); z < 256)
+					if (int z = zbuffer.zhuffman_decode(zbuffer.z_length); z < 256)
 					{
 						if (z < 0)
 						{
 							// error in huffman codes
 							throw Zlib::Err("bad huffman code");
 						}
-						if (zout >= a.zout_end)
+						if (zout >= zbuffer.zout_end)
 						{
-							a.zexpand(zout, 1);
-							zout = a.zout;
+							zbuffer.zexpand(zout, 1);
+							zout = zbuffer.zout;
 						}
 						*zout++ = static_cast<char>(z);
 					}
@@ -573,8 +559,8 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 					{
 						if (z == 256)
 						{
-							a.zout = zout;
-							if (a.hit_zeof_once && a.num_bits < 16)
+							zbuffer.zout = zout;
+							if (zbuffer.hit_zeof_once && zbuffer.num_bits < 16)
 							{
 								// The first time we hit zeof, we inserted 16 extra zero bits into our bit
 								// buffer so the decoder can just do its speculative decoding. But if we
@@ -594,9 +580,9 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 							int len = ZLENGTH_BASE[z];
 							if (ZLENGTH_EXTRA[z])
 							{
-								len += a.read_bits(ZLENGTH_EXTRA[z]);
+								len += zbuffer.read_bits(ZLENGTH_EXTRA[z]);
 							}
-							z = a.zhuffman_decode(a.z_distance);
+							z = zbuffer.zhuffman_decode(zbuffer.z_distance);
 							if (z < 0 || z >= 30)
 							{
 								throw Zlib::Err("bad huffman code");
@@ -605,16 +591,16 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 							int dist = ZDIST_BASE[z];
 							if (ZDIST_EXTRA[z])
 							{
-								dist += a.read_bits(ZDIST_EXTRA[z]);
+								dist += zbuffer.read_bits(ZDIST_EXTRA[z]);
 							}
-							if (zout - a.zout_start < dist)
+							if (zout - zbuffer.zout_start < dist)
 							{
 								throw Zlib::Err("bad dist");
 							}
-							if (len > a.zout_end - zout)
+							if (len > zbuffer.zout_end - zout)
 							{
-								a.zexpand(zout, len);
-								zout = a.zout;
+								zbuffer.zexpand(zout, len);
+								zout = zbuffer.zout;
 							}
 							auto p2 = zout - dist;
 							if (dist == 1)
@@ -623,14 +609,20 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 								auto v = *p2;
 								if (len)
 								{
-									do *zout++ = v; while (--len);
+									do
+									{
+										*zout++ = v;
+									} while (--len);
 								}
 							}
 							else
 							{
 								if (len)
 								{
-									do *zout++ = *p2++; while (--len);
+									do
+									{
+										*zout++ = *p2++;
+									} while (--len);
 								}
 							}
 						}
@@ -640,12 +632,12 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 		} while (!final);
 
 //
-		this->out_len = a.zout - a.zout_start;
-		return a.zout_start;
+		this->out_len = zbuffer.zout - zbuffer.zout_start;
+		return zbuffer.zout_start;
 	}
 	catch (Zlib::Err& e)
 	{
-		this->free_t(a.zout_start);
+		this->free_t(zbuffer.zout_start);
 		throw;
 	}
 }
