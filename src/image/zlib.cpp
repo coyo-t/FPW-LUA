@@ -646,7 +646,7 @@ auto Zlib::Context::decode_malloc_guesssize_headerflag () -> uint8_t *
 	catch (Zlib::Err& e)
 	{
 		this->free_t(a.zout_start);
-		throw e;
+		throw;
 	}
 }
 
