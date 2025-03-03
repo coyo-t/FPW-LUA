@@ -32,7 +32,7 @@ constexpr auto LUA_VERSION_RELEASE_NUM = LUA_VERSION_NUM * 100 + 7;
 
 
 /* mark for precompiled code ('<esc>Lua') */
-constexpr auto LUA_SIGNATURE = "\x1bLua";
+#define LUA_SIGNATURE "\x1bLua"
 
 /* option for multiple returns in 'lua_pcall' and 'lua_call' */
 constexpr auto LUA_MULTRET = -1;

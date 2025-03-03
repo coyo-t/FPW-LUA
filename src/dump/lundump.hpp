@@ -13,7 +13,7 @@
 
 
 /* data to catch conversion errors */
-constexpr auto LUAC_DATA =	"\x19\x93\r\n\x1a\n";
+#define LUAC_DATA "\x19\x93\r\n\x1a\n"
 
 constexpr auto LUAC_INT =	0x5678;
 constexpr auto LUAC_NUM =	static_cast<lua_Number>(370.5);

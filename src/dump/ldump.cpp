@@ -59,9 +59,9 @@ struct DumpState
 		dumpBlock(v, 1);
 	}
 
-	void dumpLiteral (const char* s)
+	void dumpLiteral (const char* s, size_t literalsize)
 	{
-		dumpBlock(s, sizeof(s) - sizeof(char));
+		dumpBlock(s, literalsize - sizeof(char));
 	}
 
 	void dumpByte(int y)
@@ -103,10 +103,10 @@ struct DumpState
 
 	void dumpHeader()
 	{
-		dumpLiteral(LUA_SIGNATURE);
+		dumpLiteral(LUA_SIGNATURE, sizeof(LUA_SIGNATURE));
 		dumpByte(LUAC_VERSION);
 		dumpByte(LUAC_FORMAT);
-		dumpLiteral(LUAC_DATA);
+		dumpLiteral(LUAC_DATA, sizeof(LUAC_DATA));
 		dumpByte(sizeof(Instruction));
 		dumpByte(sizeof(lua_Integer));
 		dumpByte(sizeof(lua_Number));
