@@ -50,13 +50,13 @@ struct DumpState
 	template<typename V, typename N>
 	void dumpVector (V* v, N n)
 	{
-		dumpBlock(v, n * sizeof(v[0]));
+		dumpBlock(v, n * sizeof(V));
 	}
 
 	template<typename V>
 	void dumpVar (V* v)
 	{
-		dumpBlock(v, 1);
+		dumpVector(v, 1);
 	}
 
 	void dumpLiteral (const char* s, size_t literalsize)
@@ -90,13 +90,13 @@ struct DumpState
 	}
 
 
-	void dumpNumber(lua_Number x)
+	void dumpLuaNumber(lua_Number x)
 	{
 		dumpVar(&x);
 	}
 
 
-	void dumpInteger(lua_Integer x)
+	void dumpLuaInteger(lua_Integer x)
 	{
 		dumpVar(&x);
 	}
@@ -110,8 +110,8 @@ struct DumpState
 		dumpByte(sizeof(Instruction));
 		dumpByte(sizeof(lua_Integer));
 		dumpByte(sizeof(lua_Number));
-		dumpInteger(LUAC_INT);
-		dumpNumber(LUAC_NUM);
+		dumpLuaInteger(LUAC_INT);
+		dumpLuaNumber(LUAC_NUM);
 	}
 
 	void dumpString(const TString *s)
@@ -148,10 +148,10 @@ struct DumpState
 			switch (tt)
 			{
 				case LUA_VNUMFLT:
-					dumpNumber(fltvalue(o));
+					dumpLuaNumber(fltvalue(o));
 					break;
 				case LUA_VNUMINT:
-					dumpInteger(ivalue(o));
+					dumpLuaInteger(ivalue(o));
 					break;
 				case LUA_VSHRSTR:
 				case LUA_VLNGSTR:

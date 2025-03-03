@@ -49,17 +49,21 @@ static l_noret error(LoadState *S, const char *why)
 ** All high-level loads go through loadVector; you can change it to
 ** adapt to the endianness of the input
 */
-#define loadVector(S,b,n)	loadBlock(S,b,(n)*sizeof((b)[0]))
-
-static void loadBlock(LoadState *S, void *b, size_t size)
+// #define loadVector(S,b,n)	loadBlock(S,b,(n)*sizeof((b)[0]))
+template<typename T>
+static void loadVector (LoadState *s, T* b, size_t size)
 {
-	if (S->Z->read(b, size) != 0)
-		error(S, "truncated chunk");
+	if (s->Z->read(b, size * sizeof(T)) != 0)
+		error(s, "truncated chunk");
+	// loadBlock(s, b, size * sizeof(T));
 }
 
-
-#define loadVar(S,x)		loadVector(S,&x,1)
-
+// #define loadVar(S,x)		loadVector(S,&x,1)
+template<typename T>
+static void loadVar (LoadState* s, T*x)
+{
+	loadVector(s, x, 1);
+}
 
 static lu_byte loadByte(LoadState *S)
 {
@@ -101,7 +105,7 @@ static int loadInt(LoadState *S)
 static lua_Number loadNumber(LoadState *S)
 {
 	lua_Number x;
-	loadVar(S, x);
+	loadVar(S, &x);
 	return x;
 }
 
@@ -109,7 +113,7 @@ static lua_Number loadNumber(LoadState *S)
 static lua_Integer loadInteger(LoadState *S)
 {
 	lua_Integer x;
-	loadVar(S, x);
+	loadVar(S, &x);
 	return x;
 }
 
@@ -320,7 +324,12 @@ static void fchecksize(LoadState *S, size_t size, const char *tname)
 }
 
 
-#define checksize(S,t)	fchecksize(S,sizeof(t),#t)
+// #define checksize(S,t)	fchecksize(S,sizeof(t),#t)
+template<typename T>
+void checksize(LoadState* s)
+{
+	fchecksize(s, sizeof(T), typeid(T).name());
+}
 
 static void checkHeader(LoadState *S)
 {
@@ -331,9 +340,9 @@ static void checkHeader(LoadState *S)
 	if (loadByte(S) != LUAC_FORMAT)
 		error(S, "format mismatch");
 	checkliteral(S, LUAC_DATA, "corrupted chunk");
-	checksize(S, Instruction);
-	checksize(S, lua_Integer);
-	checksize(S, lua_Number);
+	checksize<Instruction>(S);
+	checksize<lua_Integer>(S);
+	checksize<lua_Number>(S);
 	if (loadInteger(S) != LUAC_INT)
 		error(S, "integer format mismatch");
 	if (loadNumber(S) != LUAC_NUM)
